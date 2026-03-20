@@ -1,9 +1,10 @@
 # Deliverable D1
 
-**Deadline:** 27/03/2026  
-**Gruppo:** ID 13  
+- Deadline: 27/03/2026
+- Gruppo: ID 13
 
-**Componenti del gruppo:**
+## Componenti del gruppo
+
 - Stefania, Milani, 243506
 - Alice, Bortolotti, 244397
 - Elena, Carmagnani, 244462
@@ -17,7 +18,7 @@
 - **O5:** Semplificare il processo di certificazione per i produttori, permettendo loro di dichiarare eventuali certificazioni possedute e organizzare i dati e documenti necessari per una futura richiesta, ma offrendo anche un sistema alternativo di verifica basato sulla tracciabilità dei processi e dati raccolti, rendendo la qualità garantita e verificabile anche senza certificazione ufficiale.
 - **O6:** Fornire una dashboard intuitiva che permetta agli utenti (allevatori, distributori, consumatori) di gestire, monitorare e visualizzare i dati relativi agli animali, i prodotti, la filiera e le recensioni.
 
-> //analisi di mercato/SWOT (opzionale)
+## Analisi di mercato/SWOT (opzionale)
 
 ### Punti di forza (Strengths)
 
@@ -58,37 +59,49 @@
 
 ### Attori del sistema
 
-- Consumatore (non autenticato)
-    - Visualizza info su aziende e prodotti
-- Consumatore (autenticato)
-    - Salva aziende/prodotti tra i preferiti
-    - Consulta dettagli avanzati (passi mucche, dati filiera)
-    - Recensioni
-    - Aggiunge distributori tra preferiti su Google Maps
-- Allevatore (autenticato)
-    - Registra allevamento
-    - Inserisce dati animali (foto, razza, ID/tag)
-    - Monitora salute (dati vitali, attività)
-    - Gestisce filiera (tracciabilità lotti)
-    - Riceve notifiche
-    - Inserisce certificazioni
-- Distributore/Caseificio (autenticato)
-    - Riceve/aggiorna informazioni sulla filiera
-    - Traccia lotti
-    - Collabora con altri attori
-    - Riceve recensioni
-- Ente certificatore (autenticato)
-    - Visualizza parametri/documenti
-    - Valida certificazioni
-    - Supporta allevatori nella certificazione
+```text
+Attori del sistema
+│
+├── Consumatore (non autenticato)
+│   └── Visualizza info su aziende e prodotti
+│
+├── Consumatore (autenticato)
+│   ├── Salva aziende/prodotti tra i preferiti
+│   ├── Consulta dettagli avanzati (passi mucche, dati filiera)
+│   ├── Recensioni
+│   └── Aggiunge distributori tra preferiti su Google Maps
+│
+├── Allevatore (autenticato)
+│   ├── Registra allevamento
+│   ├── Inserisce dati animali (foto, razza, ID/tag)
+│   ├── Monitora salute (dati vitali, attività)
+│   ├── Gestisce filiera (tracciabilità lotti)
+│   ├── Riceve notifiche
+│   └── Inserisce certificazioni
+│
+├── Distributore/Caseificio (autenticato)
+│   ├── Riceve/aggiorna informazioni sulla filiera
+│   ├── Traccia lotti
+│   ├── Collabora con altri attori
+│   └── Riceve recensioni
+│
+└── Ente certificatore (autenticato)
+    ├── Visualizza parametri/documenti
+    ├── Valida certificazioni
+    └── Supporta allevatori nella certificazione
+```
 
 ### Sistemi esterni
 
-- Google Maps (geolocalizzazione, preferiti)
-- Tag RFID/ID (identificazione animale)
-- Sensori contapassi/attività (monitoraggio mucche)
-- Raccolta dati vitali (temperatura, frequenza cardiaca, GPS, esposizione solare)
-- Laboratori di analisi (qualità del latte/prodotti)
+```text
+Sistemi esterni
+│
+├── Google Maps (geolocalizzazione, preferiti)
+├── Tag RFID/ID (identificazione animale)
+├── Sensori contapassi/attività (monitoraggio mucche)
+├── Raccolta dati vitali (temperatura, frequenza cardiaca, GPS, esposizione solare)
+└── Laboratori di analisi (qualità del latte/prodotti)
+```
 
 Qui si può inserire una mindmap.[1]
 
@@ -99,13 +112,21 @@ Qui si può inserire una mindmap.[1]
 - (utente non autenticato): può visualizzare informazioni sulle aziende locali e sui prodotti offerti, senza funzionalità avanzate.
 - (utente autenticato): può salvare aziende e prodotti tra i preferiti, consultare dettagli avanzati (come i passi delle mucche e dati di filiera), interagire con la piattaforma (recensioni), aggiungere distributori tra i preferiti su Google Maps.
 
-**Allevatore (utente autenticato):** può registrare il proprio allevamento, inserire dati degli animali (foto, razza, ID/tag), monitorare la salute (dati vitali, attività), gestire la filiera (creazione lotti, tracciabilità), ricevere notifiche e inserire certificazioni.
+**Allevatore (utente autenticato)**
 
-**Distributore/Caseificio (utente autenticato):** può ricevere e aggiornare informazioni sulla filiera, tracciare lotti, collaborare con altri attori e ricevere recensioni.
+- può registrare il proprio allevamento, inserire dati degli animali (foto, razza, ID/tag), monitorare la salute (dati vitali, attività), gestire la filiera (creazione lotti, tracciabilità), ricevere notifiche e inserire certificazioni.
 
-**Ente certificatore (utente autenticato):** può visualizzare, validare o suggerire parametri e documenti necessari alle certificazioni, monitorare processi e supportare allevatori nella preparazione delle richieste.
+**Distributore/Caseificio (utente autenticato)**
 
-**Veterinario:** può collaborare fornendo dati di monitoraggio sanitario e supporto agli allevatori.
+- può ricevere e aggiornare informazioni sulla filiera, tracciare lotti, collaborare con altri attori e ricevere recensioni.
+
+**Ente certificatore (utente autenticato)**
+
+- può visualizzare, validare o suggerire parametri e documenti necessari alle certificazioni, monitorare processi e supportare allevatori nella preparazione delle richieste.
+
+**Veterinario**
+
+- può collaborare fornendo dati di monitoraggio sanitario e supporto agli allevatori.
 
 ### 2.2 Sistemi esterni
 
