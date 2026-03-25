@@ -151,3 +151,16 @@ Volendo possiamo aggiungere:
 - RNF13: I dati devono essere sincronizzati anche in presenza di connessione intermittente o scarsa.
 - RNF14: L’autenticazione dell’utente deve avvenire attraverso l’inserimento di nome utente e password o, alternativamente, con l’associazione di account Gmail esistente.
 
+## 6. Use case diagrams e casi d'uso
+### Use case diagram 
+![alt text](<user case diagram.drawio-1.png>)
+#### Use case 1.1 - Aggiornamento dati filiera 
+#### Use case 2.1 - Consultazione prodotto
+#### Use case 3.1 - Consultazione lista produttori locali
+#### Use case 3.2 - Consultazione lista distributori/produttori locali: con autenticazione 
+#### Use case 4.1 - Visualizzazione dashboard
+#### Use case 5.1 - Creazione Account Consumatore 
+#### Use case 5.2 - Creazione Account Creazione Account Consumatore: Indirizzo e-mail Non Valido
+
+## 7. Diagramma BPMN
+
