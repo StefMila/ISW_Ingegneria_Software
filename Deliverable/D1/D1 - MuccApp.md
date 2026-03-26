@@ -130,7 +130,7 @@
 
 ## **3.2 Mappa degli Attori**  {#3.2-mappa-degli-attori}
 
-![][image1]
+![image](./image.png)
 
 ## **3.2 Utenti** {#3.2-utenti}
 
