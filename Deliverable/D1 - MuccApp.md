@@ -5,9 +5,9 @@
 **Gruppo:** ID 13  
  **Componenti del gruppo:**
 
-* Stefania, Milani, 243506  
-* Alice, Bortolotti, 244397  
-* Elena, Carmagnani, 244462
+* Stefania, Milani,   
+* Alice, Bortolotti,   
+* Elena, Carmagnani, 
 
 **Indice**
 
