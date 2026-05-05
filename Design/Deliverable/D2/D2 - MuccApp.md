@@ -19,15 +19,15 @@
 
 [1.2 Obiettivi Futuri	3](#1.2-obiettivi-futuri)
 
-[**2\. Analisi SWOT:	4**](#2.-analisi-swot:)
+[**2\. Analisi SWOT	4**](#2.-analisi-swot:)
 
-[Punti di forza (Strengths):	4](#punti-di-forza-\(strengths\):)
+[Punti di forza (Strengths)	4](#punti-di-forza-\(strengths\):)
 
-[Punti di debolezza (Weaknesses):	4](#punti-di-debolezza-\(weaknesses\):)
+[Punti di debolezza (Weaknesses)	4](#punti-di-debolezza-\(weaknesses\):)
 
-[Opportunità (Opportunities):	4](#opportunità-\(opportunities\):)
+[Opportunità (Opportunities)	4](#opportunità-\(opportunities\):)
 
-[Minacce (Threats):	4](#minacce-\(threats\):)
+[Minacce (Threats)	4](#minacce-\(threats\):)
 
 [**3\. Attori del sistema	5**](#3.-attori-del-sistema)
 
@@ -39,17 +39,17 @@
 
 [**4\. Requisiti funzionali per attore	6**](#4.-requisiti-funzionali-per-attore)
 
-[4.1 Consumatore (Utente non autenticato):	6](#4.1-consumatore-\(utente-non-autenticato\):)
+[4.1 Consumatore (Utente non autenticato)	6](#4.1-consumatore-\(utente-non-autenticato\):)
 
-[4.2 Consumatore (Utente autenticato)(estende 4.1):	6](#4.2-consumatore-\(utente-autenticato\)\(estende-4.1\):)
+[4.2 Consumatore (Utente autenticato)(estende 4.1)	6](#4.2-consumatore-\(utente-autenticato\)\(estende-4.1\):)
 
-[4.3 Allevatore:	6](#4.3-allevatore:)
+[4.3 Allevatore	6](#4.3-allevatore:)
 
-[4.4 Distributore/Caseificio (opzionale):	7](#4.4-distributore/caseificio-\(opzionale\):)
+[4.4 Distributore/Caseificio (opzionale)	7](#4.4-distributore/caseificio-\(opzionale\):)
 
-[4.5 Veterinario (opzionale):	7](#4.5-veterinario-\(opzionale\):)
+[4.5 Veterinario (opzionale)	7](#4.5-veterinario-\(opzionale\):)
 
-[4.6 Sistemi esterni:	7](#4.6-sistemi-esterni:)
+[4.6 Sistemi esterni	7](#4.6-sistemi-esterni:)
 
 [**5\. Requisiti non funzionali	7**](#5.-requisiti-non-funzionali)
 
@@ -57,7 +57,7 @@
 
 [6.1 Use case diagram	9](#6.1-use-case-diagram)
 
-[6.2 Use cases:	10](#6.2-use-cases:)
+[6.2 Use cases	10](#6.2-use-cases:)
 
 [**7\. Diagramma BPMN	17**](#7.-diagramma-bpmn)
 
@@ -83,7 +83,7 @@
 
 ## **1.2 Obiettivi Futuri** {#1.2-obiettivi-futuri}
 
-**O7:** Estendere il ruolo di Allevatore con un modulo che permette di gestire la vendita del prodotto grezzo a Distributori terzi, nel caso in cui l’Allevatore non si occupi della lavorazione e della vendita del prodotto finale.
+**O7:** Estendere il ruolo di Allevatore con un modulo che permette di gestire la vendita del prodotto grezzo a Distributori terzi, nel caso in cui l’Allevatore non si occupi della lavorazione o della vendita del prodotto finale.
 
 **O8:** Estendere l’utilizzo del sistema di monitoraggio ad altre specie di animali da allevamento (es. pecore, capre, galline, ecc.) con rispettiva filiera, tramite moduli dedicati.
 
@@ -119,10 +119,10 @@
 
 ### **Minacce (Threats):** {#minacce-(threats):}
 
-* Resistenza da parte di produttori che non vogliono condividere/divulgare dati o adottare sistemi tecnologici.  
+* Resistenza da parte di produttori che non vogliono divulgare dati o adottare sistemi tecnologici.  
 * Concorrenti che offrono soluzioni simili o piattaforme di tracciabilità.  
 * Possibili cambiamenti nelle normative sul benessere animale.  
-* Non tutti i consumatori sono sensibili alla tematica del benessere animale, quindi potrebbe non interessare alcuni consumatori/una parte del mercato.   
+* La variabilità della sensibilità verso il benessere animale potrebbe limitare l'interesse di una parte del mercato.  
 * I parametri necessari per la certificazione potrebbero essere limitati o non pienamente noti e il team potrebbe non avere una conoscenza sufficientemente approfondita delle procedure di certificazione ufficiale.  
 * Presenza di piattaforme ministeriali di monitoraggio della salute veterinaria degli allevamenti in Italia, necessarie per il conseguimento di certificazioni ufficiali. (ClassyFarm).
 

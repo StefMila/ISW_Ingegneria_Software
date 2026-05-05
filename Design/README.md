@@ -1,3 +1,4 @@
+(da implementare con gli sviluppi che ci sono stati successivamente)
 ## 1. Obiettivi del Progetto
 
 ### 1.1 Obiettivi Principali
