@@ -1,3 +1,4 @@
 .dockerignore
 .devcontainer/
-index.js
+tests/
+.env*
