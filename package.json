@@ -34,5 +34,25 @@
     "start": "node index.js",
     "start_local": "echo use: $ npm run dev",
     "dev": "node -r dotenv/config index.js"
+  },
+  "dependencies": {
+    "cors": "2.8.6",
+    "express": "11.12.1",
+    "jsonwebtocken": "9.0.3",
+    "mongoose": "11.12.1",
+    "swagger-ui-express": "5.2.1"
+  },
+  "devDependencies": {
+    "@types/jest": "30.4.1",
+    "dotenv": "17.4.2",
+    "dotenv-cli": "11.0.0",
+    "jest": "30.4.1",
+    "supertest": "7.2.2",
+    "husky": "9.1.7",
+    "commitlint": "21.0.0",
+    "commitlint/config-conventional": "21.0.0"
+  },
+  "engines": {
+    "node": "v24.15.0"
   }
 }
