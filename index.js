@@ -10,6 +10,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import User from './app/models/user.js';
 
 dotenv.config({ path: new URL('./server/.env', import.meta.url) });
 
