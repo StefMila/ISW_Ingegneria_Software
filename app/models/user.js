@@ -3,6 +3,17 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 //come è fatto un utente: email e password, con alcune regole di validazione (es. email deve essere unica, obbligatoria, ecc.)
 const userSchema = new Schema({
+    name:{
+        type: String,
+        required: true,
+        trim: true
+        },
+    surname:{
+        type: String,
+        required: true,
+        trim: true
+        },
+
     email: {
         type: String,
         //obbligatorio
@@ -14,11 +25,17 @@ const userSchema = new Schema({
         //converte in minuscolo
         lowercase: true,
     },
-    password: {
+    passwordHash: {
         type: String,
         required: true
     },
-});
+    userType: {
+        type: String,
+        required: true,
+        enum: ['allevatore', 'veterinario','consumatore']
+    },
+}, { timestamps: true }
+);
 
 const User = mongoose.model("User", userSchema);
 //esporta il modello User per poterlo utilizzare in altre parti dell'applicazione --> auth.js per la registrazione e il login degli utenti
