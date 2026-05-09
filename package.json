@@ -25,14 +25,19 @@
   "author": "alice, elena, stefania",
   "type": "module",
   "main": "index.js",
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "mongoose": "^9.6.1"
+  },
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "start": "node index.js",
+    "start": "node server/index.js",
     "start_local": "echo use: $ npm run dev",
-    "dev": "node -r dotenv/config index.js"
+    "dev": "node server/index.js"
   }
 }
