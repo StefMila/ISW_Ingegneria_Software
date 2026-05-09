@@ -7,12 +7,11 @@ const router = express.Router();
 // Route per la registrazione di un nuovo utente --> risponde a POST su /api/auth/signup
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password } = req.body;
-
+    const { name, surname, email, password, userType } = req.body;
     // Controllo che email e password siano presenti
-    if (!email || !password) {
+    if (!name || !surname || !email || !password || !userType) {
       return res.status(400).json({
-        message: 'Email e password sono obbligatorie'
+        message: 'Name, surname, email, password e userType sono obbligatori'
       });
     }
 
@@ -28,10 +27,14 @@ router.post('/signup', async (req, res) => {
     // Creo l'hash della password. Trasforma la password in una stringa cifrata di difficoltà 10
     const hashedPassword = await bcrypt.hash(password, 10);
 
+
     // Creo il nuovo utente. Nuovo documento MongoDB e lo salvi.
     const newUser = new User({
+      name,
+      surname,
       email,
-      password: hashedPassword
+      passwordHash: hashedPassword,
+      userType
     });
 
     // Salvo l'utente nel database

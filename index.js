@@ -10,7 +10,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import User from './app/models/user.js';
+import User from './app/models/User.js';
+import authRoutes from './app/routes/auth.js';
 
 dotenv.config({ path: new URL('./server/.env', import.meta.url) });
 
@@ -40,8 +41,13 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({ error: 'Not found' }));
 });
 
-// Serve i file statici dalla cartella "static"
+// Serve per pubblicare i file statici dalla cartella "static"
 app.use(express.static(path.join(__dirname, 'static')));
+// Middleware per il parsing del corpo delle richieste in formato JSON
+app.use(express.json());
+// Route per l'autenticazione
+app.use('/api/auth', authRoutes);
+
 
 // Endpoint di test per verificare che il server sia attivo
 app.get('/api/health', (req, res) => {
