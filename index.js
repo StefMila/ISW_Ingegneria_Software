@@ -8,6 +8,8 @@ import dotenv from 'dotenv';
 import http from 'node:http';
 import express from 'express';
 import mongoose from 'mongoose';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 dotenv.config({ path: new URL('./server/.env', import.meta.url) });
 
@@ -16,6 +18,8 @@ dotenv.config({ path: new URL('./server/.env', import.meta.url) });
 const port = Number(process.env.PORT) || 3000;
 //creo l'app 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const server = http.createServer((req, res) => {
     if (req.url === '/api/health' && req.method === 'GET') {
         const body = JSON.stringify({
@@ -35,6 +39,8 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({ error: 'Not found' }));
 });
 
+// Serve i file statici dalla cartella "static"
+app.use(express.static(path.join(__dirname, 'static')));
 
 // Endpoint di test per verificare che il server sia attivo
 app.get('/api/health', (req, res) => {
@@ -43,8 +49,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok'
   });
 });
-// Serve i file statici dalla cartella "static"
-app.use(express.static('static'));
+
 
 
 
