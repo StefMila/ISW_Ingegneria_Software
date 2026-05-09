@@ -36,7 +36,7 @@
   },
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "start": "node server/index.js",
+    "start": "node index.js",
     "start_local": "echo use: $ npm run dev",
     "dev": "node -r dotenv/config index.js"
   },
