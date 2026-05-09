@@ -2,3 +2,4 @@
 .devcontainer/
 tests/
 .env*
+server/.env
