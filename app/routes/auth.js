@@ -15,6 +15,25 @@ router.post('/signup', async (req, res) => {
       });
     }
 
+    const allowedUserTypes = ['allevatore', 'veterinario', 'consumatore'];
+    if (!allowedUserTypes.includes(userType)) {
+        return res.status(400).json({
+            message: `ruolo non valido.`
+        });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({
+            message: 'Email non valida.'
+        });
+    }
+    if (password.length < 8) {
+        return res.status(400).json({
+            message: 'La password deve essere lunga almeno 8 caratteri.'
+        });
+    }
+
+    
     // Controllo se esiste già un utente con la stessa email
     const existingUser = await User.findOne({ email });
 
@@ -24,6 +43,7 @@ router.post('/signup', async (req, res) => {
       });
     }
 
+    
     // Creo l'hash della password. Trasforma la password in una stringa cifrata di difficoltà 10
     const hashedPassword = await bcrypt.hash(password, 10);
 
