@@ -54,8 +54,51 @@ button:hover {
   background-color: #1d4ed8;
 }
 
+.button-link:hover {
+    background-color: #1d4ed8; /* Colore più scuro al passaggio del mouse */
+}
+
+.button-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #2563eb; /* Colore blu */
+    color: white;
+    text-decoration: none; /* Rimuove la sottolineatura */
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+
 .status {
   margin-top: 24px;
   font-weight: bold;
   font-size: 1rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.form input,
+.form select,
+.form button {
+  padding: 10px;
+  font-size: 16px;
+}
+
+.form button {
+  cursor: pointer;
+}
+
+.status {
+  margin-top: 16px;
+  font-weight: bold;
 }
