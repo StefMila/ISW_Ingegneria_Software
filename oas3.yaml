@@ -1,0 +1,12 @@
+openapi: 3.0.0
+info:
+  title: MuccApp API
+  description: Gestionale per l'integrità e la tracciabilità dell'allevamento
+  version: 1.0.0
+paths:
+  /ping:
+    get:
+      summary: Controllo vitale
+      responses:
+        '200':
+          description: Il server è vivo

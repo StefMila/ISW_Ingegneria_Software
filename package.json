@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/StefMila/ISW_Ingegneria_Software.git"
+    "url": "https://github.com/StefMila/ISW_Ingegneria_Software.git"
   },
   "license": "UNLICENSED",
   "author": "alice, elena, stefania",
@@ -30,27 +30,21 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "node =--experimental-vm-modules node_modules/jest/bin/jest.js",
     "start": "node index.js",
-    "start_local": "echo use: $ npm run dev",
-    "dev": "node -r dotenv/config index.js"
+    "dev": "nodemon index.js",
+    "gen-env": "node generate-env-spec.js",
+    "lint-commit": "commitlint --from=HEAD~1",
+    "prepare": "husky",
+    "commitlint": "commitlint --edit"
   },
   "dependencies": {
-    "cors": "2.8.6",
-    "express": "11.12.1",
-    "jsonwebtocken": "9.0.3",
-    "mongoose": "11.12.1",
-    "swagger-ui-express": "5.2.1"
-  },
-  "devDependencies": {
-    "@types/jest": "30.4.1",
-    "dotenv": "17.4.2",
-    "dotenv-cli": "11.0.0",
-    "jest": "30.4.1",
-    "supertest": "7.2.2",
-    "husky": "9.1.7",
-    "commitlint": "21.0.0",
-    "commitlint/config-conventional": "21.0.0"
+    "cors": "^2.8.6",
+    "dotenv-safe": "^9.1.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.6.2",
+    "swagger-ui-express": "^5.0.1"
   },
   "engines": {
     "node": "v24.15.0"
