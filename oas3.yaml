@@ -111,6 +111,67 @@ paths:
                   value:
                     message: Errore interno del server
 
+  /api/auth/login:
+    post:
+      summary: Autentica un utente
+      description: Verifica le credenziali dell'utente e restituisce un token JWT per accedere all'applicazione.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        description: Credenziali necessarie per il login.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              example1:
+                value:
+                  email: mario.rossi@example.com
+                  password: Password123
+      responses:
+        '200':
+          description: Login effettuato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                success:
+                  value:
+                    message: Login effettuato con successo
+                    token: jwt-token-di-esempio
+        '400':
+          description: Email e password sono obbligatorie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Email e password sono obbligatorie
+        '401':
+          description: Credenziali non valide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCredentials:
+                  value:
+                    message: Credenziali non valide
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
 components:
   schemas:
     HealthResponse:
@@ -183,3 +244,37 @@ components:
           type: string
           description: Messaggio che descrive l'errore
           example: Errore interno del server
+
+    LoginRequest:
+      type: object
+      description: Corpo della richiesta per l'autenticazione di un utente
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email dell'utente registrato
+          example: mario.rossi@example.com
+        password:
+          type: string
+          format: password
+          description: Password dell'utente registrato
+          example: Password123
+
+    LoginResponse:
+      type: object
+      description: Risposta alla richiesta di login
+      properties:
+        message:
+          type: string
+          description: Messaggio di conferma dell'autenticazione
+          example: Login effettuato con successo
+        token:
+          type: string
+          description: JWT restituito dal server per autenticare le richieste successive.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+
+
+
