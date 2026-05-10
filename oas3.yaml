@@ -172,6 +172,36 @@ paths:
                   value:
                     message: Errore interno del server
 
+  /api/auth/logout:
+      post:
+        summary: Disconnette un utente
+        description: Effettua il logout dell'utente. In questa versione il token viene rimosso lato client; la revoca server-side sarà gestita in una fase successiva.
+        tags:
+          - Auth
+        responses:
+          '200':
+            description: Logout effettuato con successo
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/MessageResponse'
+                examples:
+                  success:
+                    value:
+                      message: Logout effettuato con successo
+          '500':
+            description: Errore interno del server
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  serverError:
+                    value:
+                      message: Errore interno del server
+
+
+
 components:
   schemas:
     HealthResponse:
