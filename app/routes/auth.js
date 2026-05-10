@@ -9,8 +9,9 @@ const router = express.Router();
 router.post('/signup', async (req, res) => {
   try {
     const { name, surname, email, password, userType } = req.body;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     // Controllo che email e password siano presenti
-    if (!name || !surname || !email || !password || !userType) {
+    if (!name || !surname || !normalizedEmail || !password || !userType) {
       return res.status(400).json({
         message: 'Name, surname, email, password e userType sono obbligatori'
       });
@@ -23,7 +24,7 @@ router.post('/signup', async (req, res) => {
         });
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
         return res.status(400).json({
             message: 'Email non valida.'
         });
@@ -36,7 +37,7 @@ router.post('/signup', async (req, res) => {
 
     
     // Controllo se esiste già un utente con la stessa email
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return res.status(409).json({
@@ -53,7 +54,7 @@ router.post('/signup', async (req, res) => {
     const newUser = new User({
       name,
       surname,
-      email,
+      email: normalizedEmail,
       passwordHash: hashedPassword,
       userType
     });
@@ -76,25 +77,26 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
     // Controllo che email e password siano presenti
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return res.status(400).json({
         message: 'Email e password sono obbligatori'
       });
     }
     // Controllo se esiste un utente con l'email fornita
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(401).json({
-        message: 'Credenziali non valide'
+        message: 'Email non valida'
       });
     }
     // Confronto la password fornita con l'hash salvato nel database (password in chiaro nel login e quella has salavata in DB) 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(401).json({
-        message: 'Credenziali non valide'
+        message: 'Password non valida'
       });
     }
     // Se le credenziali sono valide, creo un token JWT
@@ -117,6 +119,22 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Errore durante il login:', error);
+    return res.status(500).json({
+      message: 'Errore interno del server'
+    });
+  }
+});
+
+router.post('/logout', async (req, res) => {
+  try {
+    
+  //TODO (security) In un'implementazione stateless con JWT, il logout è gestito lato client eliminando il token.
+  //TODO (security) In un'implementazione stateful, si potrebbe invalidare il token lato server (es. blacklist).
+  return res.status(200).json({
+    message: 'Logout effettuato con successo'
+  });
+  } catch (error) {
+    console.error('Errore durante il logout:', error);
     return res.status(500).json({
       message: 'Errore interno del server'
     });
