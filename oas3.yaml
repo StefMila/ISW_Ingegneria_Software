@@ -1,0 +1,185 @@
+openapi: 3.0.3
+info:
+  title: MuccApp API
+  version: 1.0.0
+  description: Documentazione API del backend MuccApp
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+tags:
+  - name: Health
+    description: Endpoint per verificare lo stato del server
+  - name: Auth
+    description: Endpoint per la registrazione e autenticazione degli utenti
+
+paths:
+  /api/health:
+    get:
+      summary: Verifica che il server sia attivo
+      description: Restituisce lo stato del server per verificare che il backend sia raggiungibile e funzionante
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Server attivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                success:
+                  value:
+                    message: Server attivo
+                    status: ok
+
+  /api/auth/signup:
+    post:
+      summary: Registra un nuovo utente
+      description: Crea un nuovo account utente nel sistema. L'email deve essere univoca e la password viene salvata in forma hashata.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        description: Dati necessari per la registrazione di un nuovo utente
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+            examples:
+              consumatore:
+                value:
+                  name: Mario
+                  surname: Rossi
+                  email: mario.rossi@example.com
+                  password: Password123
+                  userType: consumatore
+              veterinario:
+                value:
+                  name: Laura
+                  surname: Bianchi
+                  email: laura.bianchi@example.com
+                  password: VetPass123
+                  userType: veterinario
+
+      responses:
+        '201':
+          description: Utente registrato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Utente registrato con successo
+
+        '400':
+          description: Dati mancanti o non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Name, surname, email, password e userType sono obbligatori
+                invalidUserType:
+                  value:
+                    message: userType non valido
+
+        '409':
+          description: Utente già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateEmail:
+                  value:
+                    message: Utente già esistente
+
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      description: Risposta di stato del server
+      properties:
+        message:
+          type: string
+          description: Messaggio descrittivo dello stato del server
+          example: Server attivo
+        status:
+          type: string
+          description: Stato sintetico del server
+          example: ok
+
+    SignupRequest:
+      type: object
+      description: Corpo della richiesta per la registrazione di un utente
+      required:
+        - name
+        - surname
+        - email
+        - password
+        - userType
+      properties:
+        name:
+          type: string
+          description: Nome dell'utente
+          minLength: 1
+          example: Mario
+        surname:
+          type: string
+          description: Cognome dell'utente
+          minLength: 1
+          example: Rossi
+        email:
+          type: string
+          format: email
+          description: Indirizzo email univoco dell'utente
+          example: mario.rossi@example.com
+        password:
+          type: string
+          format: password
+          description: Password in chiaro inviata dal client; verrà hashata dal server prima del salvataggio
+          minLength: 6
+          example: Password123
+        userType:
+          type: string
+          description: Tipologia dell'utente registrato
+          enum:
+            - allevatore
+            - veterinario
+            - consumatore
+          example: consumatore
+
+    MessageResponse:
+      type: object
+      description: Risposta generica di successo
+      properties:
+        message:
+          type: string
+          description: Messaggio di conferma dell'operazione
+          example: Utente registrato con successo
+
+    ErrorResponse:
+      type: object
+      description: Risposta generica di errore
+      properties:
+        message:
+          type: string
+          description: Messaggio che descrive l'errore
+          example: Errore interno del server

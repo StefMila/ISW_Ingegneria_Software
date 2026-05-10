@@ -1,6 +1,7 @@
 // Andando su localhost:3000/api-docs avrai una documentazione delle tue API.
-// import swaggerUi from 'swagger-ui-express';
-// import swaggerDocument from './swagger.json' with { type: 'json' };
+import swaggerUi from 'swagger-ui-express';
+//import swaggerSpec from './docs/swagger.js';
+import YAML from 'yamljs';
 
 
 // import delle librerie necessarie
@@ -40,13 +41,16 @@ const server = http.createServer((req, res) => {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));
 });
+const swaggerDocument = YAML.load('./oas3.yaml');
 
-// Serve per pubblicare i file statici dalla cartella "static"
-app.use(express.static(path.join(__dirname, 'static')));
 // Middleware per il parsing del corpo delle richieste in formato JSON
 app.use(express.json());
+// Serve per pubblicare i file statici dalla cartella "static"
+app.use(express.static(path.join(__dirname, 'static')));
 // Route per l'autenticazione
 app.use('/api/auth', authRoutes);
+// Route per la documentazione Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
 // Endpoint di test per verificare che il server sia attivo
