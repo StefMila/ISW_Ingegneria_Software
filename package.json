@@ -1,0 +1,63 @@
+{
+  "name": "muccapp",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Web app gestionale per allevamenti con sistema per tracciabilità lungo la filiera. Include sistemi di integrità dei dati e tracciabilità GDPR.",
+  "keywords": [
+    "mongodb",
+    "nodejs",
+    "express",
+    "rest-api",
+    "farm-management",
+    "traceability",
+    "gdpr",
+    "concurrency-control"
+  ],
+  "homepage": "https://github.com/StefMila/ISW_Ingegneria_Software#readme",
+  "bugs": {
+    "url": "https://github.com/StefMila/ISW_Ingegneria_Software/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StefMila/ISW_Ingegneria_Software.git"
+  },
+  "license": "UNLICENSED",
+  "author": "alice, elena, stefania",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "mongoose": "^9.6.1"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "start": "node index.js",
+    "start_local": "echo use: $ npm run dev",
+    "dev": "node -r dotenv/config index.js"
+  },
+  "dependencies": {
+    "cors": "2.8.6",
+    "express": "11.12.1",
+    "jsonwebtocken": "9.0.3",
+    "mongoose": "11.12.1",
+    "swagger-ui-express": "5.2.1"
+  },
+  "devDependencies": {
+    "@types/jest": "30.4.1",
+    "dotenv": "17.4.2",
+    "dotenv-cli": "11.0.0",
+    "jest": "30.4.1",
+    "supertest": "7.2.2",
+    "husky": "9.1.7",
+    "commitlint": "21.0.0",
+    "commitlint/config-conventional": "21.0.0"
+  },
+  "engines": {
+    "node": "v24.15.0"
+  }
+}
