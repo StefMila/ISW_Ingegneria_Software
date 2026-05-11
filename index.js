@@ -49,8 +49,9 @@ const swaggerDocument = YAML.load('./oas3.yaml');
 app.use(express.json());
 // Serve per pubblicare i file statici dalla cartella "static"
 app.use(express.static(path.join(__dirname, 'static')));
-// Route per l'autenticazione
+// Route per l'autenticazione, login, logout e recupero password, tutte le route sono prefissate da /api/auth
 app.use('/api/auth', authRoutes);
+
 // Route per la documentazione Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
