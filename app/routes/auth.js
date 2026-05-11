@@ -1,5 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 // Serve per creare un gruppo di route dedicate all’autenticazione. Così non mettiamo tutto dentro a index.js
 const router = express.Router();
@@ -70,5 +71,58 @@ router.post('/signup', async (req, res) => {
     });
   }
 });
+
+// Route per il login di un utente --> risponde a POST su /api/auth/login
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Controllo che email e password siano presenti
+    if (!email || !password) {
+      return res.status(400).json({
+        message: 'Email e password sono obbligatori'
+      });
+    }
+    // Controllo se esiste un utente con l'email fornita
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        message: 'Credenziali non valide'
+      });
+    }
+    // Confronto la password fornita con l'hash salvato nel database (password in chiaro nel login e quella has salavata in DB) 
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: 'Credenziali non valide'
+      });
+    }
+    // Se le credenziali sono valide, creo un token JWT
+    const token = jwt.sign(
+      { userId: user._id, 
+        email: user.email, 
+        userType: user.userType },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // TODO(security): valutare rate limiting o blocco temporaneo dopo tentativi di login falliti ripetuti
+    // TODO(authz): i controlli avanzati sui ruoli saranno applicati nelle route protette
+    // TODO(security): valutare refresh token e revoca token in una fase successiva
+
+
+    return res.status(200).json({
+      message: 'Login effettuato con successo',
+      token
+    });
+  } catch (error) {
+    console.error('Errore durante il login:', error);
+    return res.status(500).json({
+      message: 'Errore interno del server'
+    });
+  }
+});
+
+
 
 export default router;
