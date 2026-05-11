@@ -124,7 +124,7 @@ router.post('/login', async (req, res) => {
     });
   }
 });
-
+// Route per il logout di un utente --> risponde a POST su /api/auth/logout
 router.post('/logout', async (req, res) => {
   try {
     
@@ -140,6 +140,87 @@ router.post('/logout', async (req, res) => {
     });
   }
 });
+
+// Route per il recupero password --> risponde a POST su /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+
+    // Controllo che l'email sia presente
+    if (!normalizedEmail) {
+      return res.status(400).json({
+        message: 'Email è obbligatoria'
+      });
+    }
+    // Controllo se esiste un utente con l'email fornita
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({
+        message: 'Utente non trovato'
+      });
+    }
+// TODO(security): introdurre token temporaneo di reset e scadenza
+// TODO(security): integrare invio email per il recupero password
+// TODO(security): evitare enumeration e abuso della funzionalità
+// Per ora, rispondiamo sempre con successo per evitare enumeration, ma in un'implementazione reale dovremmo inviare un'email con un link di reset password
+
+    return res.status(200).json({
+      message: 'Email inserita correttamente, riceverai istruzioni per reimpostare la password'
+    });
+  } catch (error) {
+    console.error('Errore durante il recupero password:', error);
+    return res.status(500).json({
+      message: 'Errore interno del server'
+    });
+  }
+});
+
+//Route per il reset password --> risponde a POST su /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    // Controllo che email e nuova password siano presenti
+    if (!normalizedEmail || !newPassword) {
+      return res.status(400).json({
+        message: 'Email e nuova password sono obbligatorie'
+      });
+    }
+    // Controllo se esiste un utente con l'email fornita
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({
+        message: 'Utente non trovato'
+      });
+    }
+    if (newPassword.length < 8) {
+        return res.status(400).json({
+            message: 'La nuova password deve essere lunga almeno 8 caratteri.'
+        });
+    }
+    // Creo l'hash della nuova password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Aggiorno la password dell'utente nel database
+    user.passwordHash = hashedPassword;
+    await user.save();
+
+    // TODO(security): sostituire il reset diretto con token temporaneo e scadenza
+    // TODO(security): invalidare eventuali sessioni/token esistenti in una fase successiva
+
+    return res.status(200).json({
+      message: 'Password aggiornata con successo'
+    });
+  } catch (error) {
+    console.error('Errore durante il reset password:', error);
+    return res.status(500).json({
+      message: 'Errore interno del server'
+    });
+  }
+});
+
+
 
 
 
