@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url';
 import User from './app/models/User.js';
 import authRoutes from './app/routes/auth.js';
 
+
+
 dotenv.config({ path: new URL('./server/.env', import.meta.url) });
 
 
