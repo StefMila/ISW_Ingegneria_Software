@@ -1,100 +1,181 @@
 					Days	10	New estimates of effort - Remaining at end of day									
 																
 ID_BackLog	Product Backlog Item_link	Sprint Task 	Note	Volunteer 	Stato Lavori 	Initial Estimate of Effort 	1	2	3	4	5	6	7	8	9	10
-36	Definizione della struttura della repository, delle convenzioni di branch e dei template PR, così da lavorare in modo ordinato e consistente.	decidere struttura del repository 	decidere struttura del repository 	Stefania Milani	Terminata	½	0									
-		decidere branch strategy(main, develop, e le branch feature) 	decidere branch strategy(main, develop, e le branch feature) 	Elena Carmagnani	Terminata	½	0									
-		decidere convenzione nomi file/cartelle	decidere convenzione nomi file/cartelle	Alice Bortolotti	Terminata	½	0									
-		decidere stack minimo( backend, frontend, database, test)	decidere stack minimo( backend, frontend, database, test)			½										
-		inizializzare progetto con package.json	inizializzare progetto con package.json	Elena Carmagnani	In corso 	½										
-		creare .gitignore	creare .gitignore	Elena Carmagnani	In corso 	½										
-		creare README.md	creare README.md	Elena Carmagnani	In corso 	½										
-		creare struttura cartelle	creare struttura cartelle	Elena Carmagnani	In corso 	½										
-		definire script npm base(start,dev,test)	definire script npm base(start,dev,test)	Elena Carmagnani	In corso 	½										
-		definire regole commit	definire regole commit	Elena Carmagnani	In corso 	½										
-37	Separazione tra logica applicativa, parametri di configurazione e segreti (credenziali), differenziando i contesti di Sviluppo (Dev) e Test.	Studio e analisi 	Scouting:  - la configurazione base di una web app e della struttura tipica da utilizzare			5										
-		Design API	- elencare le variabili necessarie (port, db_url, email_user, email_pass, frontend_url, chiavi API)  - elencare le variabili locali, segreti Github			½										
-		Implementazione REST	set up locale:  - creare .env.example - creare .env locale - caricare variabili con dotenv - verificare che l’app legga le variabili sicurezza: - inserire .env in .gitignore - non committare segreti reali - documentare come configurare l’ambiente GitHub: - configurare repository secrets in GitHub - collegare i secrets alla GitHub Actions se necessario			½										
-		Sviluppo UI	frontend statico / separato che chiama le API			½										
-		Testing	design test case .env			2										
-		Deploy				½										
-44	Studiare i requisiti minimi di sicurezza per evitare accessi non autorizzati.	Studio e analisi 	Studio minimo: - capire differenza tra:  - autenticazione e autorizzazione - capire JWT - capire has password - capire ruoli utente - capire route pubbliche vs protette			13										
-		Design API	Decisioni progettuali: - scegliere metodo auth: JWT - definire i ruoli (consumatore, azienda, distributore) - definire i permessi per ruolo  - definire durata token  - definire dove salvare il token lato client			2										
-		Documentazione	aggiornamento documentale: documentare le scelte di sicurezza, route, ruoli ammessi			3										
-		Testing				2										
-55	Come utente, voglio che i dati relativi al mio profilo, eventuale azienda compresa, non vadano persi a causa di errori di sistema e che siano esportabili o recuperabili al fine di evitare perdite di tempo e risorse.	Studio e analisi 	Analisi: - identificare dati critici (utenti, aziende, lotti, recensioni) 			2										
-		Progettazione e implementazione DB	Backup minimo:  - creare script base (dump, restore) 			1										
-		Documentazione	Documentazione: - documentare backup manuale database - documentare export/import dati 			1										
-		Testing	Test: - simulare esportazione dati - simulare ripristino su database vuoto			2										
-		Deploy				½										
-57	Come utente, voglio che i miei dati siano protetti da accessi non autorizzati e attacchi informatici, affinché la mia privacy sia garantita e il servizio rimanga sempre disponibile e affidabile.	Design API	Analisi: - identificare dati sensibili (email, password, token, eventuali dati sanitari futuri) - definire quali dati non devono essere mai restituiti dal backend 			2										
-		 Implementazione metodo REST	Backend: - non restituire password nelle response - validare input - gestire errori senza esporre stack trace - usare hash password - usare segreti da env - limitare messaggi troppo dettagliati nel login			8										
-		Sviluppo UI	Frontend - non mostrare dati sensibili - gestire logout pulito - evitare salvataggio insicuro di dati superflui			5										
-		Documentazione	Documentazione - scrivere regole minime di protezione dati - definire checklist sicurezza base			3										
-		Testing				2										
-		Deploy				½										
-7	Come utente, voglio registrarmi, affinchè possa usufruire di tutte le funzionalità offerte dall'applicazione. 	Design API	Analisi: - definire campi obbligatori(email, password, ruolo, nome opzionale)  - definire i vincoli (email valida, password minima, email univoca) 			2										
-		Implementazione REST	Backend  creare endpoint POST /auth/signup  - hash password con bcrypt  - salvare utente			20										
-		Progettazione e implementazione DB	- creare model User  - campi (email, passwordHash, role, createdAt) 			3										
-		Sviluppo UI	Frontend - creare pagina di registrazione  - creare form signup - validare campi client-side  - mostrare errori leggibili  - mostrare messaggio successo			8										
-		Testing	Test:  - signup valido - email invalida - password troppo corta - ruolo mancante - verificare duplicati email			2										
-		Documentazione				2										
-		Deploy				½										
-8	Come utente, voglio autenticarmi, affinchè possa accedere alla applicazione.	Studio e analisi 	Analisi:  - definire input login (email, password)  - definire output (token, ruolo, dati minimi utenti)			2										
-		Implementazione REST	Backend: - endpoint POST /auth/login - cercare utente per email  - confrontare password con bcypt  - generare JWT  - restituire token e ruolo  - messaggio errore generico 			40										
-		Sviluppo UI	Frontend - pagina login - form login - salvataggio token - redirect dopo login - gestione errore credenziali			8										
-		Testing	Test - login corretto - password errata - utente inesistente - campi vuoti			2										
-		Documentazione				2										
-		Deploy				½										
-9	Come utente, voglio disconnettermi, affinchè durante il non utilizzo, l'applicazione sia messa in sicurezza. 	Studio e analisi 	Analisi - decidere logout client-side - decidere dove tenere il token (localStorage, sessionStorage, cookie) - documentare la scelta			2										
-		Implementazione REST	Backend: - opzionale endpoint logout - middleware route protette			13										
-		Sviluppo UI	Frontend - pulsante logout - rimozione token - pulizia stato utente - redirect a login/home - blocco accesso a pagine protette dopo logout			8										
-		Testing	Test - token rimosso - route private non più accessibili - back button non riapre dati sensibili			2										
-		Deploy				½										
-10	Come utente, voglio poter recuperare la password del mio account affinchè, in caso di dimenticanza, io possa comunque accedere al mio account.  	Studio e analisi 	Analisi - decidere implementazione (via email) - definire token reset con scadenza  - definire messaggio anti enumeration (????)			2										
-		Implementazione REST	Backend - endpoint POST /auth/forgot-password - generare token reset - salvare token e scadenza - inviare email o simulare invio - endpoint POST /auth/reset-password - verificare token - aggiornare password hash - invalidare token			40										
-		Sviluppo UI	Frontend - pagina “password dimenticata” - pagina “reimposta password” - form nuova password - messaggi utente			8										
-		Documentazione				2										
-		Testing	Test - email esistente - email non esistente - token valido - token scaduto - password troppo debole 			2										
-		Deploy				½										
-28	Implementare il modulo di sicurezza con autenticazione, requisiti password e gestione dei livelli di autorizzazione. 	Studio e analisi 	Analisi - decidere route pubbliche - decidere route protette - decidere autorizzazioni per ruolo			3										
-		Implementazione REST	Backend - middleware verifica JWT - middleware verifica ruolo - protezione endpoint privati - gestione 401 e 403 - validazione scadenza token			40										
-		Sviluppo UI	Frontend - route guard / controllo accesso pagine - redirect a login se token mancante - blocco UI per utenti non autorizzati			40										
-		Testing	Test - accesso senza token → 401 - token non valido → 403/401 a seconda della scelta - utente con ruolo errato → 403 - token scaduto → accesso negato			2										
-		Deploy				½										
-33	Implementare sistemi di protezione dalla sovrascrittura per garantire l'integrità e tracciabilità dei record. 	Design API	Stabilire come client e server comunicheranno lo "stato" del record per evitare collisioni: - version-aware endpoint - concorrenza ottimistica - standard di errore - headers di tracciabilità			3										
-		Implementazione metodo REST	La logica del controllo nel backend Node.js/Express - Logic di Validazione - Middleware di Logging - Gestione Segreti			40										
-		Progettazione e implementazione DB	La struttura del database: - Schema Mongoose con Versioning - Collezione di Audit (shadow collection)			13										
-		Sviluppo UI	Frontend deve essere consapevole che l'integrità dei dati può causare fallimenti controllati: - State Management - Conflict Handling (errore 409) - Feedback di Tracciabilità			13										
-		Documentazione	Garantire che il sistema sia manutenibile e che il setup sia sicuro: - File .env.example - Istruzioni di Setup - API Docs			2										
-		Testing	Verifica dei meccanismi di blocco e di tracciabilità: - Race Condition Test - Audit Check - Security Test			2										
-		Deploy	Spostamento in produzione mantenendo la segregazione dei segreti: - GitHub Secrets - CI/CD Integration - Environment Validation			½										
-29	Adeguare il trattamento dei dati sensibili degli animali alle normative sulla privacy vigenti (GDPR/Compliance).	Design API	Isolare e proteggere i dati durante il transito: - Principio di Minimizzazione - Pseudoanonimizzazione - Controllo Accessi (RBAC) - Versioning Header			5										
-		Implementazione metodo REST	Il "vigile" che controlla l'integrità e il diritto di accesso: - Logic di Verifica Versione - Access Logging (Tracciabilità) - Sanitizzazione			20										
-		Progettazione e implementazione DB	Encryption at Rest: - Schema MongoDB con Protezione - Separazione dei Dati - Encryption			13										
-		Sviluppo UI	Deve gestire il consenso e i conflitti in modifica: - Gestione Consenso - Conflict UI - Audit View			8										
-		Documentazione	Per Accountability: - Registro del Trattamento - Setup Ambiente - Manuale di Emergenza (procedura in caso di Data Breach)			5										
-		Testing	- Test di Concorrenza - Test di Permessi - Validazione Variabili			2										
-		Deploy	Il rilascio in produzione deve essere blindato: - GitHub Secrets - Monitoring & Alerting			½										
-39	Definizione di un sistema di gestione standard di errori/log, così da diagnosticare problemi e migliorare la stabilità.	Design API	Come il sistema comunica i fallimenti senza compromettere la sicurezza: - Standardizzazione delle risposte di errore (stesso formato) - Trace ID (nell'header di ogni richiesta) - Mappatura Status Code (uso dei codici HTTP)			8										
-		Implementazione metodo REST	Il motore che cattura e smista le eccezioni nel backend: - Middleware Globale - Structured Logging (Winston/Pino non so cosa voglia dire) (usa una libreria che genera i log in formato json) - Log Scrubbing (una funzione che pulisce i log, assicurandosi che password, chiavi APi o dati sensibili non vengno mai scritti nei file di log o nel DB)			40										
-		Progettazione e implementazione DB	I log devono essere archiviati in modo che non saturino il disco: - Capped Collections (in MongoDB, per i log circolari, ossia cancella i più vecchi in automatico) - Schema del Log - Indici (su timestamp e traceId, per ricerche istantanee durante il debugging)			20										
-		Sviluppo UI	Deve aiutare l'utente senza spaventarlo, raccogliendo però dati per lo sviluppatore: - Error Boundaries (componenti che catturano i crash della UI, evitando che l'intera pagina diventi bianca) - Toast Notifications (mostra l'errore includendo il traceId per l'assistenza tecnica) - Client-side Logging (inviare errori critici del browser (JS crashes) al backend tramite un endpoint per monitorare i bug che accadono sui dispositivi degli utenti)			13										
-		Documentazione	Spiegare come interpretare i segnali del sistema: - Dizionario degli Errori (con relative soluzioni suggerite) - Guida al Debug (istruzioni su come usare il traceId per interrogare i log nel database) - Variabili d'ambiente (documentare LOG_LEVEL nel env.example, non solo ERROR come in produzione, qui logghiamo tutto)			5										
-		Testing	Verificare che il sistema di emergenza funzioni quando tutto il resto fallisce: - Chaoos Testing (forzare errori e verificare che il sistema generi il log corretto e risponda con lo standard JSON definito) - Log Integrity Test (log correttamente scritti e sistema di "scrubbing" stia effettivamente nascondendo i dati sensibili) - Performance Test (sistema di loggiing non deve rallentare l'app sotto carico elevato)			2										
-		Deploy	Monitoraggio e allerta in tempo reale: - GitHub Secrets (configurare variabili come LOG_DB_URL se i log vanno su un database separato) - Alerting System (integrare un webhook (es. Slack o Discord???) che ti avvisi quando viene registrato un log di livello FATAL o un picco di errori 500) - External Providers ?? bho sarebbe: In produzione, valutare l'invio dei log a servizi esterni (Datadog, Sentry o ELK Stack) tramite le variabili d'ambiente configurate nel deploy.			½										
-11	Come azienda, voglio inserire le informazioni relative al mio allevamento, affinchè tutti i dati siano nel mio sistema. 	Design API	Il design deve riflettere la stabilità dell'azienda e la sicurezza del dato: - Identità unica - Contratto di Identità - Concurrency Control - Audit Headers			5										
-		Implementazione metodo REST	Backend garante della coerenza del profilo aziendale: - Validazione della Logica - Middleware di Tracciabilità - Sanitizzazione input			13										
-		Progettazione e implementazione DB	Struttura solida ma flessibile per future certificazioni: - Schema MongoDB - Indici Unici			3										
-		Sviluppo UI	Deve guidare l'utente nell'inserimento dei dati aziendali complessi - Form con Validazione Real-time - Gestione Conflitti - Dashboard di Tracciabilità			13										
-		Documentazione	Chiarezza su come configurare l'identità digitale dell'allevamento: - Manuale Variabili d'Ambiente - Business Rules			2										
-		Testing	Mettere alla prova la "memoria" e la resistenza del sistema: - Integrità del Dato - Test di Sovrascrittura - Audit Trail Verification			2										
-		Deploy	Passaggio finale per rendere l'allevamento operativo nel sistema: - Configurazione Segreti - Migrazione e Seed - Monitoraggio Integrità			½										
-47	Come azienda, voglio visualizzare le informazioni relative al mio allevamento, affinchè sia sempre al corrente di tutto ciò che succede al suo interno. 	Design API	Deve garantire che il client riceva sempre lo stato più recente del database, includendo i metadati di tracciabilità: - Endpoint di Lettura - Inclusione Metadati - Polling vs WebSockets			8										
-		Implementazione metodo REST	Deve filtrare e preparare i dati per una visualizzazione sicura: - Data Aggregation - Cache Integrity - Security Scoping			8										
-		Progettazione e implementazione DB	Organizzare i dati affinché la "storia" dell'allevamento sia facile da consultare: - View Materializzate o Aggregazioni - Collezione Audit per la UI			3										
-		Sviluppo UI	L'interfaccia trasforma i dati in consapevolezza aziendale: - Dashboard di Riepilogo - Timeline di Tracciabilità - Indicatori di Sincronizzazione			8										
-		Documentazione	Spiegare come leggere e interpretare i dati visualizzati: - Guida ai Metadati - Configurazione Environment - Manuale Utente			2										
-		Testing	Verificare che la visualizzazione sia lo specchio fedele della realtà: - Visual Integrity Test - Permission Test - Load Testing sulla Visualizzazione			2										
-		Deploy	Mettere ala "centrale di controllo" online in modo sicuro: - HTTPS Enforcement - Monitoring della Latenza - Segreti UI			½										
-Total						591	0	0	0	0	0	0	0	0	0	0
-Ideal						591	531,9	472,8	413,7	354,6	295,5	236,4	177,3	118,2	59,1	0
+36	Definizione della struttura della repository, delle convenzioni di branch e dei template PR, così da lavorare in modo ordinato e consistente.	decidere struttura del repository 	decidere struttura del repository 	Stefania Milani	Terminata	½	0	0	0	0	0	0				
+		decidere branch strategy(main, develop, e le branch feature) 	decidere branch strategy(main, develop, e le branch feature) 	Elena Carmagnani	Terminata	½	0	0	0	0	0	0				
+		decidere convenzione nomi file/cartelle	decidere convenzione nomi file/cartelle	Alice Bortolotti	Terminata	½	0	0	0	0	0	0				
+		decidere stack minimo( backend, frontend, database, test)	decidere stack minimo( backend, frontend, database, test)	Alice Bortolotti	Terminata	½	0	0	0	0	0	0				
+		inizializzare progetto con package.json	inizializzare progetto con package.json	Elena Carmagnani	Terminata	½	0	0	0	0	0	0				
+		creare .gitignore	creare .gitignore	Elena Carmagnani	Terminata	½	0	0	0	0	0	0				
+		creare README.md	creare README.md	Elena Carmagnani	Terminata	½	½	½	0	0	0	0				
+		creare struttura cartelle	creare struttura cartelle	Elena Carmagnani	Terminata	½	0	0	0	0	0	0				
+		definire script npm base(start,dev,test)	definire script npm base(start,dev,test)	Elena Carmagnani	Terminata	½	½	½	0	0	0	0				
+		definire regole commit	definire regole commit	Elena Carmagnani	Terminata	½	½	½	½	½	0	0				
+37	Separazione tra logica applicativa, parametri di configurazione e segreti (credenziali), differenziando i contesti di Sviluppo (Dev) e Test.	Studio e analisi 	Scouting:  - la configurazione base di una web app e della struttura tipica da utilizzare	Stefania Milani	Terminata	5	0	0	0	0	0	0				
+		Design API	- elencare le variabili necessarie (port, db_url, email_user, email_pass, frontend_url, chiavi API)  - elencare le variabili locali, segreti Github	Stefania Milani	Terminata	½	½	0	0	0	0	0				
+		Implementazione REST	set up locale:  - creare .env.example - creare .env locale - caricare variabili con dotenv - verificare che l’app legga le variabili sicurezza: - inserire .env in .gitignore - non committare segreti reali - documentare come configurare l’ambiente GitHub: - configurare repository secrets in GitHub - collegare i secrets alla GitHub Actions se necessario	Stefania Milani	Terminata	½	0	0	0	0	0	0				
+		Sviluppo UI	frontend statico / separato che chiama le API	Stefania Milani	Terminata	½	½	½	0	0	0	0				
+		Testing	design test case .env	Stefania Milani	Terminata	2	2	2	0	0	0	0				
+		Deploy		Stefania Milani	Terminata	½	½	½	0	0	0	0				
+44	Studiare i requisiti minimi di sicurezza per evitare accessi non autorizzati.	Studio e analisi 	Studio minimo: capire differenza tra:  - autenticazione e autorizzazione - capire JWT - capire hash password (bcrypt) - capire ruoli utente - capire route pubbliche vs protette	Alice Bortolotti	Terminata	13	13	8	0	0	0	0				
+		Design API	Decisioni progettuali: - scegliere metodo auth: JWT - definire i ruoli (consumatore, azienda, distributore) - definire i permessi per ruolo  - definire durata token  - definire dove salvare il token lato client	Alice Bortolotti	Terminata	2	2	2	2	3	1	0				
+7	Come utente, voglio registrarmi, affinchè possa usufruire di tutte le funzionalità offerte dall'applicazione. 	Design API	Analisi: - definire campi obbligatori(email, password, ruolo, nome opzionale)  - definire i vincoli (email valida, password minima, email univoca) 	Stefania Milani	Terminata	2	2	2	0	0	0	0				
+		Implementazione REST	Backend  creare endpoint POST /auth/signup  - hash password con bcrypt  - salvare utente	Stefania Milani	Terminata	20	20	20	0	0	0	0				
+		Progettazione e implementazione DB	- creare model User  - campi (email, passwordHash, role, createdAt) 	Stefania Milani	Terminata	3	3	3	0	0	0	0				
+		Sviluppo UI	Frontend - creare pagina di registrazione  - creare form signup - validare campi client-side  - mostrare errori leggibili  - mostrare messaggio successo	Stefania Milani	Terminata	8	8	8	0	0	0	0				
+		Testing	Test:  - signup valido - email invalida - password troppo corta - ruolo mancante - verificare duplicati email	Stefania Milani	Terminata	2	2	2	0	0	0	0				
+		Documentazione		Stefania Milani	Terminata	2	5	3	2	0	0	0				
+		Deploy		Stefania Milani	Terminata	½	½	½	0	0	0	0				
+8	Come utente, voglio autenticarmi, affinchè possa accedere alla applicazione.	Studio e analisi 	Analisi:  - definire input login (email, password)  - definire output (token, ruolo, dati minimi utenti)	Stefania Milani	Terminata	2	2	2	2	0	0	0				
+		Implementazione REST	Backend: - endpoint POST /auth/login - cercare utente per email  - confrontare password con bcypt  - generare JWT  - restituire token e ruolo  - messaggio errore generico 	Stefania Milani	Terminata	40	40	40	40	0	0	0				
+		Sviluppo UI	Frontend - pagina login - form login - salvataggio token - redirect dopo login - gestione errore credenziali	Stefania Milani	Terminata	8	8	8	8	0	0	0				
+		Testing	Test - login corretto - password errata - utente inesistente - campi vuoti	Stefania Milani	Terminata	2	2	2	2	0	0	0				
+		Documentazione		Stefania Milani	Terminata	2	2	2	2	0	0	0				
+		Deploy		Stefania Milani	Terminata	½	½	½	½	0	0	0				
+9	Come utente, voglio disconnettermi, affinchè durante il non utilizzo, l'applicazione sia messa in sicurezza. 	Studio e analisi 	Analisi - decidere logout client-side - decidere dove tenere il token (localStorage, sessionStorage, cookie) - documentare la scelta	Stefania Milani	Bloccata	2	2	2	2	2	1	1				
+		Implementazione REST	Backend: - opzionale endpoint logout - middleware route protette	Stefania Milani	Bloccata	13	13	13	13	13	6	6				
+		Sviluppo UI	Frontend - pulsante logout - rimozione token - pulizia stato utente - redirect a login/home - blocco accesso a pagine protette dopo logout	Stefania Milani	Bloccata	8	8	8	8	8	4	4				
+		Testing	Test - token rimosso - route private non più accessibili - back button non riapre dati sensibili	Stefania Milani	Bloccata	2	2	2	2	2	1	1				
+		Deploy		Stefania Milani	Bloccata	½	½	½	½	½	½	½				
+10	Come utente, voglio poter recuperare la password del mio account affinchè, in caso di dimenticanza, io possa comunque accedere al mio account.  	Studio e analisi 	Analisi - decidere implementazione (via email) - definire token reset con scadenza  - definire messaggio anti enumeration (????)	Stefania Milani	Terminata	2	2	2	1	1	0	0				
+		Implementazione REST	Backend - endpoint POST /auth/forgot-password - generare token reset - salvare token e scadenza - inviare email o simulare invio - endpoint POST /auth/reset-password - verificare token - aggiornare password hash - invalidare token	Stefania Milani	Bloccata	40	40	40	30	30	20	20				
+		Sviluppo UI	Frontend - pagina “password dimenticata” - pagina “reimposta password” - form nuova password - messaggi utente	Stefania Milani	Terminata	8	8	8	4	4	0	0				
+		Documentazione		Stefania Milani	Terminata	2	2	2	2	2	0	0				
+		Testing	Test - email esistente - email non esistente - token valido - token scaduto - password troppo debole 	Stefania Milani	Bloccata	2	2	2	2	2	1	1				
+		Deploy		Stefania Milani	Terminata	½	½	½	½	½	0	0				
+28	Implementare il modulo di sicurezza con autenticazione, requisiti password e gestione dei livelli di autorizzazione. 	Studio e analisi 	Analisi - decidere route pubbliche - decidere route protette - decidere autorizzazioni per ruolo	Alice Bortolotti	In corso 	3	3	3	3	3	2	1				
+		Implementazione REST	Backend - middleware verifica JWT - middleware verifica ruolo - protezione endpoint privati - gestione 401 e 403 - validazione scadenza token	Alice Bortolotti	Non iniziata 	40	40	40	40	40	40	40				
+		Sviluppo UI	Frontend - route guard / controllo accesso pagine - redirect a login se token mancante - blocco UI per utenti non autorizzati	Alice Bortolotti	Non iniziata 	40	40	40	40	40	40	40				
+		Testing	Test - accesso senza token → 401 - token non valido → 403/401 a seconda della scelta - utente con ruolo errato → 403 - token scaduto → accesso negato	Alice Bortolotti	Non iniziata 	2	2	2	2	2	2	2				
+		Deploy		Alice Bortolotti	Non iniziata 	½	½	½	½	½	½	½				
+11	Come azienda, voglio inserire le informazioni relative al mio allevamento, affinchè tutti i dati siano nel mio sistema. 	Design API	Il design deve riflettere la stabilità dell'azienda e la sicurezza del dato: - Identità unica - Contratto di Identità - Concurrency Control - Audit Headers	Stefania Milani	Non iniziata 	5	5	5	5	5	5					
+		Implementazione metodo REST	Backend garante della coerenza del profilo aziendale: - Validazione della Logica - Middleware di Tracciabilità - Sanitizzazione input	Stefania Milani	Non iniziata 	13	13	13	13	13	13					
+		Progettazione e implementazione DB	Struttura solida ma flessibile per future certificazioni: - Schema MongoDB - Indici Unici	Stefania Milani	Non iniziata 	3	3	3	3	3	3					
+		Sviluppo UI	Deve guidare l'utente nell'inserimento dei dati aziendali complessi - Form con Validazione Real-time - Gestione Conflitti - Dashboard di Tracciabilità	Stefania Milani	Non iniziata 	13	13	13	13	13	13					
+		Documentazione	Chiarezza su come configurare l'identità digitale dell'allevamento: - Manuale Variabili d'Ambiente - Business Rules	Stefania Milani	Non iniziata 	2	2	2	2	2	2					
+		Testing	Mettere alla prova la "memoria" e la resistenza del sistema: - Integrità del Dato - Test di Sovrascrittura - Audit Trail Verification	Stefania Milani	Non iniziata 	2	2	2	2	2	2					
+		Deploy	Passaggio finale per rendere l'allevamento operativo nel sistema: - Configurazione Segreti - Migrazione e Seed - Monitoraggio Integrità	Stefania Milani	Non iniziata 	½	½	½	½	½	½					
+47	Come azienda, voglio visualizzare le informazioni relative al mio allevamento, affinchè sia sempre al corrente di tutto ciò che succede al suo interno. 	Design API	Deve garantire che il client riceva sempre lo stato più recente del database, includendo i metadati di tracciabilità: - Endpoint di Lettura - Inclusione Metadati - Polling vs WebSockets	Elena Carmagnani	Non iniziata 	8	8	8	8	8	8					
+		Implementazione metodo REST	Deve filtrare e preparare i dati per una visualizzazione sicura: - Data Aggregation - Cache Integrity - Security Scoping		Non iniziata 	8	8	8	8	8	8					
+		Progettazione e implementazione DB	Organizzare i dati affinché la "storia" dell'allevamento sia facile da consultare: - View Materializzate o Aggregazioni - Collezione Audit per la UI		Non iniziata 	3	3	3	3	3	3					
+		Sviluppo UI	L'interfaccia trasforma i dati in consapevolezza aziendale: - Dashboard di Riepilogo - Timeline di Tracciabilità - Indicatori di Sincronizzazione		Non iniziata 	8	8	8	8	8	8					
+		Documentazione	Spiegare come leggere e interpretare i dati visualizzati: - Guida ai Metadati - Configurazione Environment - Manuale Utente		Non iniziata 	2	2	2	2	2	2					
+		Testing	Verificare che la visualizzazione sia lo specchio fedele della realtà: - Visual Integrity Test - Permission Test - Load Testing sulla Visualizzazione		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Mettere ala "centrale di controllo" online in modo sicuro: - HTTPS Enforcement - Monitoring della Latenza - Segreti UI		Non iniziata 	½	½	½	½	½	½					
+46	Come azienda, voglio eliminare le informazioni relative al mio allevamento, affinchè tutti i dati siano aggiornati nel mio sistema. 	Design API			Non iniziata 	8	8	8	8	8	8					
+		Implementazione metodo REST	Creare endpoint DELETE per eliminazione allevamento con controllo autorizzazioni e gestione errori in caso di record collegati.		Non iniziata 	8	8	8	8	8	8					
+		Progettazione e implementazione DB	Definire strategia di soft delete o cascading delete mantenendo integrità referenziale con animali e cartelle cliniche.		Non iniziata 	3	3	3	3	3	3					
+		Sviluppo UI	Inserire finestra di conferma eliminazione e notifiche di successo/errore.		Non iniziata 	8	8	8	8	8	8					
+		Documentazione	Documentare endpoint, codici di risposta e vincoli di eliminazione.		Non iniziata 	2	2	2	2	2	2					
+		Testing	Testare eliminazione valida, tentativi non autorizzati e gestione relazioni esistenti.		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Verificare migrazioni DB e corretto funzionamento API in ambiente di staging e produzione.		Non iniziata 	½	½	½	½	½	½					
+13	Come azienda, voglio inserire nel sistema le anagrafiche dei miei animali, affinché possa visualizzare tutte le loro cartelle cliniche.	Design API			Non iniziata 	8	8	8	8	8	8					
+		Implementazione metodo REST	Creare endpoint POST per inserimento anagrafica animale con validazione campi obbligatori e unicità matricola.		Non iniziata 	8	8	8	8	8	8					
+		Progettazione e implementazione DB	Definire tabella animali con relazioni verso allevamento e cartelle cliniche.		Non iniziata 	3	3	3	3	3	3					
+		Sviluppo UI	Realizzare form di inserimento con validazioni lato client e messaggi di errore chiari.		Non iniziata 	8	8	8	8	8	8					
+		Documentazione	Descrivere payload richiesti, struttura dati e vincoli di validazione.		Non iniziata 	2	2	2	2	2	2					
+		Testing	Testare inserimento corretto, campi mancanti e duplicazione dati identificativi.		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Applicare migrazioni DB e verificare sincronizzazione frontend-backend.		Non iniziata 	½	½	½	½	½	½					
+49	Come azienda, voglio visualizzare le informazioni relative alle mucche, affinché io sia sempre al corrente delle loro condizioni.	Design API			Non iniziata 	8	8	8	8	8	8					
+		Implementazione metodo REST	Creare endpoint GET con supporto a ricerca, filtri e paginazione.		Non iniziata 	8	8	8	8	8	8					
+		Progettazione e implementazione DB	Ottimizzare query tramite indici sui campi di ricerca più utilizzati.		Non iniziata 	3	3	3	3	3	3					
+		Sviluppo UI	Mostrare elenco dettagliato delle mucche con possibilità di ricerca e visualizzazione scheda completa.		Non iniziata 	8	8	8	8	8	8					
+		Documentazione	Documentare parametri di ricerca, formato risposta e gestione paginazione.		Non iniziata 	2	2	2	2	2	2					
+		Testing	Verificare correttezza dati restituiti, performance query e gestione dataset vuoti.		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Monitorare performance API e corretto caricamento dati in produzione.		Non iniziata 	½	½	½	½	½	½					
+50	Come azienda, voglio eliminare le informazioni relative alle mucche, affinchè solo i dati necessari siano nel mio sistema. 	Design API			Non iniziata 	8	8	8	8	8	8					
+		Implementazione metodo REST	Creare endpoint DELETE per rimozione mucca con controlli sulle dipendenze cliniche associate.		Non iniziata 	8	8	8	8	8	8					
+		Progettazione e implementazione DB	Implementare soft delete per preservare storico sanitario e audit log.		Non iniziata 	3	3	3	3	3	3					
+		Sviluppo UI	Aggiungere conferma eliminazione e feedback visivo post-operazione.		Non iniziata 	8	8	8	8	8	8					
+		Documentazione	Specificare comportamento della cancellazione e impatto sui dati correlati.		Non iniziata 	2	2	2	2	2	2					
+		Testing	Testare eliminazione con e senza dati associati e gestione errori.		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Validare consistenza dati dopo il deploy e verificare log applicativi.		Non iniziata 	½	½	½	½	½	½					
+45	Come azienda, voglio modificare le informazioni relative al mio allevamento, affinchè tutti i dati siano aggiornati nel mio sistema. 	Design API			Non iniziata 	8	8	8	8	8	8					
+		Implementazione metodo REST	Creare endpoint PUT/PATCH per aggiornamento dati allevamento con validazione input.		Non iniziata 	8	8	8	8	8	8					
+		Progettazione e implementazione DB	Garantire aggiornamento consistente dei dati e gestione versionamento modifiche.		Non iniziata 	3	3	3	3	3	3					
+		Sviluppo UI	Implementare schermata modifica con caricamento dati esistenti e validazioni.		Non iniziata 	8	8	8	8	8	8					
+		Documentazione	Descrivere campi modificabili e regole di aggiornamento.		Non iniziata 	2	2	2	2	2	2					
+		Testing	Verificare aggiornamenti corretti, campi invalidi e gestione concorrenza.		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Eseguire test regressivi post-rilascio e controllo compatibilità API.		Non iniziata 	½	½	½	½	½	½					
+48	Come azienda, voglio modifica le informazioni relative alle mucche, affinchè tutti i dati nel sistema rispecchino la corrente realtà delle cose. 	Design API			Non iniziata 	8	8	8	8	8	8					
+		Implementazione metodo REST	Creare endpoint PUT/PATCH per modifica dati mucca con controlli sui campi sensibili.		Non iniziata 	8	8	8	8	8	8					
+		Progettazione e implementazione DB	Gestire storico modifiche e mantenere integrità dei dati anagrafici e clinici.		Non iniziata 	3	3	3	3	3	3					
+		Sviluppo UI	Fornire interfaccia intuitiva per modifica dati con validazioni dinamiche.		Non iniziata 	8	8	8	8	8	8					
+		Documentazione	Documentare regole di aggiornamento e struttura delle richieste API.		Non iniziata 	2	2	2	2	2	2					
+		Testing	Testare modifiche parziali, dati non validi e aggiornamenti simultanei.		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Verificare corretto aggiornamento dati in ambiente produttivo e monitorare errori runtime.		Non iniziata 	½	½	½	½	½	½					
+Total						346	344	337	276	221	187	116	0	0	0	0
+Ideal						346	311,4	276,8	242,2	207,6	173	138,4	103,8	69,2	34,6	0
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+																
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+	#N/A															
+																
+																
+																
+																
+																
+55	Come utente, voglio che i dati relativi al mio profilo, eventuale azienda compresa, non vadano persi a causa di errori di sistema e che siano esportabili o recuperabili al fine di evitare perdite di tempo e risorse.	Studio e analisi 	Analisi: - identificare dati critici (utenti, aziende, lotti, recensioni) 		Non iniziata 	2	2	2	2	2	2					
+		Progettazione e implementazione DB	Backup minimo:  - creare script base (dump, restore) 		Non iniziata 	1	1	1	1	1	1					
+		Documentazione	Documentazione: - documentare backup manuale database - documentare export/import dati 		Non iniziata 	1	1	1	1	1	1					
+		Testing	Test: - simulare esportazione dati - simulare ripristino su database vuoto		Non iniziata 	2	2	2	2	2	2					
+		Deploy			Non iniziata 	½	½	½	½	½	½					
+57	Come utente, voglio che i miei dati siano protetti da accessi non autorizzati e attacchi informatici, affinché la mia privacy sia garantita e il servizio rimanga sempre disponibile e affidabile.	Design API	Analisi: - identificare dati sensibili (email, password, token, eventuali dati sanitari futuri) - definire quali dati non devono essere mai restituiti dal backend 		Non iniziata 	2	2	2	2	2	2					
+		 Implementazione metodo REST	Backend: - non restituire password nelle response - validare input - gestire errori senza esporre stack trace - usare hash password - usare segreti da env - limitare messaggi troppo dettagliati nel login		Non iniziata 	8	8	8	8	8	8					
+		Sviluppo UI	Frontend - non mostrare dati sensibili - gestire logout pulito - evitare salvataggio insicuro di dati superflui		Non iniziata 	5	5	5	5	5	5					
+		Documentazione	Documentazione - scrivere regole minime di protezione dati - definire checklist sicurezza base		Non iniziata 	3	3	3	3	3	3					
+		Testing			Non iniziata 	2	2	2	2	2	2					
+		Deploy			Non iniziata 	½	½	½	½	½	½					
+33	Implementare sistemi di protezione dalla sovrascrittura per garantire l'integrità e tracciabilità dei record. 	Design API	Stabilire come client e server comunicheranno lo "stato" del record per evitare collisioni: - version-aware endpoint - concorrenza ottimistica - standard di errore - headers di tracciabilità	Stefania Milani	In corso 	3	3	3	3	3	3					
+		Implementazione metodo REST	La logica del controllo nel backend Node.js/Express - Logic di Validazione - Middleware di Logging - Gestione Segreti		Non iniziata 	40	40	40	40	40	40					
+		Progettazione e implementazione DB	La struttura del database: - Schema Mongoose con Versioning - Collezione di Audit (shadow collection)		Non iniziata 	13	13	13	13	13	13					
+		Sviluppo UI	Frontend deve essere consapevole che l'integrità dei dati può causare fallimenti controllati: - State Management - Conflict Handling (errore 409) - Feedback di Tracciabilità		Non iniziata 	13	13	13	13	13	13					
+		Documentazione	Garantire che il sistema sia manutenibile e che il setup sia sicuro: - File .env.example - Istruzioni di Setup - API Docs		Non iniziata 	2	2	2	2	2	2					
+		Testing	Verifica dei meccanismi di blocco e di tracciabilità: - Race Condition Test - Audit Check - Security Test		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Spostamento in produzione mantenendo la segregazione dei segreti: - GitHub Secrets - CI/CD Integration - Environment Validation		Non iniziata 	½	½	½	½	½	½					
+29	Adeguare il trattamento dei dati sensibili degli animali alle normative sulla privacy vigenti (GDPR/Compliance).	Design API	Isolare e proteggere i dati durante il transito: - Principio di Minimizzazione - Pseudoanonimizzazione - Controllo Accessi (RBAC) - Versioning Header		Non iniziata 	5	5	5	5	5	5					
+		Implementazione metodo REST	Il "vigile" che controlla l'integrità e il diritto di accesso: - Logic di Verifica Versione - Access Logging (Tracciabilità) - Sanitizzazione		Non iniziata 	20	20	20	20	20	20					
+		Progettazione e implementazione DB	Encryption at Rest: - Schema MongoDB con Protezione - Separazione dei Dati - Encryption		Non iniziata 	13	13	13	13	13	13					
+		Sviluppo UI	Deve gestire il consenso e i conflitti in modifica: - Gestione Consenso - Conflict UI - Audit View		Non iniziata 	8	8	8	8	8	8					
+		Documentazione	Per Accountability: - Registro del Trattamento - Setup Ambiente - Manuale di Emergenza (procedura in caso di Data Breach)		Non iniziata 	5	5	5	5	5	5					
+		Testing	- Test di Concorrenza - Test di Permessi - Validazione Variabili		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Il rilascio in produzione deve essere blindato: - GitHub Secrets - Monitoring & Alerting		Non iniziata 	½	½	½	½	½	½					
+39	Definizione di un sistema di gestione standard di errori/log, così da diagnosticare problemi e migliorare la stabilità.	Design API	Come il sistema comunica i fallimenti senza compromettere la sicurezza: - Standardizzazione delle risposte di errore (stesso formato) - Trace ID (nell'header di ogni richiesta) - Mappatura Status Code (uso dei codici HTTP)		Non iniziata 	8	8	8	8	8	8					
+		Implementazione metodo REST	Il motore che cattura e smista le eccezioni nel backend: - Middleware Globale - Structured Logging (Winston/Pino non so cosa voglia dire) (usa una libreria che genera i log in formato json) - Log Scrubbing (una funzione che pulisce i log, assicurandosi che password, chiavi APi o dati sensibili non vengno mai scritti nei file di log o nel DB)		Non iniziata 	40	40	40	40	40	40					
+		Progettazione e implementazione DB	I log devono essere archiviati in modo che non saturino il disco: - Capped Collections (in MongoDB, per i log circolari, ossia cancella i più vecchi in automatico) - Schema del Log - Indici (su timestamp e traceId, per ricerche istantanee durante il debugging)		Non iniziata 	20	20	20	20	20	20					
+		Sviluppo UI	Deve aiutare l'utente senza spaventarlo, raccogliendo però dati per lo sviluppatore: - Error Boundaries (componenti che catturano i crash della UI, evitando che l'intera pagina diventi bianca) - Toast Notifications (mostra l'errore includendo il traceId per l'assistenza tecnica) - Client-side Logging (inviare errori critici del browser (JS crashes) al backend tramite un endpoint per monitorare i bug che accadono sui dispositivi degli utenti)		Non iniziata 	13	13	13	13	13	13					
+		Documentazione	Spiegare come interpretare i segnali del sistema: - Dizionario degli Errori (con relative soluzioni suggerite) - Guida al Debug (istruzioni su come usare il traceId per interrogare i log nel database) - Variabili d'ambiente (documentare LOG_LEVEL nel env.example, non solo ERROR come in produzione, qui logghiamo tutto)		Non iniziata 	5	5	5	5	5	5					
+		Testing	Verificare che il sistema di emergenza funzioni quando tutto il resto fallisce: - Chaoos Testing (forzare errori e verificare che il sistema generi il log corretto e risponda con lo standard JSON definito) - Log Integrity Test (log correttamente scritti e sistema di "scrubbing" stia effettivamente nascondendo i dati sensibili) - Performance Test (sistema di loggiing non deve rallentare l'app sotto carico elevato)		Non iniziata 	2	2	2	2	2	2					
+		Deploy	Monitoraggio e allerta in tempo reale: - GitHub Secrets (configurare variabili come LOG_DB_URL se i log vanno su un database separato) - Alerting System (integrare un webhook (es. Slack o Discord???) che ti avvisi quando viene registrato un log di livello FATAL o un picco di errori 500) - External Providers ?? bho sarebbe: In produzione, valutare l'invio dei log a servizi esterni (Datadog, Sentry o ELK Stack) tramite le variabili d'ambiente configurate nel deploy.		Non iniziata 	½	½	½	½	½	½					
