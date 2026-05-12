@@ -27,6 +27,14 @@ body {
   text-align: center;
 }
 
+.card-bianca {
+  height: auto;       /* Lascia che cresca con il contenuto */
+  min-height: 300px;  /* Ma mantieni una base minima */
+  display: flex;
+  flex-direction: column; 
+  align-items: center;
+}
+
 h1 {
   margin-top: 0;
   margin-bottom: 12px;
@@ -73,6 +81,13 @@ button:hover {
     transition: background-color 0.3s;
 }
 
+.button-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
 
 .status {
   margin-top: 24px;
@@ -83,8 +98,9 @@ button:hover {
 .form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin-top: 20px;
+  align-self: auto;
 }
 
 .form input,
@@ -92,13 +108,23 @@ button:hover {
 .form button {
   padding: 10px;
   font-size: 16px;
+  border: 1px solid #ccc;
+  /* gap: 10px; */
+  /* width: 100%; /* Fa sì che le caselle siano larghe uguali */
+  /* margin-bottom: 10px; */
 }
 
 .form button {
   cursor: pointer;
 }
 
+#loginForm > div {
+  margin-bottom: 8px;
+}
+
 .status {
   margin-top: 16px;
   font-weight: bold;
 }
+
+
