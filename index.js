@@ -10,7 +10,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import User from './app/models/User.js';
+import User from './app/models/user.js';
 import authRoutes from './app/routes/auth.js';
 
 
@@ -53,6 +53,7 @@ app.use('/api/auth', authRoutes);
 
 // Route per la documentazione Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 
 
 // Endpoint di test per verificare che il server sia attivo
