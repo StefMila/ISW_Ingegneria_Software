@@ -200,7 +200,139 @@ paths:
                     value:
                       message: Errore interno del server
 
+  /api/auth/forgot-password:
+    post:
+      summary: Richiesta di reset password
+      description: Permette agli utenti di richiedere un reset della password fornendo la propria email. In questa versione non è implementato un sistema di invio email, ma sarà aggiunto in futuro.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        description: Dati necessari per richiedere il reset della password
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email dell'utente che richiede il reset della password
+                  example: mario.rossi@example.com
+      responses:
+        '200':
+          description: Richiesta di reset password ricevuta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Se l'email è registrata, riceverai istruzioni per il reset della password
+        '400':
+          description: Dati mancanti o non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Email è obbligatoria
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
 
+  /api/auth/reset-password:
+      post:
+        summary: Reset della password
+        description: Permette agli utenti di reimpostare la propria password fornendo l'email e una nuova password. In questa versione non è implementato un sistema di token per la verifica dell'identità, ma sarà aggiunto in futuro.
+        tags:
+          - Auth
+        requestBody:
+          required: true
+          description: Dati necessari per il reset della password
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - email
+                  - newPassword
+                  - confirmedPassword
+                properties:
+                  email:
+                    type: string
+                    format: email
+                    description: Email dell'utente che richiede il reset della password
+                    example: mario.rossi@example.com
+                  newPassword:
+                    type: string
+                    format: password
+                    description: Nuova password dell'utente
+                    example: NuovaPassword123
+                  confirmedPassword:
+                    type: string
+                    format: password
+                    description: Conferma della nuova password
+                    example: NuovaPassword123
+        responses:
+          '200':
+            description: Password aggiornata con successo
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/MessageResponse'
+                examples:
+                  success:
+                    value:
+                      message: Password aggiornata con successo
+          '400':
+            description: Dati mancanti o non validi
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  missingFields:
+                    value:
+                      message: Email, newPassword e confirmedPassword sono obbligatori
+                  passwordMismatch:
+                    value:
+                      message: La nuova password e la conferma non coincidono
+                  weakPassword:
+                    value:
+                      message: La nuova password deve essere lunga almeno 8 caratteri
+          '404':
+            description: Utente non trovato con l'email fornita
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  userNotFound:
+                    value:
+                      message: Utente non trovato con l'email fornita
+          '500':
+            description: Errore interno del server
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  serverError:
+                    value:
+                      message: Errore interno del server
 
 components:
   schemas:
