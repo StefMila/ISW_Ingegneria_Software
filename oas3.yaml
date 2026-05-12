@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: MuccApp API
-  version: 1.0.0
   description: Documentazione API del backend MuccApp
+  version: 1.0.0
 
 servers:
   - url: http://localhost:3000
@@ -305,6 +305,3 @@ components:
           type: string
           description: JWT restituito dal server per autenticare le richieste successive.
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
-
-
-

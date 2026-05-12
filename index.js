@@ -1,4 +1,3 @@
-// Andando su localhost:3000/api-docs avrai una documentazione delle tue API.
 import swaggerUi from 'swagger-ui-express';
 //import swaggerSpec from './docs/swagger.js';
 import YAML from 'yamljs';

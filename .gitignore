@@ -1,5 +1,28 @@
 .dockerignore
 .devcontainer/
+
+# Dependency directories (si rigenerano con npm install)
+node_modules/
+
 tests/
-.env*
+
+# Environment variables (contengono password e segreti)
+.env
+.env.local
 server/.env
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDE/Editor (impostazioni del tuo VS Code)
+.vscode/
+.idea/
+
+# Testing (se Jest genera report di copertura)
+coverage/
