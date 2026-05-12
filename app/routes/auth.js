@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import User from '../models/user.js';
 // Serve per creare un gruppo di route dedicate all’autenticazione. Così non mettiamo tutto dentro a index.js
 const router = express.Router();
 
