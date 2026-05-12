@@ -11,12 +11,14 @@ const allevatoreSchema = new Schema({
     ownerUserId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true, 
+        index: true
     },
     // campo obbligatorio 
     vatNumber: {
         type: String,
         required: true,
+        unique: true,
         trim: true
     },
     companyName: {
@@ -26,19 +28,23 @@ const allevatoreSchema = new Schema({
     },
     address: {
         type: String,
+        required: true,
         trim: true
     },
     emailAzienda: {
         type: String,
+        required: false,
         trim: true,
         lowercase: true
     },
     phoneNumber: {
         type: String,
+        required: false,
         trim: true
     },
     website: {
         type: String,
+        required: false,
         trim: true
     },
 }, { timestamps: true });
