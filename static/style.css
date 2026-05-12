@@ -98,7 +98,7 @@ button:hover {
 .form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 10 px;
   margin-top: 20px;
   align-self: auto;
 }
@@ -108,10 +108,10 @@ button:hover {
 .form button {
   padding: 10px;
   font-size: 16px;
-  border: 1px solid #ccc;
+  border: 1 px solid #ccc;
   /* gap: 10px; */
   /* width: 100%; /* Fa sì che le caselle siano larghe uguali */
-  /* margin-bottom: 10px; */
+   margin-bottom: 10px; 
 }
 
 .form button {
