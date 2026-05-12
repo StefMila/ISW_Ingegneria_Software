@@ -1,17 +1,17 @@
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
-const allevatoreSchema = new Schema({
-    name: {
+const aziendaSchema = new Schema({
+    companyName: {
         type: String,
         required: true,
         trim: true
     },
-    // Questo campo è una Foreign Key che fa riferimento al modello User, indicando quale utente è l'allevatore
+    // Questo campo è una Foreign Key che fa riferimento al modello User, indicando quale utente è l'azienda
     ownerUserId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: true, 
+        required: false, // In attesa del middleware di autenticazione, questo campo può essere opzionale --> poi impostare su true
         index: true
     },
     // campo obbligatorio 
@@ -21,16 +21,12 @@ const allevatoreSchema = new Schema({
         unique: true,
         trim: true
     },
-    companyName: {
-        type: String,
-        required: true,
-        trim: true
-    },
     address: {
         type: String,
         required: true,
         trim: true
     },
+    //email da esporre nel sito
     emailAzienda: {
         type: String,
         required: false,
@@ -49,5 +45,5 @@ const allevatoreSchema = new Schema({
     },
 }, { timestamps: true });
 
-const Allevatore = mongoose.model('Allevatore', allevatoreSchema);
-export default Allevatore;
+const Azienda = mongoose.model('Azienda', aziendaSchema);
+export default Azienda;
