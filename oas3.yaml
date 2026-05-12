@@ -305,7 +305,3 @@ components:
           type: string
           description: JWT restituito dal server per autenticare le richieste successive.
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
-
-
-
->>>>>>> origin/us9logout

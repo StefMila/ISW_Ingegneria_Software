@@ -1,5 +1,3 @@
-import Path from 'path';
-import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 //import swaggerSpec from './docs/swagger.js';
 import YAML from 'yamljs';
