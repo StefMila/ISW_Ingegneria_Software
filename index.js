@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import User from './app/models/user.js';
 import authRoutes from './app/routes/auth.js';
 import AziendaRoutes from './app/routes/azienda.js';
+import AnimaliRoutes from './app/routes/animale.js';
 
 
 
@@ -53,8 +54,13 @@ app.use(express.static(path.join(__dirname, 'static')));
 app.use('/api/auth', authRoutes);
 // Alias route per compatibilita': consente chiamate su /api/azienda
 app.use('/api/azienda', AziendaRoutes);
+// Route per gestione animali
+app.use('/api/animali', AnimaliRoutes);
+
+
 
 // Route per la documentazione Swagger
+app.get('/api-docs/spec.json', (req, res) => res.json(swaggerDocument));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
