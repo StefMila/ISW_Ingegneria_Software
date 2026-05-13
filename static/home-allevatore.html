@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Allevatore - MuccApp</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-container">
+    <header class="dashboard-header">
+      <div class="nav-buttons">
+        <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">La tua azienda ▾</button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/add-azienda.html">Aggiungi azienda</a></li>
+          
+            <!-- 
+            //per le prossime user story, se implementiamo la visualizzazione e modifica dell'azienda
+            <li><a href="#section-azienda">Visualizza azienda</a></li>
+            <li><a href="/edit-azienda.html">Modifica azienda</a></li>
+             -->
+          </ul>
+        </div>
+        <button onclick="document.getElementById('section-mandria').scrollIntoView({behavior:'smooth'})">La tua mandria</button>
+        <button onclick="document.getElementById('section-documenti').scrollIntoView({behavior:'smooth'})">I tuoi documenti</button>
+      </div>
+      <button id="logoutButton">Logout</button>
+    </header>
+
+   
+  </main>
+
+  <script src="/home-allevatore.js"></script>
+  <script src="/logout.js"></script>
+</body>
+</html>

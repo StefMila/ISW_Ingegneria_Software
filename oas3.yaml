@@ -13,6 +13,8 @@ tags:
     description: Endpoint per verificare lo stato del server
   - name: Auth
     description: Endpoint per la registrazione e autenticazione degli utenti
+  - name: Aziende
+    description: Endpoint per la registrazione e gestione aziende
 
 paths:
   /api/health:
@@ -87,7 +89,7 @@ paths:
                     message: Name, surname, email, password e userType sono obbligatori
                 invalidUserType:
                   value:
-                    message: userType non valido
+                    message: Ruolo non valido
 
         '409':
           description: Utente già esistente
@@ -141,6 +143,7 @@ paths:
                   value:
                     message: Login effettuato con successo
                     token: jwt-token-di-esempio
+                    userType: allevatore
         '400':
           description: Email e password sono obbligatorie
           content:
@@ -160,7 +163,7 @@ paths:
               examples:
                 invalidCredentials:
                   value:
-                    message: Credenziali non valide
+                    message: Email non valida
         '500':
           description: Errore interno del server
           content:
@@ -231,7 +234,7 @@ paths:
               examples:
                 success:
                   value:
-                    message: Se l'email è registrata, riceverai istruzioni per il reset della password
+                    message: Email inserita correttamente, riceverai istruzioni per reimpostare la password
         '400':
           description: Dati mancanti o non validi
           content:
@@ -309,7 +312,7 @@ paths:
                       message: Email, newPassword e confirmedPassword sono obbligatori
                   passwordMismatch:
                     value:
-                      message: La nuova password e la conferma non coincidono
+                      message: La nuova password e quella di conferma non coincidono
                   weakPassword:
                     value:
                       message: La nuova password deve essere lunga almeno 8 caratteri
@@ -334,6 +337,53 @@ paths:
                     value:
                       message: Errore interno del server
 
+  /api/azienda:
+    post:
+      summary: Crea una nuova azienda
+      description: Permette a un allevatore di registrare la propria azienda.
+      tags:
+        - Aziende
+      requestBody:
+        required: true
+        description: Dati necessari per la creazione dell'azienda.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAziendaRequest'
+            examples:
+              example1:
+                value:
+                  companyName: Azienda Agricola Rossi
+                  address: Via Roma 10, Milano
+                  vatNumber: IT12345678901
+                  emailAzienda: info@azienda-rossi.it
+                  phoneNumber: "+39021234567"
+                  website: https://www.azienda-rossi.it
+      responses:
+        '201':
+          description: Azienda creata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AziendaResponse'
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Azienda già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     HealthResponse:
@@ -378,7 +428,7 @@ components:
           type: string
           format: password
           description: Password in chiaro inviata dal client; verrà hashata dal server prima del salvataggio
-          minLength: 6
+          minLength: 8
           example: Password123
         userType:
           type: string
@@ -437,3 +487,92 @@ components:
           type: string
           description: JWT restituito dal server per autenticare le richieste successive.
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        userType:
+          type: string
+          description: Ruolo dell'utente autenticato.
+          enum:
+            - allevatore
+            - veterinario
+            - consumatore
+          example: allevatore
+
+    CreateAziendaRequest:
+      type: object
+      description: Corpo della richiesta per la creazione di una nuova azienda
+      required:
+        - companyName
+        - address
+        - vatNumber
+        - emailAzienda
+      properties:
+        companyName:
+          type: string
+          description: Nome dell'azienda
+          minLength: 1
+          example: Azienda Agricola Rossi
+        address:
+          type: string
+          description: Indirizzo della sede aziendale
+          minLength: 1
+          example: Via Roma 10, Milano
+        vatNumber:
+          type: string
+          description: Partita IVA dell'azienda
+          minLength: 1
+          maxLength: 13
+          example: IT12345678901
+          pattern: ^IT\d{11}$  # Validazione della partita IVA italiana
+        emailAzienda:
+          type: string
+          format: email
+          description: Email di contatto dell'azienda
+          example: info@azienda-rossi.it
+        phoneNumber:
+          type: string
+          description: Numero di telefono dell'azienda
+          example: "+39021234567"
+        website:
+          type: string
+          description: Sito web aziendale
+          example: https://www.azienda-rossi.it
+
+    AziendaResponse:
+      type: object
+      description: Risposta di creazione azienda
+      properties:
+        message: 
+          type: string
+          description: Messaggio di conferma
+          example: Azienda registrata con successo
+        company:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Identificativo azienda
+              example: 665f8fd8ad8f8c0012f9c123
+            ownerUserId:
+              type: string
+              nullable: true
+              description: ID utente proprietario (puo essere null senza middleware auth)
+              example: 665f8d90ad8f8c0012f9b456
+            vatNumber:
+              type: string
+              example: IT12345678901
+            companyName:
+              type: string
+              example: Azienda Agricola Rossi
+            emailAzienda:
+              type: string
+              format: email
+              example: info@azienda-rossi.it
+            address:
+              type: string
+              example: Via Roma 10, Milano
+            phoneNumber:
+              type: string
+              example: "+39021234567"
+            website:
+              type: string
+              example: https://www.azienda-rossi.it
+          
