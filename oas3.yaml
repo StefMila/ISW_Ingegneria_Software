@@ -143,6 +143,8 @@ paths:
                   value:
                     message: Login effettuato con successo
                     token: jwt-token-di-esempio
+                    email: mario.rossi@example.com
+                    id: 665f8d90ad8f8c0012f9b456
                     userType: allevatore
         '400':
           description: Email e password sono obbligatorie
@@ -527,6 +529,15 @@ components:
           type: string
           description: JWT restituito dal server per autenticare le richieste successive.
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        email:
+          type: string
+          format: email
+          description: Email dell'utente autenticato.
+          example: mario.rossi@example.com
+        id:
+          type: string
+          description: Identificativo dell'utente autenticato.
+          example: 665f8d90ad8f8c0012f9b456
         userType:
           type: string
           description: Ruolo dell'utente autenticato.
