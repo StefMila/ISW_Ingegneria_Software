@@ -5,11 +5,7 @@
 node_modules/
 
 tests/
-
-# Environment variables (contengono password e segreti)
 .env
-.env.local
-.env.*.local
 server/.env
 
 # Debug logs
