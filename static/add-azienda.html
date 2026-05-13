@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title >Aggiungi Azienda - MuccApp</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <main class="dashboard-container">
+        <header  class="dashboard-header">
+            <h1 style="color: rgb(245, 248, 221);">Aggiungi Azienda 🚜</h1>
+        </header>
+        <section id="section-azienda" class="section">
+            <form id="add-azienda-form" class="form">
+                <label for="nomeAzienda">Nome Azienda:</label>
+                <input type="text" id="nomeAzienda" name="nomeAzienda" placeholder="Inserisci il nome dell'azienda" required>
+
+                <label for="indirizzo">Indirizzo:</label>
+                <input type="text" id="indirizzo" name="indirizzo" placeholder="Inserisci l'indirizzo dell'azienda" required>
+
+                <label for="partitaIva">Partita IVA:</label>
+                <input type="text" id="partitaIva" name="partitaIva" placeholder="Inserisci la partita IVA dell'azienda" required>
+
+                <label for="telefono">Telefono:</label>
+                <input type="text" id="telefono" name="telefono" placeholder="Inserisci il numero di telefono dell'azienda" >
+                
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Inserisci l'email dell'azienda" >
+
+                <label for="website">Sito Web:</label>
+                <input type="url" id="website" name="website" placeholder="Inserisci il sito web dell'azienda" >
+
+                
+                <button type="submit">Salva Azienda</button>
+            </form>
+            <p id="addAziendaMessage" class="status"></p>
+        </section>
+        <p>
+            <a href="/home-allevatore.html">Torna alla dashboard</a>
+        </p>
+    </main>
+
+    <script src="/add-azienda.js"></script>
+</body>
+
+
+
+
+
+
+
+</html>
