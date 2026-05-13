@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import userTypes from "../../config/userTypes.js";
 // definizione dello schema per l'utente= descrive la struttura dati 
 const { Schema } = mongoose;
 //come è fatto un utente: email e password, con alcune regole di validazione (es. email deve essere unica, obbligatoria, ecc.)
@@ -29,10 +30,10 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
-    userType: {
+    userType: { 
         type: String,
         required: true,
-        enum: ['allevatore', 'veterinario','consumatore']
+        enum: userTypes
     },
 }, { timestamps: true }
 );
