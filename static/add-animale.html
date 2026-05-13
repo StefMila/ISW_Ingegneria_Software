@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title >Aggiungi Animale - MuccApp</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <main class="dashboard-container">
+        <header  class="dashboard-header">
+            <h1 class="dashboard-title-light">Aggiungi Animale 🐄</h1>
+        </header>
+        <section id="section-animale" class="section">
+            <form id="add-animale-form" class="form">
+                <label for="matricola">Matricola:</label>
+                <input type="text" id="matricola" name="matricola" placeholder="Inserisci la matricola" required>
+
+                <label for="nomeAnimale">Nome Animale:</label>
+                <input type="text" id="nomeAnimale" name="nomeAnimale" placeholder="Inserisci il nome dell'animale" required>
+
+                <label for="species">Specie:</label>
+                <select id="species" name="species" required>
+                    <option value="">Seleziona...</option>
+                    <option value="mucca">Mucca</option>
+                    <option value="pecora">Pecora</option>
+                    <option value="capra">Capra</option>
+                    <option value="pollo">Pollo</option>
+                    <option value="coniglio">Coniglio</option>
+                </select>
+
+                <label for="dataNascita">Data di Nascita o di acquisto:</label>
+                <input type="date" id="dataNascita" name="dataNascita" required>
+
+                <label for="sesso">Sesso:</label>
+                <select id="sesso" name="sesso" required>
+                    <option value="">Seleziona...</option>
+                    <option value="maschio">Maschio</option>
+                    <option value="femmina">Femmina</option>
+                </select>
+
+                <label for="razza">Razza:</label>
+                <input type="text" id="razza" name="razza" placeholder="Inserisci la razza dell'animale" required>
+
+                <label for="figlioDi">Figlia di (ID genitore):</label>
+                <input type="text" id="figliaDi" name="figliaDi" placeholder="Inserisci l'ID della madre (se conosciuto)">
+                
+                
+
+                 <label for="note">Note:</label>
+                <textarea id="note" name="note" placeholder="Inserisci eventuali note"></textarea>
+                <button type="submit">Salva Animale</button>
+            </form>
+            <p id="addAnimaleMessage" class="status"></p>
+        </section>
+        <p>
+            <a href="/home-allevatore.html">Torna alla dashboard</a>
+        </p>
+    </main>
+
+    <script src="/add-animale.js"></script>
+</body>
+</html>
