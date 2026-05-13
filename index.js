@@ -54,7 +54,10 @@ app.use('/api/auth', authRoutes);
 // Alias route per compatibilita': consente chiamate su /api/azienda
 app.use('/api/azienda', AziendaRoutes);
 
+
+
 // Route per la documentazione Swagger
+app.get('/api-docs/spec.json', (req, res) => res.json(swaggerDocument));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 

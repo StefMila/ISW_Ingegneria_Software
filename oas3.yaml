@@ -13,7 +13,7 @@ tags:
     description: Endpoint per verificare lo stato del server
   - name: Auth
     description: Endpoint per la registrazione e autenticazione degli utenti
-  - name: Aziende
+  - name: Azienda
     description: Endpoint per la registrazione e gestione aziende
 
 paths:
@@ -342,7 +342,7 @@ paths:
       summary: Crea una nuova azienda
       description: Permette a un allevatore di registrare la propria azienda.
       tags:
-        - Aziende
+        - Azienda
       requestBody:
         required: true
         description: Dati necessari per la creazione dell'azienda.
@@ -384,6 +384,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /api/azienda/{id}:
+    delete:
+      summary: Elimina un'azienda
+      description: Elimina l'azienda identificata dall'id specificato.
+      tags:
+        - Azienda
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID dell'azienda da eliminare
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Azienda eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: ID azienda non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     HealthResponse:
