@@ -21,7 +21,7 @@
     "type": "git",
     "url": "https://github.com/StefMila/ISW_Ingegneria_Software.git"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "author": "alice, elena, stefania",
   "type": "module",
   "main": "index.js",
@@ -31,9 +31,10 @@
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "jsonwebtoken": "9.0.2",
-    "mongoose": "^9.6.1",
+    "mongoose": "^9.6.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^14.0.0",
     "yamljs": "^0.3.0"
   },
   "directories": {
@@ -44,14 +45,10 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "gen-env": "node generate-env-spec.js",
-    "lint-commit": "commitlint --from=HEAD~1",
-    "commitlint": "commitlint --edit"
+    "gen-env": "node generate-env-spec.js"
   },
   "devDependencies": {
-    "@commitlint/config-conventional": "21.0.0",
     "@types/jest": "29.5.12",
-    "commitlint": "21.0.0",
     "dotenv-cli": "11.0.0",
     "jest": "29.7.0",
     "nodemon": "^3.1.14",
