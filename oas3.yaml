@@ -13,7 +13,7 @@ tags:
     description: Endpoint per verificare lo stato del server
   - name: Auth
     description: Endpoint per la registrazione e autenticazione degli utenti
-  - name: Aziende
+  - name: Azienda
     description: Endpoint per la registrazione e gestione aziende
 
 paths:
@@ -143,6 +143,8 @@ paths:
                   value:
                     message: Login effettuato con successo
                     token: jwt-token-di-esempio
+                    email: mario.rossi@example.com
+                    id: 665f8d90ad8f8c0012f9b456
                     userType: allevatore
         '400':
           description: Email e password sono obbligatorie
@@ -342,7 +344,7 @@ paths:
       summary: Crea una nuova azienda
       description: Permette a un allevatore di registrare la propria azienda.
       tags:
-        - Aziende
+        - Azienda
       requestBody:
         required: true
         description: Dati necessari per la creazione dell'azienda.
@@ -384,6 +386,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /api/azienda/{id}:
+    delete:
+      summary: Elimina un'azienda
+      description: Elimina l'azienda identificata dall'id specificato.
+      tags:
+        - Azienda
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID dell'azienda da eliminare
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Azienda eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: ID azienda non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     HealthResponse:
@@ -487,6 +529,15 @@ components:
           type: string
           description: JWT restituito dal server per autenticare le richieste successive.
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        email:
+          type: string
+          format: email
+          description: Email dell'utente autenticato.
+          example: mario.rossi@example.com
+        id:
+          type: string
+          description: Identificativo dell'utente autenticato.
+          example: 665f8d90ad8f8c0012f9b456
         userType:
           type: string
           description: Ruolo dell'utente autenticato.
