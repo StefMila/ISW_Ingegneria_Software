@@ -15,6 +15,8 @@ tags:
     description: Endpoint per la registrazione e autenticazione degli utenti
   - name: Azienda
     description: Endpoint per la registrazione e gestione aziende
+  - name: Animale
+    description: Endpoint per la registrazione e gestione animali
 
 paths:
   /api/health:
@@ -57,6 +59,20 @@ paths:
                   email: mario.rossi@example.com
                   password: Password123
                   userType: consumatore
+              marisaRossi:
+                value:
+                  name: Marisa
+                  surname: Rossi
+                  email: marisa.rossi@example.com
+                  password: Password123
+                  userType: consumatore
+              distributore:
+                value:
+                  name: Luca
+                  surname: Verdi
+                  email: luca.verdi@example.com
+                  password: DistPass123
+                  userType: distributore
               veterinario:
                 value:
                   name: Laura
@@ -130,6 +146,10 @@ paths:
               example1:
                 value:
                   email: mario.rossi@example.com
+                  password: Password123
+              marisaRossi:
+                value:
+                  email: marisa.rossi@example.com
                   password: Password123
       responses:
         '200':
@@ -345,6 +365,8 @@ paths:
       description: Permette a un allevatore di registrare la propria azienda.
       tags:
         - Azienda
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         description: Dati necessari per la creazione dell'azienda.
@@ -374,6 +396,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: Azienda già esistente
           content:
@@ -393,6 +427,8 @@ paths:
       description: Elimina l'azienda identificata dall'id specificato.
       tags:
         - Azienda
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -413,6 +449,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Azienda non trovata
           content:
@@ -426,7 +474,83 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/animali/register:
+    post:
+      summary: Registra un nuovo animale
+      description: Permette a un allevatore autenticato di registrare un animale associato a un'azienda esistente.
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Dati necessari per la registrazione dell'animale.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnimaleRequest'
+            examples:
+              example1:
+                value:
+                  matricola: ITA00123
+                  name: Stella
+                  species: mucca
+                  dataNascita: 2022-03-10
+                  sesso: femmina
+                  razza: frisona
+                  figliaDi: ITA00099
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  note: primo parto regolare
+      responses:
+        '201':
+          description: Animale registrato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimaleResponse'
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Animale già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthResponse:
       type: object
@@ -477,6 +601,7 @@ components:
           description: Tipologia dell'utente registrato
           enum:
             - allevatore
+            - distributore
             - veterinario
             - consumatore
           example: consumatore
@@ -543,6 +668,7 @@ components:
           description: Ruolo dell'utente autenticato.
           enum:
             - allevatore
+            - distributore
             - veterinario
             - consumatore
           example: allevatore
@@ -626,4 +752,107 @@ components:
             website:
               type: string
               example: https://www.azienda-rossi.it
+
+    CreateAnimaleRequest:
+      type: object
+      description: Corpo della richiesta per la registrazione di un nuovo animale
+      required:
+        - matricola
+        - name
+        - species
+        - dataNascita
+        - sesso
+        - aziendaId
+      properties:
+        matricola:
+          type: string
+          description: Identificativo univoco dell'animale
+          minLength: 1
+          example: ITA00123
+        name:
+          type: string
+          description: Nome dell'animale
+          minLength: 1
+          example: Stella
+        species:
+          type: string
+          description: Specie dell'animale
+          enum:
+            - mucca
+            - pecora
+            - capra
+            - pollo
+            - coniglio
+          example: mucca
+        dataNascita:
+          type: string
+          format: date
+          description: Data di nascita dell'animale
+          example: 2022-03-10
+        sesso:
+          type: string
+          description: Sesso dell'animale
+          enum:
+            - maschio
+            - femmina
+          example: femmina
+        razza:
+          type: string
+          description: Razza dell'animale
+          example: frisona
+        figliaDi:
+          type: string
+          description: Matricola della madre (se disponibile)
+          example: ITA00099
+        aziendaId:
+          type: string
+          description: ID dell'azienda proprietaria dell'animale
+          example: 665f8fd8ad8f8c0012f9c123
+        note:
+          type: string
+          description: Note aggiuntive sull'animale
+          example: primo parto regolare
+
+    AnimaleResponse:
+      type: object
+      description: Risposta di creazione animale
+      properties:
+        message:
+          type: string
+          description: Messaggio di conferma
+          example: Animale registrato con successo
+        animale:
+          type: object
+          properties:
+            _id:
+              type: string
+              example: 665f9f10ad8f8c0012f9d111
+            matricola:
+              type: string
+              example: ITA00123
+            name:
+              type: string
+              example: Stella
+            species:
+              type: string
+              example: mucca
+            dataNascita:
+              type: string
+              format: date-time
+              example: 2022-03-10T00:00:00.000Z
+            sesso:
+              type: string
+              example: femmina
+            razza:
+              type: string
+              example: frisona
+            figliaDi:
+              type: string
+              example: ITA00099
+            aziendaId:
+              type: string
+              example: 665f8fd8ad8f8c0012f9c123
+            note:
+              type: string
+              example: primo parto regolare
           

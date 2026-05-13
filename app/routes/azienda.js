@@ -1,10 +1,49 @@
 import express from 'express';
 import Azienda from '../models/azienda.js';
 import mongoose from 'mongoose';
-//TODO(security) importazione del middleware di autenticazione per proteggere le rotte che richiedono l'autenticazione
-//import authenticate from '../middleware/authenticate.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
+
+// Middleware per proteggere le route private di qualunque utente autenticato --> controlla la validità del token JWT
+const checkAuth = (req, res, next) => {
+    let token = req.headers['authorization']; // Recupero il token dall'header Authorization
+
+    if (!token || !token.startsWith('Bearer ')) {
+        return res.status(401).json({
+            message: 'Token mancante o formato non valido: Accesso negato'
+        });
+    }
+
+    token = token.split(' ')[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                message: 'Token scaduto: Accesso negato'
+            });
+        }
+
+        return res.status(403).json({
+            message: 'Token non valido: Accesso negato'
+        });
+    }
+};
+
+// Middleware per identificare il ruolo dell'utente e stabilire se ha i permessi per eseguire l'azione richiesta
+const checkUserType = (allowedTypes) => (req, res, next) => {
+    if (!allowedTypes.includes(req.user.userType)) {
+        return res.status(403).json({
+            message: 'Permessi insufficienti: Accesso negato'
+        });
+    }
+
+    next();
+};
 
 // Handler per la registrazione di una nuova azienda
 const registerAzienda = async (req, res) => {
@@ -47,9 +86,8 @@ const registerAzienda = async (req, res) => {
         }
 
         // Creazione della nuova azienda
-        // TODO(security): req.user._id sarà valorizzato quando il middleware di autenticazione sarà implementato
         const newAzienda = new Azienda({
-            ownerUserId: req.user?._id || null, // In attesa del middleware di autenticazione, impostiamo ownerUserId a null
+            ownerUserId: req.user.userId,
             vatNumber: normalizedVatNumber,
             companyName: normalizedCompanyName,
             emailAzienda: normalizedEmailAzienda,
@@ -88,11 +126,28 @@ const registerAzienda = async (req, res) => {
 
 
 // Routes per la gestione delle aziende. Tutte le rotte puntano a /api/azienda --> alias
-router.post('/create', registerAzienda);
-router.post('/signup', registerAzienda);
-router.post('/', registerAzienda);
+router.post('/create', checkAuth, checkUserType(['allevatore']), registerAzienda);
+router.post('/signup', checkAuth, checkUserType(['allevatore']), registerAzienda);
+router.post('/', checkAuth, checkUserType(['allevatore']), registerAzienda);
+
+// Route per ottenere le aziende dell'utente autenticato (allevatore)
+router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) => {
+    try {
+        const items = await Azienda.find({ ownerUserId: req.user.userId })
+            .select('_id companyName vatNumber address emailAzienda')
+            .sort({ createdAt: 1 });
+
+        return res.status(200).json({ items });
+    } catch (error) {
+        console.error('Errore durante il recupero delle aziende dell\'utente:', error);
+        return res.status(500).json({
+            message: 'Errore interno del server'
+        });
+    }
+});
+
 // Route per eliminare un'azienda 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
         const { id } = req.params;
 

@@ -22,13 +22,37 @@
              -->
           </ul>
         </div>
-        <button onclick="document.getElementById('section-mandria').scrollIntoView({behavior:'smooth'})">La tua mandria</button>
-        <button onclick="document.getElementById('section-documenti').scrollIntoView({behavior:'smooth'})">I tuoi documenti</button>
+        <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">La tua mandria ▾</button>
+          <ul class="nav-dropdown-menu"> 
+            <li><a href="/add-animale.html">Aggiungi animale</a></li>
+            <!-- 
+            //per le prossime user story, se implementiamo la visualizzazione e modifica dell'azienda
+            <li><a href="/view-animali.html">Visualizza animali</a></li>
+            <li><a href="#section-azienda">Visualizza azienda</a></li>
+            <li><a href="/edit-azienda.html">Modifica azienda</a></li>
+             -->
+          </ul>
+        </div>
+        <button onclick="document.getElementById('section-documenti')?.scrollIntoView({behavior:'smooth'})">I tuoi documenti</button>
       </div>
-      <button id="logoutButton">Logout</button>
+
+      <div class="header-right-actions">
+        <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button" type="button">Azienda attiva: non selezionata</button>
+        <button id="logoutButton">Logout</button>
+      </div>
     </header>
 
-   
+    <section id="section-azienda-attiva" class="section">
+      <h2>Azienda Attiva</h2>
+      <p id="aziendaSelectionStatus" class="status"></p>
+      <div id="aziendaSelectionControls" hidden>
+        <label for="aziendaSelector">Seleziona l'azienda</label>
+        <select id="aziendaSelector"></select>
+        <button id="saveAziendaSelectionButton" type="button">Seleziona azienda</button>
+      </div>
+    </section>
+
   </main>
 
   <script src="/home-allevatore.js"></script>
