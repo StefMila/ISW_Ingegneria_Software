@@ -43,9 +43,19 @@ function initLoginForm() {
             }
 
             localStorage.setItem('token', data.token);
-            loginMessage.style.color = 'green';
-            loginMessage.textContent = 'Login effettuato con successo';
-            window.location.href = '/home.html';
+            // questo verifica i ruoli
+            localStorage.setItem('userType', data.userType);
+            if(data.userType === 'allevatore') {
+                loginMessage.style.color = 'green';
+                loginMessage.textContent = 'Login effettuato con successo';
+                window.location.href = '/home-allevatore.html';
+            }else{
+                window.location.href = '/home.html';
+            }
+            // questo andrà sistemato quando creiamo anche gli altri utenti, per ora reindirizza tutti alla stessa home
+            // loginMessage.style.color = 'green';
+            // loginMessage.textContent = 'Login effettuato con successo';
+            // window.location.href = '/home.html';
         } catch (error) {
             console.error('Errore durante il login:', error);
             loginMessage.style.color = 'red';
