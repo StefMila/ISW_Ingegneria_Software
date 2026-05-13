@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import User from '../models/user.js';
 // Serve per creare un gruppo di route dedicate all’autenticazione. Così non mettiamo tutto dentro a index.js
 const router = express.Router();
 
@@ -115,7 +115,8 @@ router.post('/login', async (req, res) => {
 
     return res.status(200).json({
       message: 'Login effettuato con successo',
-      token
+      token, 
+      userType: user.userType
     });
   } catch (error) {
     console.error('Errore durante il login:', error);
