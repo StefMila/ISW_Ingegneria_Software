@@ -1,13 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-<<<<<<< HEAD
 import User from '../models/User.js';
 import userTypes from '../../config/userTypes.js';
 import tokenExpByRole from '../../config/jwt_config.js';
-=======
-import User from '../models/user.js';
->>>>>>> c7e022417685880b590ed7057eab0d0170ec3801
 // Serve per creare un gruppo di route dedicate all’autenticazione. Così non mettiamo tutto dentro a index.js
 const router = express.Router();
 
@@ -120,14 +116,10 @@ router.post('/login', async (req, res) => {
 
     return res.status(200).json({
       message: 'Login effettuato con successo',
-<<<<<<< HEAD
-      token: token,
+      token: token, 
       email: user.email,
-      id: user._id
-=======
-      token, 
+      id: user._id,
       userType: user.userType
->>>>>>> c7e022417685880b590ed7057eab0d0170ec3801
     });
   } catch (error) {
     console.error('Errore durante il login:', error);
@@ -140,7 +132,7 @@ router.post('/login', async (req, res) => {
 router.post('/logout', async (req, res) => {
   try {
     
-  //TODO (security) In un'implementazione stateless con JWT, il logout è gestito lato client eliminando il token.
+  //TODO (security) In un'implementazione stateless con JWT, il logout è gestito lato client (frontend) eliminando il token.
   
   return res.status(200).json({
     message: 'Logout effettuato con successo'
@@ -220,7 +212,7 @@ router.post('/reset-password', async (req, res) => {
     await user.save();
 
     // TODO(security): sostituire il reset diretto con token temporaneo e scadenza
-    // TODO(security): invalidare eventuali sessioni/token esistenti in una fase successiva
+    // TODO(security): invalidare eventuali sessioni/token esistenti in una fase successiva --> non si può fare
 
     return res.status(200).json({
       message: 'Password aggiornata con successo'
