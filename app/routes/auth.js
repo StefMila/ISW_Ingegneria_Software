@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import User from '../models/user.js';
 import userTypes from '../../config/userTypes.js';
 import tokenExpByRole from '../../config/jwt_config.js';
 // Serve per creare un gruppo di route dedicate all’autenticazione. Così non mettiamo tutto dentro a index.js
@@ -116,7 +116,7 @@ router.post('/login', async (req, res) => {
 
     return res.status(200).json({
       message: 'Login effettuato con successo',
-      token: token, 
+      token: token,
       email: user.email,
       id: user._id,
       userType: user.userType
@@ -228,7 +228,7 @@ router.post('/reset-password', async (req, res) => {
 // Middleware per proteggere le route private di qualunque utente autenticato --> controlla la validità del token JWT
 const checkAuth = (req, res, next) => {
   var token = req.headers['authorization']; // Recupero il token dall'header Authorization
-  if (!token && !token.startsWith('Bearer ')) {
+  if (!token || !token.startsWith('Bearer ')) {
     return res.status(401).json({
       message: 'Token mancante o formato non valido: Accesso negato'
     });
@@ -252,7 +252,7 @@ const checkAuth = (req, res, next) => {
 }
 
 // Middleware per identificare il ruolo dell'utente e stabilire se ha i permessi per eseguire l'azione richiesta --> utilizzato nei singoli endpoint (es. solo gli allevatori possono modificare i dati dell'allevamento)
-const checkUserType = (allowedTypes) => (res, req, next) => {
+const checkUserType = (allowedTypes) => (req, res, next) => {
   if (!allowedTypes.includes(req.user.userType)) {
     return res.status(403).json({
       message: 'Permessi insufficienti: Accesso negato'
