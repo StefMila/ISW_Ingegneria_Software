@@ -15,6 +15,8 @@ tags:
     description: Endpoint per la registrazione e autenticazione degli utenti
   - name: Azienda
     description: Endpoint per la registrazione e gestione aziende
+  - name: Animale
+    description: Endpoint per la registrazione e gestione animali
 
 paths:
   /api/health:
@@ -57,12 +59,26 @@ paths:
                   email: mario.rossi@example.com
                   password: Password123
                   userType: consumatore
+              allevatore:
+                value:
+                  name: Marisa
+                  surname: Rossi
+                  email: marisa.rossi@example.com
+                  password: Password123
+                  userType: allevatore
+              distributore:
+                value:
+                  name: Luca
+                  surname: Verdi
+                  email: luca.verdi@example.com
+                  password: Password123
+                  userType: distributore
               veterinario:
                 value:
                   name: Laura
                   surname: Bianchi
                   email: laura.bianchi@example.com
-                  password: VetPass123
+                  password: Password123
                   userType: veterinario
 
       responses:
@@ -86,10 +102,13 @@ paths:
               examples:
                 missingFields:
                   value:
-                    message: Name, surname, email, password e userType sono obbligatori
+                    message: Nome, cognome, email, password e ruolo sono obbligatori
                 invalidUserType:
                   value:
-                    message: Ruolo non valido
+                    message: ruolo non valido.
+                invalidEmailOrPassword:
+                  value:
+                    message: Password deve essere almeno di 8 caratteri e e email deve essere in formato valido
 
         '409':
           description: Utente già esistente
@@ -127,9 +146,21 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
             examples:
-              example1:
+              consumatore:
                 value:
                   email: mario.rossi@example.com
+                  password: Password123
+              allevatore:
+                value:
+                  email: marisa.rossi@example.com
+                  password: Password123
+              distributore:
+                value:
+                  email: luca.verdi@example.com
+                  password: Password123
+              veterinario:
+                value:
+                  email: laura.bianchi@example.com
                   password: Password123
       responses:
         '200':
@@ -343,9 +374,11 @@ paths:
   /api/azienda:
     post:
       summary: Crea una nuova azienda
-      description: Permette a un allevatore di registrare la propria azienda.
+      description: Permette a un allevatore autenticato di registrare una o più aziende associate al proprio account. L'accesso è riservato al solo ruolo allevatore; gli altri userType ricevono un errore di autorizzazione.
       tags:
         - Azienda
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         description: Dati necessari per la creazione dell'azienda.
@@ -369,24 +402,94 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AziendaResponse'
+              examples:
+                success:
+                  value:
+                    message: "Azienda registrata con successo"
+                    company:
+                      id: "665f8fd8ad8f8c0012f9c123"
+                      ownerUserId: "665f8d90ad8f8c0012f9b456"
+                      vatNumber: "IT12345678901"
+                      companyName: "Azienda Agricola Rossi"
+                      emailAzienda: "info@azienda-rossi.it"
+                      address: "Via Roma 10, Milano"
+                      phoneNumber: "+39021234567"
+                      website: "https://www.azienda-rossi.it"
         '400':
           description: Dati non validi
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: "Partita IVA, nome azienda, email azienda e indirizzo sono obbligatori"
+                invalidEmail:
+                  value:
+                    message: "Email azienda non valida."
         '409':
           description: Azienda già esistente
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateVatNumber:
+                  value:
+                    message: "Esiste già un’azienda con questa partita IVA"
         '500':
           description: Errore interno del server
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: "Errore interno del server"
+  
+  
+  # /api/azienda/mine:
+  #   get:
+  #     summary: Elenca le aziende dell'allevatore autenticato
+  #     description: Restituisce tutte le aziende collegate all'id dell'allevatore presente nel token JWT. La rotta è accessibile solo al ruolo allevatore.
+  #     tags:
+  #       - Azienda
+  #     security:
+  #       - bearerAuth: []
+  #     responses:
+  #       '200':
+  #         description: Elenco aziende recuperato con successo
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 items:
+  #                   type: array
+  #                   items:
+  #                     $ref: '#/components/schemas/AziendaSummary'
+  #       '401':
+  #         description: Token mancante, scaduto o non valido
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #             examples:
+  #               missingOrInvalidToken:
+  #                 value:
+  #                   message: "Token mancante o formato non valido: Accesso negato"
+  #       '403':
+  #         description: Permessi insufficienti per accedere all'area allevatore
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/ErrorResponse'
+  #             examples:
+  #               forbiddenRole:
+  #                 value:
+  #                   message: "Permessi insufficienti: Accesso negato"
 
   /api/azienda/{id}:
     delete:
@@ -394,6 +497,8 @@ paths:
       description: Elimina l'azienda identificata dall'id specificato.
       tags:
         - Azienda
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -408,26 +513,175 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Azienda eliminata con successo
         '400':
           description: ID azienda non valido
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID azienda non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Azienda non trovata
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Azienda non trovata
+
         '500':
           description: Errore interno del server
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              
+
+  /api/animali/register:
+    post:
+      summary: Registra un nuovo animale
+      description: Permette a un allevatore autenticato di registrare un animale associato a un'azienda esistente.
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Dati necessari per la registrazione dell'animale.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnimaleRequest'
+            examples:
+              example1:
+                value:
+                  matricola: ITA00123
+                  name: Stella
+                  species: mucca
+                  dataNascita: 2022-03-10
+                  sesso: femmina
+                  razza: frisona
+                  figliaDi: ITA00099
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  note: primo parto regolare
+      responses:
+        '201':
+          description: Animale registrato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimaleResponse'
+              examples:
+                success:
+                  value:
+                    message: "Animale registrato con successo"
+                    animal:
+                      id: "665f8fd8ad8f8c0012f9c456"
+                      matricola: "ITA00123"
+                      name: "Stella"
+                      species: "mucca"
+                      dataNascita: "2022-03-10"
+                      sesso: "femmina"
+                      razza: "frisona"
+                      figliaDi: "ITA00099"
+                      aziendaId: "665f8fd8ad8f8c0012f9c123"
+                      note: "primo parto regolare"
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: "Matricola, nome, specie, data di nascita, sesso, razza e aziendaId sono obbligatori"
+                invalidData:
+                  value:
+                    message: "Dati non validi: verifica il formato della data di nascita e la validità dell'aziendaId"
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Azienda non trovata
+        '409':
+          description: Animale già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateMatricola:
+                  value:
+                    message: "Esiste già un animale con questa matricola"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthResponse:
       type: object
@@ -530,15 +784,6 @@ components:
           type: string
           description: JWT restituito dal server per autenticare le richieste successive.
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
-        email:
-          type: string
-          format: email
-          description: Email dell'utente autenticato.
-          example: mario.rossi@example.com
-        id:
-          type: string
-          description: Identificativo dell'utente autenticato.
-          example: 665f8d90ad8f8c0012f9b456
         userType:
           type: string
           description: Ruolo dell'utente autenticato.
@@ -618,8 +863,7 @@ components:
               example: 665f8fd8ad8f8c0012f9c123
             ownerUserId:
               type: string
-              nullable: true
-              description: ID utente proprietario (puo essere null senza middleware auth)
+              description: ID dell'allevatore proprietario, valorizzato automaticamente dal token JWT
               example: 665f8d90ad8f8c0012f9b456
             vatNumber:
               type: string
@@ -640,4 +884,124 @@ components:
             website:
               type: string
               example: https://www.azienda-rossi.it
+
+    AziendaSummary:
+      type: object
+      description: Riepilogo sintetico di un'azienda appartenente a un allevatore
+      additionalProperties: false
+      properties:
+        _id:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        companyName:
+          type: string
+          example: Azienda Agricola Rossi
+        vatNumber:
+          type: string
+          example: IT12345678901
+        address:
+          type: string
+          example: Via Roma 10, Milano
+        emailAzienda:
+          type: string
+          format: email
+          example: info@azienda-rossi.it
           
+    CreateAnimaleRequest:
+      type: object
+      description: Corpo della richiesta per la registrazione di un nuovo animale
+      required:
+        - matricola
+        - name
+        - species
+        - dataNascita
+        - sesso
+        - aziendaId
+      properties:
+        matricola:
+          type: string
+          description: Identificativo univoco dell'animale
+          minLength: 1
+          example: ITA00123
+        name:
+          type: string
+          description: Nome dell'animale
+          minLength: 1
+          example: Stella
+        species:
+          type: string
+          description: Specie dell'animale
+          enum:
+            - mucca
+            - pecora
+            - capra
+            - pollo
+            - coniglio
+          example: mucca
+        dataNascita:
+          type: string
+          format: date
+          description: Data di nascita dell'animale
+          example: 2022-03-10
+        sesso:
+          type: string
+          description: Sesso dell'animale
+          enum:
+            - maschio
+            - femmina
+          example: femmina
+        figliaDi:
+          type: string
+          description: Matricola della madre (se disponibile)
+          example: ITA00099
+        aziendaId:
+          type: string
+          description: ID dell'azienda proprietaria dell'animale
+          example: 665f8fd8ad8f8c0012f9c123
+        note:
+          type: string
+          description: Note aggiuntive sull'animale
+          example: primo parto regolare
+
+    AnimaleResponse:
+      type: object
+      description: Risposta di creazione animale
+      properties:
+        message:
+          type: string
+          description: Messaggio di conferma
+          example: Animale registrato con successo
+        animale:
+          type: object
+          properties:
+            _id:
+              type: string
+              example: 665f9f10ad8f8c0012f9d111
+            matricola:
+              type: string
+              example: ITA00123
+            name:
+              type: string
+              example: Stella
+            species:
+              type: string
+              example: mucca
+            dataNascita:
+              type: string
+              format: date-time
+              example: 2022-03-10T00:00:00.000Z
+            sesso:
+              type: string
+              example: femmina
+            razza:
+              type: string
+              example: frisona
+            figliaDi:
+              type: string
+              example: ITA00099
+            aziendaId:
+              type: string
+              example: 665f8fd8ad8f8c0012f9c123
+            note:
+              type: string
+              example: primo parto regolare

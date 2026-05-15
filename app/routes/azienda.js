@@ -49,9 +49,8 @@ const registerAzienda = async (req, res) => {
         }
 
         // Creazione della nuova azienda
-
         const newAzienda = new Azienda({
-            ownerUserId: req.user._id,
+            ownerUserId: req.user.userId,
             vatNumber: normalizedVatNumber,
             companyName: normalizedCompanyName,
             emailAzienda: normalizedEmailAzienda,
@@ -90,11 +89,28 @@ const registerAzienda = async (req, res) => {
 
 
 // Routes per la gestione delle aziende. Tutte le rotte puntano a /api/azienda --> alias
-router.post('/create', registerAzienda);
-router.post('/signup', registerAzienda);
-router.post('/', registerAzienda);
+router.post('/create', checkAuth, checkUserType(['allevatore']), registerAzienda);
+router.post('/signup', checkAuth, checkUserType(['allevatore']), registerAzienda);
+router.post('/', checkAuth, checkUserType(['allevatore']), registerAzienda);
+
+// Route per ottenere le aziende dell'utente autenticato (allevatore)
+router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) => {
+    try {
+        const items = await Azienda.find({ ownerUserId: req.user.userId })
+            .select('_id companyName vatNumber address emailAzienda')
+            .sort({ createdAt: 1 });
+
+        return res.status(200).json({ items });
+    } catch (error) {
+        console.error('Errore durante il recupero delle aziende dell\'utente:', error);
+        return res.status(500).json({
+            message: 'Errore interno del server'
+        });
+    }
+});
+
 // Route per eliminare un'azienda 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
         const { id } = req.params;
 

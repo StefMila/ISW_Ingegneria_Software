@@ -1,0 +1,433 @@
+{
+  "openapi" : "3.0.3",
+  "info" : {
+    "title" : "MuccApp API",
+    "description" : "Documentazione API del backend MuccApp",
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "http://localhost:3000",
+    "description" : "Development server"
+  } ],
+  "tags" : [ {
+    "name" : "Health",
+    "description" : "Endpoint per verificare lo stato del server"
+  }, {
+    "name" : "Auth",
+    "description" : "Endpoint per la registrazione e autenticazione degli utenti"
+  } ],
+  "paths" : {
+    "/api/health" : {
+      "get" : {
+        "tags" : [ "Health" ],
+        "summary" : "Verifica che il server sia attivo",
+        "description" : "Restituisce lo stato del server per verificare che il backend sia raggiungibile e funzionante",
+        "responses" : {
+          "200" : {
+            "description" : "Server attivo",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                },
+                "examples" : {
+                  "success" : {
+                    "value" : {
+                      "message" : "Server attivo",
+                      "status" : "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/signup" : {
+      "post" : {
+        "tags" : [ "Auth" ],
+        "summary" : "Registra un nuovo utente",
+        "description" : "Crea un nuovo account utente nel sistema. L'email deve essere univoca e la password viene salvata in forma hashata.",
+        "requestBody" : {
+          "description" : "Dati necessari per la registrazione di un nuovo utente",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SignupRequest"
+              },
+              "examples" : {
+                "consumatore" : {
+                  "value" : {
+                    "name" : "Mario",
+                    "surname" : "Rossi",
+                    "email" : "mario.rossi@example.com",
+                    "password" : "Password123",
+                    "userType" : "consumatore"
+                  }
+                },
+                "veterinario" : {
+                  "value" : {
+                    "name" : "Laura",
+                    "surname" : "Bianchi",
+                    "email" : "laura.bianchi@example.com",
+                    "password" : "VetPass123",
+                    "userType" : "veterinario"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Utente registrato con successo",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageResponse"
+                },
+                "examples" : {
+                  "success" : {
+                    "value" : {
+                      "message" : "Utente registrato con successo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Dati mancanti o non validi",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "missingFields" : {
+                    "value" : {
+                      "message" : "Name, surname, email, password e userType sono obbligatori"
+                    }
+                  },
+                  "invalidUserType" : {
+                    "value" : {
+                      "message" : "userType non valido"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Utente già esistente",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "duplicateEmail" : {
+                    "value" : {
+                      "message" : "Utente già esistente"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Formato dei dati non valido",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "invalidFormat" : {
+                    "value" : {
+                      "message" : "Password deve essere almeno di 8 caratteri e email deve essere in formato valido"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Errore interno del server",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "serverError" : {
+                    "value" : {
+                      "message" : "Errore interno del server"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login" : {
+      "post" : {
+        "tags" : [ "Auth" ],
+        "summary" : "Autentica un utente",
+        "description" : "Verifica le credenziali dell'utente e restituisce un token JWT per accedere all'applicazione.",
+        "requestBody" : {
+          "description" : "Credenziali necessarie per il login.",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LoginRequest"
+              },
+              "examples" : {
+                "example1" : {
+                  "value" : {
+                    "email" : "mario.rossi@example.com",
+                    "password" : "Password123"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Login effettuato con successo",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoginResponse"
+                },
+                "examples" : {
+                  "success" : {
+                    "value" : {
+                      "message" : "Login effettuato con successo",
+                      "token" : "jwt-token-di-esempio"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Email e password sono obbligatorie",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "missingFields" : {
+                    "value" : {
+                      "message" : "Email e password sono obbligatorie"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Credenziali non valide",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "invalidCredentials" : {
+                    "value" : {
+                      "message" : "Credenziali non valide"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Errore interno del server",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "serverError" : {
+                    "value" : {
+                      "message" : "Errore interno del server"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout" : {
+      "post" : {
+        "tags" : [ "Auth" ],
+        "summary" : "Disconnette un utente",
+        "description" : "Effettua il logout dell'utente. In questa versione il token viene rimosso lato client; la revoca server-side sarà gestita in una fase successiva.",
+        "responses" : {
+          "200" : {
+            "description" : "Logout effettuato con successo",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageResponse"
+                },
+                "examples" : {
+                  "success" : {
+                    "value" : {
+                      "message" : "Logout effettuato con successo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Errore interno del server",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "serverError" : {
+                    "value" : {
+                      "message" : "Errore interno del server"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "HealthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "description" : "Messaggio descrittivo dello stato del server",
+            "example" : "Server attivo"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "Stato sintetico del server",
+            "example" : "ok"
+          }
+        },
+        "description" : "Risposta di stato del server"
+      },
+      "SignupRequest" : {
+        "required" : [ "email", "name", "password", "surname", "userType" ],
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "minLength" : 1,
+            "type" : "string",
+            "description" : "Nome dell'utente",
+            "example" : "Mario"
+          },
+          "surname" : {
+            "minLength" : 1,
+            "type" : "string",
+            "description" : "Cognome dell'utente",
+            "example" : "Rossi"
+          },
+          "email" : {
+            "type" : "string",
+            "description" : "Indirizzo email univoco dell'utente",
+            "format" : "email",
+            "example" : "mario.rossi@example.com"
+          },
+          "password" : {
+            "minLength" : 6,
+            "type" : "string",
+            "description" : "Password in chiaro inviata dal client; verrà hashata dal server prima del salvataggio",
+            "format" : "password",
+            "example" : "Password123"
+          },
+          "userType" : {
+            "type" : "string",
+            "description" : "Tipologia dell'utente registrato",
+            "example" : "consumatore",
+            "enum" : [ "allevatore", "veterinario", "consumatore" ]
+          }
+        },
+        "description" : "Corpo della richiesta per la registrazione di un utente"
+      },
+      "MessageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "description" : "Messaggio di conferma dell'operazione",
+            "example" : "Utente registrato con successo"
+          }
+        },
+        "description" : "Risposta generica di successo"
+      },
+      "ErrorResponse" : {
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "description" : "Messaggio che descrive l'errore",
+            "example" : "Errore interno del server"
+          }
+        },
+        "description" : "Risposta generica di errore"
+      },
+      "LoginRequest" : {
+        "required" : [ "email", "password" ],
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "description" : "Email dell'utente registrato",
+            "format" : "email",
+            "example" : "mario.rossi@example.com"
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Password dell'utente registrato",
+            "format" : "password",
+            "example" : "Password123"
+          }
+        },
+        "description" : "Corpo della richiesta per l'autenticazione di un utente"
+      },
+      "LoginResponse" : {
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "description" : "Messaggio di conferma dell'autenticazione",
+            "example" : "Login effettuato con successo"
+          },
+          "token" : {
+            "type" : "string",
+            "description" : "JWT restituito dal server per autenticare le richieste successive.",
+            "example" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+          }
+        },
+        "description" : "Risposta alla richiesta di login"
+      }
+    }
+  }
+}
