@@ -1,0 +1,857 @@
+openapi: 3.0.3
+info:
+  title: MuccApp API
+  description: Documentazione API del backend MuccApp
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+tags:
+  - name: Health
+    description: Endpoint per verificare lo stato del server
+  - name: Auth
+    description: Endpoint per la registrazione e autenticazione degli utenti
+  - name: Azienda
+    description: Endpoint per la registrazione e gestione aziende
+  - name: Animale
+    description: Endpoint per la registrazione e gestione animali
+
+paths:
+  /api/health:
+    get:
+      summary: Verifica che il server sia attivo
+      description: Restituisce lo stato del server per verificare che il backend sia raggiungibile e funzionante
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Server attivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                success:
+                  value:
+                    message: Server attivo
+                    status: ok
+
+  /api/auth/signup:
+    post:
+      summary: Registra un nuovo utente
+      description: Crea un nuovo account utente nel sistema. L'email deve essere univoca e la password viene salvata in forma hashata.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        description: Dati necessari per la registrazione di un nuovo utente
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+            examples:
+              consumatore:
+                value:
+                  name: Mario
+                  surname: Rossi
+                  email: mario.rossi@example.com
+                  password: Password123
+                  userType: consumatore
+              marisaRossi:
+                value:
+                  name: Marisa
+                  surname: Rossi
+                  email: marisa.rossi@example.com
+                  password: Password123
+                  userType: consumatore
+              distributore:
+                value:
+                  name: Luca
+                  surname: Verdi
+                  email: luca.verdi@example.com
+                  password: DistPass123
+                  userType: distributore
+              veterinario:
+                value:
+                  name: Laura
+                  surname: Bianchi
+                  email: laura.bianchi@example.com
+                  password: VetPass123
+                  userType: veterinario
+
+      responses:
+        '201':
+          description: Utente registrato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Utente registrato con successo
+
+        '400':
+          description: Dati mancanti o non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Name, surname, email, password e userType sono obbligatori
+                invalidUserType:
+                  value:
+                    message: Ruolo non valido
+
+        '409':
+          description: Utente già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateEmail:
+                  value:
+                    message: Utente già esistente
+
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
+  /api/auth/login:
+    post:
+      summary: Autentica un utente
+      description: Verifica le credenziali dell'utente e restituisce un token JWT per accedere all'applicazione.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        description: Credenziali necessarie per il login.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              example1:
+                value:
+                  email: mario.rossi@example.com
+                  password: Password123
+              marisaRossi:
+                value:
+                  email: marisa.rossi@example.com
+                  password: Password123
+      responses:
+        '200':
+          description: Login effettuato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                success:
+                  value:
+                    message: Login effettuato con successo
+                    token: jwt-token-di-esempio
+                    email: mario.rossi@example.com
+                    id: 665f8d90ad8f8c0012f9b456
+                    userType: allevatore
+        '400':
+          description: Email e password sono obbligatorie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Email e password sono obbligatorie
+        '401':
+          description: Credenziali non valide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCredentials:
+                  value:
+                    message: Email non valida
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
+  /api/auth/logout:
+      post:
+        summary: Disconnette un utente
+        description: Effettua il logout dell'utente. In questa versione il token viene rimosso lato client; la revoca server-side sarà gestita in una fase successiva.
+        tags:
+          - Auth
+        responses:
+          '200':
+            description: Logout effettuato con successo
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/MessageResponse'
+                examples:
+                  success:
+                    value:
+                      message: Logout effettuato con successo
+          '500':
+            description: Errore interno del server
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  serverError:
+                    value:
+                      message: Errore interno del server
+
+  /api/auth/forgot-password:
+    post:
+      summary: Richiesta di reset password
+      description: Permette agli utenti di richiedere un reset della password fornendo la propria email. In questa versione non è implementato un sistema di invio email, ma sarà aggiunto in futuro.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        description: Dati necessari per richiedere il reset della password
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email dell'utente che richiede il reset della password
+                  example: mario.rossi@example.com
+      responses:
+        '200':
+          description: Richiesta di reset password ricevuta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Email inserita correttamente, riceverai istruzioni per reimpostare la password
+        '400':
+          description: Dati mancanti o non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Email è obbligatoria
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
+  /api/auth/reset-password:
+      post:
+        summary: Reset della password
+        description: Permette agli utenti di reimpostare la propria password fornendo l'email e una nuova password. In questa versione non è implementato un sistema di token per la verifica dell'identità, ma sarà aggiunto in futuro.
+        tags:
+          - Auth
+        requestBody:
+          required: true
+          description: Dati necessari per il reset della password
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - email
+                  - newPassword
+                  - confirmedPassword
+                properties:
+                  email:
+                    type: string
+                    format: email
+                    description: Email dell'utente che richiede il reset della password
+                    example: mario.rossi@example.com
+                  newPassword:
+                    type: string
+                    format: password
+                    description: Nuova password dell'utente
+                    example: NuovaPassword123
+                  confirmedPassword:
+                    type: string
+                    format: password
+                    description: Conferma della nuova password
+                    example: NuovaPassword123
+        responses:
+          '200':
+            description: Password aggiornata con successo
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/MessageResponse'
+                examples:
+                  success:
+                    value:
+                      message: Password aggiornata con successo
+          '400':
+            description: Dati mancanti o non validi
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  missingFields:
+                    value:
+                      message: Email, newPassword e confirmedPassword sono obbligatori
+                  passwordMismatch:
+                    value:
+                      message: La nuova password e quella di conferma non coincidono
+                  weakPassword:
+                    value:
+                      message: La nuova password deve essere lunga almeno 8 caratteri
+          '404':
+            description: Utente non trovato con l'email fornita
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  userNotFound:
+                    value:
+                      message: Utente non trovato con l'email fornita
+          '500':
+            description: Errore interno del server
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  serverError:
+                    value:
+                      message: Errore interno del server
+
+  /api/azienda:
+    post:
+      summary: Crea una nuova azienda
+      description: Permette a un allevatore di registrare la propria azienda.
+      tags:
+        - Azienda
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Dati necessari per la creazione dell'azienda.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAziendaRequest'
+            examples:
+              example1:
+                value:
+                  companyName: Azienda Agricola Rossi
+                  address: Via Roma 10, Milano
+                  vatNumber: IT12345678901
+                  emailAzienda: info@azienda-rossi.it
+                  phoneNumber: "+39021234567"
+                  website: https://www.azienda-rossi.it
+      responses:
+        '201':
+          description: Azienda creata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AziendaResponse'
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Azienda già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/azienda/{id}:
+    delete:
+      summary: Elimina un'azienda
+      description: Elimina l'azienda identificata dall'id specificato.
+      tags:
+        - Azienda
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID dell'azienda da eliminare
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Azienda eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: ID azienda non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/animali/register:
+    post:
+      summary: Registra un nuovo animale
+      description: Permette a un allevatore autenticato di registrare un animale associato a un'azienda esistente.
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Dati necessari per la registrazione dell'animale.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnimaleRequest'
+            examples:
+              example1:
+                value:
+                  matricola: ITA00123
+                  name: Stella
+                  species: mucca
+                  dataNascita: 2022-03-10
+                  sesso: femmina
+                  razza: frisona
+                  figliaDi: ITA00099
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  note: primo parto regolare
+      responses:
+        '201':
+          description: Animale registrato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimaleResponse'
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Animale già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    HealthResponse:
+      type: object
+      description: Risposta di stato del server
+      properties:
+        message:
+          type: string
+          description: Messaggio descrittivo dello stato del server
+          example: Server attivo
+        status:
+          type: string
+          description: Stato sintetico del server
+          example: ok
+
+    SignupRequest:
+      type: object
+      description: Corpo della richiesta per la registrazione di un utente
+      required:
+        - name
+        - surname
+        - email
+        - password
+        - userType
+      properties:
+        name:
+          type: string
+          description: Nome dell'utente
+          minLength: 1
+          example: Mario
+        surname:
+          type: string
+          description: Cognome dell'utente
+          minLength: 1
+          example: Rossi
+        email:
+          type: string
+          format: email
+          description: Indirizzo email univoco dell'utente
+          example: mario.rossi@example.com
+        password:
+          type: string
+          format: password
+          description: Password in chiaro inviata dal client; verrà hashata dal server prima del salvataggio
+          minLength: 8
+          example: Password123
+        userType:
+          type: string
+          description: Tipologia dell'utente registrato
+          enum:
+            - allevatore
+            - distributore
+            - veterinario
+            - consumatore
+          example: consumatore
+
+    MessageResponse:
+      type: object
+      description: Risposta generica di successo
+      properties:
+        message:
+          type: string
+          description: Messaggio di conferma dell'operazione
+          example: Utente registrato con successo
+
+    ErrorResponse:
+      type: object
+      description: Risposta generica di errore
+      properties:
+        message:
+          type: string
+          description: Messaggio che descrive l'errore
+          example: Errore interno del server
+
+    LoginRequest:
+      type: object
+      description: Corpo della richiesta per l'autenticazione di un utente
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email dell'utente registrato
+          example: mario.rossi@example.com
+        password:
+          type: string
+          format: password
+          description: Password dell'utente registrato
+          example: Password123
+
+    LoginResponse:
+      type: object
+      description: Risposta alla richiesta di login
+      properties:
+        message:
+          type: string
+          description: Messaggio di conferma dell'autenticazione
+          example: Login effettuato con successo
+        token:
+          type: string
+          description: JWT restituito dal server per autenticare le richieste successive.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        email:
+          type: string
+          format: email
+          description: Email dell'utente autenticato.
+          example: mario.rossi@example.com
+        id:
+          type: string
+          description: Identificativo dell'utente autenticato.
+          example: 665f8d90ad8f8c0012f9b456
+        userType:
+          type: string
+          description: Ruolo dell'utente autenticato.
+          enum:
+            - allevatore
+            - distributore
+            - veterinario
+            - consumatore
+          example: allevatore
+
+    CreateAziendaRequest:
+      type: object
+      description: Corpo della richiesta per la creazione di una nuova azienda
+      required:
+        - companyName
+        - address
+        - vatNumber
+        - emailAzienda
+      properties:
+        companyName:
+          type: string
+          description: Nome dell'azienda
+          minLength: 1
+          example: Azienda Agricola Rossi
+        address:
+          type: string
+          description: Indirizzo della sede aziendale
+          minLength: 1
+          example: Via Roma 10, Milano
+        vatNumber:
+          type: string
+          description: Partita IVA dell'azienda
+          minLength: 1
+          maxLength: 13
+          example: IT12345678901
+          pattern: ^IT\d{11}$  # Validazione della partita IVA italiana
+        emailAzienda:
+          type: string
+          format: email
+          description: Email di contatto dell'azienda
+          example: info@azienda-rossi.it
+        phoneNumber:
+          type: string
+          description: Numero di telefono dell'azienda
+          example: "+39021234567"
+        website:
+          type: string
+          description: Sito web aziendale
+          example: https://www.azienda-rossi.it
+
+    AziendaResponse:
+      type: object
+      description: Risposta di creazione azienda
+      properties:
+        message: 
+          type: string
+          description: Messaggio di conferma
+          example: Azienda registrata con successo
+        company:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Identificativo azienda
+              example: 665f8fd8ad8f8c0012f9c123
+            ownerUserId:
+              type: string
+              nullable: true
+              description: ID utente proprietario (puo essere null senza middleware auth)
+              example: 665f8d90ad8f8c0012f9b456
+            vatNumber:
+              type: string
+              example: IT12345678901
+            companyName:
+              type: string
+              example: Azienda Agricola Rossi
+            emailAzienda:
+              type: string
+              format: email
+              example: info@azienda-rossi.it
+            address:
+              type: string
+              example: Via Roma 10, Milano
+            phoneNumber:
+              type: string
+              example: "+39021234567"
+            website:
+              type: string
+              example: https://www.azienda-rossi.it
+
+    CreateAnimaleRequest:
+      type: object
+      description: Corpo della richiesta per la registrazione di un nuovo animale
+      required:
+        - matricola
+        - name
+        - species
+        - dataNascita
+        - sesso
+        - aziendaId
+      properties:
+        matricola:
+          type: string
+          description: Identificativo univoco dell'animale
+          minLength: 1
+          example: ITA00123
+        name:
+          type: string
+          description: Nome dell'animale
+          minLength: 1
+          example: Stella
+        species:
+          type: string
+          description: Specie dell'animale
+          enum:
+            - mucca
+            - pecora
+            - capra
+            - pollo
+            - coniglio
+          example: mucca
+        dataNascita:
+          type: string
+          format: date
+          description: Data di nascita dell'animale
+          example: 2022-03-10
+        sesso:
+          type: string
+          description: Sesso dell'animale
+          enum:
+            - maschio
+            - femmina
+          example: femmina
+        razza:
+          type: string
+          description: Razza dell'animale
+          example: frisona
+        figliaDi:
+          type: string
+          description: Matricola della madre (se disponibile)
+          example: ITA00099
+        aziendaId:
+          type: string
+          description: ID dell'azienda proprietaria dell'animale
+          example: 665f8fd8ad8f8c0012f9c123
+        note:
+          type: string
+          description: Note aggiuntive sull'animale
+          example: primo parto regolare
+
+    AnimaleResponse:
+      type: object
+      description: Risposta di creazione animale
+      properties:
+        message:
+          type: string
+          description: Messaggio di conferma
+          example: Animale registrato con successo
+        animale:
+          type: object
+          properties:
+            _id:
+              type: string
+              example: 665f9f10ad8f8c0012f9d111
+            matricola:
+              type: string
+              example: ITA00123
+            name:
+              type: string
+              example: Stella
+            species:
+              type: string
+              example: mucca
+            dataNascita:
+              type: string
+              format: date-time
+              example: 2022-03-10T00:00:00.000Z
+            sesso:
+              type: string
+              example: femmina
+            razza:
+              type: string
+              example: frisona
+            figliaDi:
+              type: string
+              example: ITA00099
+            aziendaId:
+              type: string
+              example: 665f8fd8ad8f8c0012f9c123
+            note:
+              type: string
+              example: primo parto regolare
