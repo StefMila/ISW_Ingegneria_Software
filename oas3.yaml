@@ -52,14 +52,14 @@ paths:
             schema:
               $ref: '#/components/schemas/SignupRequest'
             examples:
-              allevatore:
+              consumatore:
                 value:
                   name: Mario
                   surname: Rossi
                   email: mario.rossi@example.com
                   password: Password123
                   userType: consumatore
-              marisaRossi:
+              allevatore:
                 value:
                   name: Marisa
                   surname: Rossi
