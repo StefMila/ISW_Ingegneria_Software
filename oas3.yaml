@@ -263,11 +263,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
+                $ref: '#/components/schemas/ForgotPasswordResponse'
               examples:
                 success:
                   value:
                     message: Email inserita correttamente, riceverai istruzioni per reimpostare la password
+                    token: hjkfgyfdtserfg6r5r6uhgvcfdr56y
         '400':
           description: Dati mancanti o non validi
           content:
@@ -791,6 +792,19 @@ components:
             - veterinario
             - consumatore
           example: allevatore
+
+    ForgotPasswordResponse:
+      type: object
+      description: Risposta alla richiesta di cambio password.
+      properties:
+        message:
+          type: string
+          description: Messaggio di conferma della ricezione della richiesta di cambio password.
+          example: Email inserita correttamente, riceverai istruzioni per reimpostare la password.
+        token:
+          type: string
+          description: Token per la reimpostazione della password di breve durata (10 minuti).
+          example: hjkfgyfdtserfg6r5r6uhgvcfdr56y
 
     CreateAziendaRequest:
       type: object

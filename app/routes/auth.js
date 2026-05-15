@@ -7,6 +7,44 @@ import tokenExpByRole from '../../config/jwt_config.js';
 // Serve per creare un gruppo di route dedicate all’autenticazione. Così non mettiamo tutto dentro a index.js
 const router = express.Router();
 
+
+// Middleware per proteggere le route private di qualunque utente autenticato --> controlla la validità del token JWT
+export const checkAuth = (req, res, next) => {
+  var token = req.headers['authorization']; // Recupero il token dall'header Authorization
+  if (!token || !token.startsWith('Bearer ')) {
+    return res.status(401).json({
+      message: 'Token mancante o formato non valido: Accesso negato'
+    });
+  }
+  token = token.split(' ')[1]; 
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        message: 'Token scaduto: Accesso negato'
+      });
+    } else {
+      return res.status(403).json({
+        message: 'Token non valido: Accesso negato'
+      });
+    }
+  }
+}
+
+
+// Middleware per identificare il ruolo dell'utente e stabilire se ha i permessi per eseguire l'azione richiesta --> utilizzato nei singoli endpoint (es. solo gli allevatori possono modificare i dati dell'allevamento)
+export const checkUserType = (allowedTypes) => (req, res, next) => {
+  if (!allowedTypes.includes(req.user.userType)) {
+    return res.status(403).json({
+      message: 'Permessi insufficienti: Accesso negato'
+    });
+  }
+  next();
+}
+
 // Route per la registrazione di un nuovo utente --> risponde a POST su /api/auth/signup
 router.post('/signup', async (req, res) => { 
   try {
@@ -131,12 +169,9 @@ router.post('/login', async (req, res) => {
 // Route per il logout di un utente --> risponde a POST su /api/auth/logout
 router.post('/logout', async (req, res) => {
   try {
-    
-  //TODO (security) In un'implementazione stateless con JWT, il logout è gestito lato client eliminando il token.
-  
-  return res.status(200).json({
+    return res.status(200).json({
     message: 'Logout effettuato con successo'
-  });
+    });
   } catch (error) {
     console.error('Errore durante il logout:', error);
     return res.status(500).json({
@@ -165,13 +200,20 @@ router.post('/forgot-password', async (req, res) => {
         message: 'Utente non trovato'
       });
     }
-// TODO(security): introdurre token temporaneo di reset e scadenza
 // TODO(security): integrare invio email per il recupero password
 // TODO(security): evitare enumeration e abuso della funzionalità
 // Per ora, rispondiamo sempre con successo per evitare enumeration, ma in un'implementazione reale dovremmo inviare un'email con un link di reset password
+    
+    // Genero un token temporaneo per il reset della password --> payload minimale visto il one-time-use e la breve durata  
+    const token = jwt.sign(
+      { userId: user._id, }, 
+      process.env.JWT_SECRET,
+      { expiresIn: '10m' } // Il token scade dopo 10 minuti per limitare il rischio di abuso
+    );    
 
     return res.status(200).json({
-      message: 'Email inserita correttamente, riceverai istruzioni per reimpostare la password'
+      message: 'Email inserita correttamente, riceverai istruzioni per reimpostare la password',
+      token: token // Per ora restituiamo il token direttamente nella risposta
     });
   } catch (error) {
     console.error('Errore durante il recupero password:', error);
@@ -182,7 +224,7 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 //Route per il reset password --> risponde a POST su /api/auth/reset-password
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', checkAuth, async (req, res) => { //utilizzo il middleware checkAuth per verificare la validità del token JWT temporaneo
   try {
     const { email, newPassword, confirmedPassword } = req.body;
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
@@ -218,7 +260,7 @@ router.post('/reset-password', async (req, res) => {
     await user.save();
 
     // TODO(security): sostituire il reset diretto con token temporaneo e scadenza
-    // TODO(security): invalidare eventuali sessioni/token esistenti in una fase successiva
+    // TODO(security): invalidare eventuali sessioni/token esistenti in una fase successiva --> non si può fare
 
     return res.status(200).json({
       message: 'Password aggiornata con successo'
@@ -230,41 +272,5 @@ router.post('/reset-password', async (req, res) => {
     });
   }
 });
-
-// Middleware per proteggere le route private di qualunque utente autenticato --> controlla la validità del token JWT
-const checkAuth = (req, res, next) => {
-  var token = req.headers['authorization']; // Recupero il token dall'header Authorization
-  if (!token || !token.startsWith('Bearer ')) {
-    return res.status(401).json({
-      message: 'Token mancante o formato non valido: Accesso negato'
-    });
-  }
-  token = token.split(' ')[1]; 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        message: 'Token scaduto: Accesso negato'
-      });
-    } else {
-      return res.status(403).json({
-        message: 'Token non valido: Accesso negato'
-      });
-    }
-  }
-}
-
-// Middleware per identificare il ruolo dell'utente e stabilire se ha i permessi per eseguire l'azione richiesta --> utilizzato nei singoli endpoint (es. solo gli allevatori possono modificare i dati dell'allevamento)
-const checkUserType = (allowedTypes) => (req, res, next) => {
-  if (!allowedTypes.includes(req.user.userType)) {
-    return res.status(403).json({
-      message: 'Permessi insufficienti: Accesso negato'
-    });
-  }
-  next();
-}
 
 export default router;

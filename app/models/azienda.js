@@ -11,7 +11,7 @@ const aziendaSchema = new Schema({
     ownerUserId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: false, // In attesa del middleware di autenticazione, questo campo può essere opzionale --> poi impostare su true
+        required: true,
         index: true
     },
     // campo obbligatorio 
