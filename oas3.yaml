@@ -52,7 +52,7 @@ paths:
             schema:
               $ref: '#/components/schemas/SignupRequest'
             examples:
-              consumatore:
+              allevatore:
                 value:
                   name: Mario
                   surname: Rossi
@@ -65,20 +65,20 @@ paths:
                   surname: Rossi
                   email: marisa.rossi@example.com
                   password: Password123
-                  userType: consumatore
+                  userType: allevatore
               distributore:
                 value:
                   name: Luca
                   surname: Verdi
                   email: luca.verdi@example.com
-                  password: DistPass123
+                  password: Password123
                   userType: distributore
               veterinario:
                 value:
                   name: Laura
                   surname: Bianchi
                   email: laura.bianchi@example.com
-                  password: VetPass123
+                  password: Password123
                   userType: veterinario
 
       responses:
@@ -146,13 +146,21 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
             examples:
-              example1:
+              consumatore:
                 value:
                   email: mario.rossi@example.com
                   password: Password123
-              marisaRossi:
+              allevatore:
                 value:
                   email: marisa.rossi@example.com
+                  password: Password123
+              distributore:
+                value:
+                  email: luca.verdi@example.com
+                  password: Password123
+              veterinario:
+                value:
+                  email: laura.bianchi@example.com
                   password: Password123
       responses:
         '200':
@@ -284,7 +292,7 @@ paths:
   /api/auth/reset-password:
       post:
         summary: Reset della password
-        description: Permette agli utenti di reimpostare la propria password fornendo l'email, una nuova password e la conferma della nuova password. Il valore di confirmedPassword deve essere uguale a newPassword. In questa versione non è implementato un sistema di token per la verifica dell'identità, ma sarà aggiunto in futuro.
+        description: Permette agli utenti di reimpostare la propria password fornendo l'email e una nuova password. In questa versione non è implementato un sistema di token per la verifica dell'identità, ma sarà aggiunto in futuro.
         tags:
           - Auth
         requestBody:
