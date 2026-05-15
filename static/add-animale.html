@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title >Aggiungi Animale - MuccApp</title>
+  // Controllo accesso alla pagina, solo gli utenti con ruolo "allevatore" possono accedervi
+  <script src="/auth-control.js"></script> 
+  <script>
+    protectRoute(['allevatore']);
+  </script>
+  // Fine controllo accesso
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>

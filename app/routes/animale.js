@@ -2,53 +2,24 @@ import express from 'express';
 import mongoose from 'mongoose';
 import animale from '../models/animale.js';
 import azienda from '../models/azienda.js';
-import jwt from 'jsonwebtoken';
+import { checkAuth, checkUserType } from './auth.js';
 
 const router = express.Router();
 
-// Middleware per proteggere le route private di qualunque utente autenticato --> controlla la validità del token JWT
-const checkAuth = (req, res, next) => {
-    let token = req.headers['authorization']; // Recupero il token dall'header Authorization
-
-    if (!token || !token.startsWith('Bearer ')) {
-        return res.status(401).json({
-            message: 'Token mancante o formato non valido: Accesso negato'
-        });
-    }
-
-    token = token.split(' ')[1];
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                message: 'Token scaduto: Accesso negato'
-            });
-        }
-
-        return res.status(403).json({
-            message: 'Token non valido: Accesso negato'
-        });
-    }
-};
-
-// Middleware per identificare il ruolo dell'utente e stabilire se ha i permessi per eseguire l'azione richiesta
-const checkUserType = (allowedTypes) => (req, res, next) => {
-    if (!allowedTypes.includes(req.user.userType)) {
-        return res.status(403).json({
-            message: 'Permessi insufficienti: Accesso negato'
-        });
-    }
-    next();
-};
+// Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo router
+router.use(checkAuth);
+router.use(checkUserType('allevatore'));
 
 //handler per la registrazione di un nuovo animale --> risponde a POST su /api/animali/register
 const registerAnimale = async (req, res) => {
     try {
         const { matricola, name, species, dataNascita, sesso, razza, figliaDi, aziendaId, note } = req.body;
+
+        if (req.user.userType !== 'allevatore') {
+            return res.status(403).json({
+                message: 'Solo gli allevatori possono registrare un\'azienda'
+            });
+        }
         const normalizedMatricola = typeof matricola === 'string' ? matricola.trim().toUpperCase() : '';
         const normalizedName = typeof name === 'string' ? name.trim() : '';
         const normalizedSpecies = typeof species === 'string' ? species.trim().toLowerCase() : '';
@@ -113,6 +84,6 @@ const registerAnimale = async (req, res) => {
     }
 };
 
-router.post('/register', checkAuth, checkUserType(['allevatore']), registerAnimale);
+router.post('/register', registerAnimale);
 export default router;
         
