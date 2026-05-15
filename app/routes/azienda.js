@@ -1,22 +1,24 @@
 import express from 'express';
 import Azienda from '../models/azienda.js';
 import mongoose from 'mongoose';
-//TODO(security) importazione del middleware di autenticazione per proteggere le rotte che richiedono l'autenticazione
-//import authenticate from '../middleware/authenticate.js';
+import { checkAuth, checkUserType } from './auth.js';
 
 const router = express.Router();
+
+// Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo router
+router.use(checkAuth);
+router.use(checkUserType('allevatore'));
 
 // Handler per la registrazione di una nuova azienda
 const registerAzienda = async (req, res) => {
     try {
         const { vatNumber, companyName, address, emailAzienda, phoneNumber, website } = req.body;
 
-        // TODO(security): Verificare che l'utente sia un allevatore quando il middleware di autenticazione sarà implementato
-        // if (req.user.userType !== 'allevatore') {
-        //     return res.status(403).json({
-        //         message: 'Solo gli allevatori possono registrare un\'azienda'
-        //     });
-        // }
+        if (req.user.userType !== 'allevatore') {
+            return res.status(403).json({
+                message: 'Solo gli allevatori possono registrare un\'azienda'
+            });
+        }
         // trasformazione del numero di partita IVA in maiuscolo e rimozione degli spazi
         const normalizedVatNumber = typeof vatNumber === 'string' ? vatNumber.trim().toUpperCase() : '';
         const normalizedCompanyName = typeof companyName === 'string' ? companyName.trim() : '';
@@ -42,14 +44,14 @@ const registerAzienda = async (req, res) => {
 
         if (existingAzienda) {
             return res.status(409).json({
-                message: 'Esiste già un’azienda con questa partita IVA'
+                message: 'Esiste già un\'azienda con questa partita IVA'
             });
         }
 
         // Creazione della nuova azienda
-        // TODO(security): req.user._id sarà valorizzato quando il middleware di autenticazione sarà implementato
+
         const newAzienda = new Azienda({
-            ownerUserId: req.user?._id || null, // In attesa del middleware di autenticazione, impostiamo ownerUserId a null
+            ownerUserId: req.user._id,
             vatNumber: normalizedVatNumber,
             companyName: normalizedCompanyName,
             emailAzienda: normalizedEmailAzienda,
@@ -77,7 +79,7 @@ const registerAzienda = async (req, res) => {
         console.error('Errore durante la registrazione dell\'azienda:', error);
         if (error?.code === 11000) {
             return res.status(409).json({
-                message: 'Esiste già un’azienda con questa partita IVA'
+                message: 'Esiste già un\'azienda con questa partita IVA'
             });
         }
         return res.status(500).json({
@@ -101,8 +103,13 @@ router.delete('/:id', async (req, res) => {
                 message: 'ID dell\'azienda è obbligatorio'
             });
         }
-// TODO(security): Verificare che l'utente sia un allevatore e proprietario dell'azienda quando il middleware di autenticazione sarà implementato
-// TODO (relations): Prima di eliminare l'azienda, verificare che non ci siano mandrie o documenti associati ad essa, o implementare una cancellazione a cascata
+        // Verifico che l'utente sia il proprietario dell'azienda
+        if (req.user._id !== req.ownerUserId) {
+            return res.status(403).json({
+                message: 'Non sei il proprietario di questa azienda'
+            });
+        }
+        // TODO (relations): Prima di eliminare l'azienda, verificare che non ci siano mandrie o documenti associati ad essa, o implementare una cancellazione a cascata
         const deletedAzienda = await Azienda.findByIdAndDelete(id);
 
         if (!deletedAzienda) {
