@@ -229,6 +229,31 @@ button:disabled {
   gap: 12px;
 }
 
+.dashboard-header .header-right-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dashboard-header .dashboard-header-pill {
+  border: 2px solid var(--green-light);
+  color: white;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  line-height: 1;
+  white-space: nowrap;
+  background-color: transparent;
+}
+
+.dashboard-header .dashboard-header-pill-button {
+  cursor: pointer;
+}
+
+.dashboard-header .dashboard-header-pill-button:hover {
+  background-color: rgba(168, 213, 94, 0.25);
+}
+
 .dashboard-header button {
   background-color: transparent;
   border: 2px solid var(--green-light);
@@ -240,6 +265,11 @@ button:disabled {
 
 .dashboard-header button:hover {
   background-color: rgba(168, 213, 94, 0.25);
+}
+
+.dashboard-header .dashboard-title-light {
+  color: rgb(245, 248, 221);
+  margin: 0;
 }
 
 /* Logout con accento giallo */
@@ -255,10 +285,6 @@ button:disabled {
 /* ---- Navbar dropdown ---- */
 .nav-dropdown {
   position: relative;
-}
-
-.nav-dropdown-toggle {
-  /* eredita stile da .dashboard-header button */
 }
 
 .nav-dropdown-menu {
