@@ -184,12 +184,18 @@ router.post('/forgot-password', async (req, res) => {
 //Route per il reset password --> risponde a POST su /api/auth/reset-password
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, newPassword } = req.body;
+    const { email, newPassword, confirmedPassword } = req.body;
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
-    // Controllo che email e nuova password siano presenti
-    if (!normalizedEmail || !newPassword) {
+    // Controllo che email, nuova password e conferma password siano presenti
+    if (!normalizedEmail || !newPassword || !confirmedPassword) {
       return res.status(400).json({
-        message: 'Email e nuova password sono obbligatorie'
+        message: 'Email, newPassword e confirmedPassword sono obbligatori'
+      });
+    }
+    // Controllo che la nuova password coincida con la password di conferma
+    if (newPassword !== confirmedPassword) {
+      return res.status(400).json({
+        message: 'La nuova password e quella di conferma non coincidono'
       });
     }
     // Controllo se esiste un utente con l'email fornita

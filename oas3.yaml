@@ -102,10 +102,13 @@ paths:
               examples:
                 missingFields:
                   value:
-                    message: Name, surname, email, password e userType sono obbligatori
+                    message: Nome, cognome, email, password e ruolo sono obbligatori
                 invalidUserType:
                   value:
-                    message: Ruolo non valido
+                    message: ruolo non valido.
+                invalidEmailOrPassword:
+                  value:
+                    message: Password deve essere almeno di 8 caratteri e e email deve essere in formato valido
 
         '409':
           description: Utente già esistente
@@ -281,7 +284,7 @@ paths:
   /api/auth/reset-password:
       post:
         summary: Reset della password
-        description: Permette agli utenti di reimpostare la propria password fornendo l'email e una nuova password. In questa versione non è implementato un sistema di token per la verifica dell'identità, ma sarà aggiunto in futuro.
+        description: Permette agli utenti di reimpostare la propria password fornendo l'email, una nuova password e la conferma della nuova password. Il valore di confirmedPassword deve essere uguale a newPassword. In questa versione non è implementato un sistema di token per la verifica dell'identità, ma sarà aggiunto in futuro.
         tags:
           - Auth
         requestBody:
