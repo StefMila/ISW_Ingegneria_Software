@@ -5,7 +5,7 @@ Web app gestionale per allevamenti, con funzionalita di tracciabilita e gestione
 ## Funzionalita principali
 - Autenticazione utenti con JWT (signup, login, logout, reset password).
 - Gestione aziende per utenti con ruolo allevatore.
-- Registrazione animali associati a un'azienda.
+- Registrazione animali associati a un'azienda (endpoint annidati su azienda).
 - View mandria con:
 	- filtri per colonna
 	- ordinamento per colonna
@@ -76,9 +76,16 @@ Credenziali principali seed:
 Con server avviato:
 - Swagger UI: `http://localhost:3000/api-docs`
 
-Endpoint principale della view mandria documentato:
-- `GET /api/animali/azienda/{aziendaId}`
+Endpoint ufficiali (consigliati):
+- `POST /api/azienda/{aziendaId}/animali`
+- `GET /api/azienda/{aziendaId}/animali`
 	- supporta filtri, sort e paginazione
+
+Endpoint legacy (deprecati ma ancora supportati per compatibilita):
+- `POST /api/animali/register`
+- `GET /api/animali/azienda/{aziendaId}`
+
+Nota: nel modello corrente gli animali sono risorse dell'azienda; i controlli autorizzativi verificano che l'utente possa operare solo sulle proprie aziende.
 
 
 ## Convenzioni

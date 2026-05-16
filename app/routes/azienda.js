@@ -2,6 +2,7 @@ import express from 'express';
 import Azienda from '../models/azienda.js';
 import mongoose from 'mongoose';
 import { checkAuth, checkUserType } from './auth.js';
+import { registerAnimale, getAnimali } from './animale.js';
 
 const router = express.Router();
 
@@ -92,6 +93,10 @@ const registerAzienda = async (req, res) => {
 router.post('/create', checkAuth, checkUserType(['allevatore']), registerAzienda);
 router.post('/signup', checkAuth, checkUserType(['allevatore']), registerAzienda);
 router.post('/', checkAuth, checkUserType(['allevatore']), registerAzienda);
+
+// Endpoint annidati consigliati per la gestione animali per azienda.
+router.post('/:aziendaId/animali', registerAnimale);
+router.get('/:aziendaId/animali', getAnimali);
 
 // Route per ottenere le aziende dell'utente autenticato (allevatore)
 router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) => {
