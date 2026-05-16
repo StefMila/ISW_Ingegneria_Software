@@ -155,7 +155,48 @@ const getAnimali = async (req, res) => {
     }
 };
 
+const deleteAnimale = async (req, res) => {
+    try {
+        const { id } = req.params;
 
+        if (!id) {
+            return res.status(400).json({
+                message: 'ID della mucca è obbligatorio'
+            });
+        }
+        // Verifico che la mucca faccia parte dell'azienda interessata.
+        const azienda = await Azienda.findOne({ _id: req.aziendaId, ownerUserId: req.user._id });
+
+        if (!azienda) {
+            return res.status(403).json({
+                message: 'Questo animale non appartiene alla tua azienda'
+            });
+        }
+        //TODO: controllare se l'animale è associato a lotti prodotto/cartelle cliniche/dati IoT: in caso affermativo, applicare soft delete.
+        const deletedAnimale = await Animale.findByIdAndDelete(id);
+
+        if (!deletedAnimale) {
+            return res.status(404).json({
+                message: 'Animale non trovato'
+            });
+        }
+        res.status(200).json({
+            message: 'Animale eliminato con successo'
+        });
+    } catch (error) {
+        console.error('Errore durante l\'eliminazione dell\'animale:', error);
+        
+        //cast error per id non valido
+        if (error.name === 'CastError' && error.kind === 'ObjectId') {
+            return res.status(400).json({
+                message: 'ID dell\'animale non valido'
+            });
+        }
+        return res.status(500).json({
+            message: 'Errore interno del server'
+        });
+    }
+}; 
 
 
 
