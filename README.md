@@ -1,61 +1,91 @@
 # MuccApp
-> [github mmarkdown guide] (https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#what)
 
-## Descrizione
-Web app gestionale per allevamenti con sistema per tracciabilità lungo la filiera. Include sistemi di integrità dei dati e tracciabilità GDPR.
+Web app gestionale per allevamenti, con funzionalita di tracciabilita e gestione azienda/mandria.
 
-## Tecnologie Utilizzate
-- Node.js e Express (Framework backend)
-- MongoDB e Mongoose (Database NoSQL e ODM )
-- JSON Web Tokens (JWT) (Autenticazione sicura)
-- Jest e Supertest (Testing automatizzato)
-- Swagger (Documentazione API)
+## Funzionalita principali
+- Autenticazione utenti con JWT (signup, login, logout, reset password).
+- Gestione aziende per utenti con ruolo allevatore.
+- Registrazione animali associati a un'azienda.
+- View mandria con:
+	- filtri per colonna
+	- ordinamento per colonna
+	- paginazione server-side
 
-### Frontend o output di Swagger
-> Inserire qui uno screenshot
+## Stack tecnologico
+- Node.js + Express
+- MongoDB + Mongoose
+- JSON Web Token (JWT)
+- Swagger UI / OpenAPI 3
+- Jest + Supertest
 
-## Installazione e configurazione
+## Requisiti
+- Node.js 22.x
+- MongoDB in esecuzione in locale
+
+## Installazione
 1. Clona il repository
-```git clone https://github.com/StefMila/ISW_Ingegneria_Software```
-2. Installa le dipendenze
-```npm install```
-3. Configura le variabili d'ambiente
-```cp .env.example .env```
 
-## Script
-> da revisionare
-- (```npm run dev```: Avvia il server in modalità sviluppo con Nodemon (auto-reload))
-- ```npm start```: Avvia il server in modalità produzione
-- ```npm test```: Esegue la suite di test con Jest
--( ```npm run gen-dev```: Aggiorna il file .env.example in base al codice)
+```bash
+git clone https://github.com/StefMila/ISW_Ingegneria_Software
+cd ISW_Ingegneria_Software
+```
+
+2. Installa le dipendenze
+
+```bash
+npm install
+```
+
+3. Configura le variabili ambiente
+
+Il backend legge il file `server/.env`.
+Assicurati che siano presenti almeno:
+- `DB_URL`
+- `JWT_SECRET`
+
+## Avvio applicazione
+
+```bash
+npm run dev
+```
+
+Server: `http://localhost:3000`
+
+## Script disponibili
+- `npm run dev`: avvia il server in sviluppo con nodemon
+- `npm start`: avvia il server in modalita produzione
+- `npm test`: esegue i test con Jest
+- `npm run gen-env`: aggiorna la specifica env
+- `npm run seed`: popola il database con dati di test
+
+## Seed database
+
+Esegui:
+
+```bash
+npm run seed
+```
+
+Lo script crea/riutilizza un utente allevatore di test e popola aziende/animali.
+Credenziali principali seed:
+- email: `allevatore.test@muccapp.it`
+- password: `Password123!`
 
 ## Documentazione API
-Una volta avviato il server, la documentazione interattiva Swagger è disponibile all'indirizzo
-http://localhost:3000/api-docs
 
-### Esempi APi
-> (inserire qui come fare es una chiamata POST per aggiungere una mucca)
+Con server avviato:
+- Swagger UI: `http://localhost:3000/api-docs`
 
-## Convenzioni di qualità e integrità
-Il progetto segue queste convenzioni:
-- **Integrità Ambientale**: Utilizzo di dotenv-safe per prevenire l'avvio dell'app in mancanza di configurazioni essenziali
-- **Conventional Commits**: I messaggi di commit seguono lo standard Angular validato da ```commitlint``` e ```husky```.
-Struttura del messaggio di commit:
-```<type>[optional scope]: <description>```
-```[optional body]```
-```[optional footer(s)]```
+Endpoint principale della view mandria documentato:
+- `GET /api/animali/azienda/{aziendaId}`
+	- supporta filtri, sort e paginazione
 
- _- type: build:, chore:, ci:, docs:, style:, refactor:, perf:, test:, altri secondo [convenzione Angular](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)
 
-> fix: a commit of the type fix patches a bug in your codebase (this correlates with PATCH in Semantic Versioning).
-feat: a commit of the type feat introduces a new feature to the codebase (this correlates with MINOR in Semantic Versioning).
-BREAKING CHANGE: a commit that has a footer BREAKING CHANGE:, or appends a ! after the type/scope, introduces a breaking API change (correlating with MAJOR in Semantic Versioning). A BREAKING CHANGE can be part of commits of any type.
-types other than fix: and feat: are allowed, for example @commitlint/config-conventional (based on the Angular convention) recommends build:, chore:, ci:, docs:, style:, refactor:, perf:, test:, and others.
-footers other than BREAKING CHANGE: <description> may be provided and follow a convention similar to git trailer format.
+## Convenzioni
+- Conventional Commits (stile Angular)
+- Tracciabilita modelli con `createdAt`, `updatedAt`, `__v`
 
-- **Tracciabilità**: Ogni modello nel database include timestamp (```createdAt```, ```updatedAt```) e controllo della concorrenza tramite ```__v``` (versionKey)
-
-# Autori
+## Autori
 - Alice
 - Elena
 - Stefania
