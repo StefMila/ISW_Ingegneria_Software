@@ -259,6 +259,25 @@ button:disabled {
   background-color: rgba(168, 213, 94, 0.25);
 }
 
+.nav-home-btn {
+  background-color: var(--green-mid);
+  border: 2px solid var(--green-light);
+  color: white;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-home-btn:hover {
+  background-color: var(--green-dark);
+  color: var(--green-light);
+}
+
 .dashboard-header button {
   background-color: transparent;
   border: 2px solid var(--green-light);
@@ -372,23 +391,124 @@ button:disabled {
   }
 }
 
+/* ---- Tabella animali con filtri ---- */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
 
-@media (max-width: 900px) {
-  .dashboard-container {
-    padding: 0 12px 16px;
+.animali-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  background: var(--card-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(17, 57, 1, 0.1);
+}
+
+.animali-table thead tr.header-labels th {
+  background: var(--green-dark);
+  color: #f0f7e6;
+  padding: 10px 12px;
+  text-align: left;
+
+  .animali-table thead tr.header-labels th[data-sort] {
+    cursor: pointer;
+    user-select: none;
   }
 
-  .dashboard-header {
-    padding: 10px 12px;
+  .animali-table thead tr.header-labels th[data-sort]:hover {
+    background: #1f4a08;
   }
 
-  .dashboard-header .nav-buttons,
-  .dashboard-header .header-right-actions {
-    width: 100%;
+  .animali-table thead tr.header-labels th.sorted {
+    background: #2d6e10;
+    color: var(--yellow-gold);
   }
 
-  .dashboard-header .header-right-actions {
-    justify-content: flex-start;
-    margin-left: 0;
+  .sort-icon {
+    font-size: 0.75rem;
+    opacity: 0.85;
   }
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.animali-table thead tr.header-filters th {
+  background: #e8f5d4;
+  padding: 6px 8px;
+}
+
+.animali-table thead tr.header-filters th input,
+.animali-table thead tr.header-filters th select {
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 0.85rem;
+  border: 1px solid #b5c9a0;
+  border-radius: 6px;
+  background: white;
+  color: var(--text-dark);
+  box-sizing: border-box;
+}
+
+.animali-table thead tr.header-filters th input:focus,
+.animali-table thead tr.header-filters th select:focus {
+  outline: 2px solid var(--green-light);
+  border-color: var(--green-mid);
+}
+
+.animali-table tbody tr {
+  border-bottom: 1px solid #ddeec9;
+  transition: background 0.12s;
+}
+
+.animali-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.animali-table tbody tr:hover {
+  background: #f3fbea;
+}
+
+.animali-table tbody td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  color: var(--text-dark);
+}
+
+.animali-table tbody tr.empty-row td {
+  text-align: center;
+  color: var(--text-mid);
+  font-style: italic;
+  padding: 24px;
+}
+
+/* Paginazione */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.pagination-bar button {
+  padding: 6px 16px;
+  font-size: 0.9rem;
+}
+
+.pagination-bar span {
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+/* Contenitore pagina con larghezza estesa per la tabella */
+.dashboard-container-wide {
+  width: 100%;
+  max-width: 1300px;
+  padding: 0 24px 24px;
+  align-self: flex-start;
+  margin-top: 0;
 }
