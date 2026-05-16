@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import animale from '../models/animale.js';
-import azienda from '../models/azienda.js';
+import Azienda from '../models/azienda.js';
 import { checkAuth, checkUserType } from './auth.js';
 
 const router = express.Router();
