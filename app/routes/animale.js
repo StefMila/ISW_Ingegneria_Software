@@ -10,10 +10,34 @@ const router = express.Router();
 router.use(checkAuth);
 router.use(checkUserType('allevatore'));
 
+const resolveAziendaIdFromRequest = (req) => {
+    const pathAziendaId = typeof req.params?.aziendaId === 'string' ? req.params.aziendaId.trim() : '';
+    const bodyAziendaId = typeof req.body?.aziendaId === 'string' ? req.body.aziendaId.trim() : '';
+    return pathAziendaId || bodyAziendaId;
+};
+
+const assertAziendaOwnedByUser = async (aziendaId, userId) => {
+    if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
+        return { ok: false, status: 400, message: 'aziendaId non è un ObjectId valido' };
+    }
+
+    const existingAzienda = await Azienda.findById(aziendaId).select('_id ownerUserId');
+    if (!existingAzienda) {
+        return { ok: false, status: 404, message: 'Azienda non trovata' };
+    }
+
+    if (String(existingAzienda.ownerUserId) !== String(userId)) {
+        return { ok: false, status: 403, message: 'Non hai i permessi per questa azienda' };
+    }
+
+    return { ok: true };
+};
+
 //handler per la registrazione di un nuovo animale --> risponde a POST su /api/animali/register
-const registerAnimale = async (req, res) => {
+export const registerAnimale = async (req, res) => {
     try {
-        const { matricola, name, species, dataNascita, sesso, razza, figliaDi, aziendaId, note } = req.body;
+        const { matricola, name, species, dataNascita, sesso, razza, figliaDi, note } = req.body;
+        const aziendaId = resolveAziendaIdFromRequest(req);
 
         if (req.user.userType !== 'allevatore') {
             return res.status(403).json({
@@ -40,17 +64,11 @@ const registerAnimale = async (req, res) => {
                 message: 'Esiste già un animale con questa matricola'
             });
         }
-        // Controllo che aziendaId sia un ObjectId valido
-        if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
-            return res.status(400).json({
-                message: 'aziendaId non è un ObjectId valido'
-            });
-        }
-        //controllo che l'azienda esista
-        const existingAzienda = await azienda.findById(aziendaId);
-        if (!existingAzienda) {
-            return res.status(404).json({
-                message: 'Azienda non trovata'
+
+        const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
+        if (!ownershipCheck.ok) {
+            return res.status(ownershipCheck.status).json({
+                message: ownershipCheck.message
             });
         }
         // Creazione del nuovo animale
@@ -86,8 +104,23 @@ const registerAnimale = async (req, res) => {
 
 // visualizza tutti gli animali di un'azienda --> risponde a GET 
 // si poteva fare anche inline come handler della rotta, ma per mantenere il codice più pulito e leggibile ho deciso di estrarlo in una funzione a parte
-const getAnimali = async (req, res) => {
+export const getAnimali = async (req, res) => {
     try {
+        const aziendaId = resolveAziendaIdFromRequest(req);
+
+        if (!aziendaId) {
+            return res.status(400).json({
+                message: 'aziendaId è obbligatorio'
+            });
+        }
+
+        const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
+        if (!ownershipCheck.ok) {
+            return res.status(ownershipCheck.status).json({
+                message: ownershipCheck.message
+            });
+        }
+
         const {
             matricola,
             sortBy = 'createdAt',
@@ -115,7 +148,7 @@ const getAnimali = async (req, res) => {
         const safeSortOrder = sortOrder === 'asc' ? 1 : -1;
 
         // Costruisco il filtro combinando tutti i campi forniti + aziendaId obbligatorio
-        const filter = { aziendaId: req.params.aziendaId };
+        const filter = { aziendaId };
 
         if (matricola) filter.matricola = { $regex: matricola.trim(), $options: 'i' };
         if (name) filter.name = { $regex: name.trim(), $options: 'i' };
@@ -159,7 +192,12 @@ const getAnimali = async (req, res) => {
 
 
 
+// Endpoint legacy: mantenuti per compatibilita' con frontend/consumer esistenti.
 router.post('/register', registerAnimale);
 router.get('/azienda/:aziendaId', getAnimali);
+
+// Endpoint consigliati in stile nested resource.
+router.post('/azienda/:aziendaId/animali', registerAnimale);
+router.get('/azienda/:aziendaId/animali', getAnimali);
 export default router;
         
