@@ -54,7 +54,7 @@ const fetchAnimali = async () => {
   params.set('sortOrder', currentSort.order);
 
   try {
-    const response = await fetch(`/api/animali/azienda/${aziendaId}?${params.toString()}`, {
+    const response = await fetch(`/api/azienda/${aziendaId}/animali?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 

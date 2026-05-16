@@ -107,7 +107,7 @@ async function seed() {
   // 3. Animali — salta quelli con matricola già presente
   let inseriti = 0;
   let saltati = 0;
-  for (const dati of animaliData) {
+  for (const dati of animaliDataExtra) {
     const esiste = await Animale.findOne({ matricola: dati.matricola });
     if (esiste) { saltati++; continue; }
 
