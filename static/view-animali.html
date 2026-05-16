@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La tua mandria - MuccApp</title>
+  <!-- Controllo accesso alla pagina: solo gli utenti con ruolo "allevatore" possono accedervi -->
+  <script src="/auth-control.js"></script>
+  <script>
+    protectRoute(['allevatore']);
+  </script>
+  <!-- Fine controllo accesso -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-container-wide">
+    <header class="dashboard-header">
+      <div class="nav-buttons">
+        <a href="/home-allevatore.html" class="nav-home-btn">← Home</a>
+        <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">La tua azienda ▾</button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/add-azienda.html">Aggiungi azienda</a></li>
+            <li><a href="/view-azienda.html">Elimina azienda</a></li>
+          </ul>
+        </div>
+        <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">La tua mandria ▾</button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/add-animale.html">Aggiungi animale</a></li>
+            <li><a href="/view-animali.html">Visualizza animali</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="header-right-actions">
+        <span id="currentAziendaBadge" class="dashboard-header-pill">Azienda attiva: non selezionata</span>
+        <button id="logoutButton">Logout</button>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>La tua mandria 🐄</h2>
+      <p id="statusMsg" class="status"></p>
+
+      <div class="table-wrapper">
+        <table class="animali-table" id="animaliTable">
+          <thead>
+            <!-- Riga 1: etichette colonne -->
+            <tr class="header-labels">
+              <th data-sort="matricola">Matricola <span class="sort-icon"></span></th>
+              <th data-sort="name">Nome <span class="sort-icon"></span></th>
+              <th data-sort="species">Specie <span class="sort-icon"></span></th>
+              <th data-sort="dataNascita">Data di nascita <span class="sort-icon"></span></th>
+              <th data-sort="sesso">Sesso <span class="sort-icon"></span></th>
+              <th data-sort="razza">Razza <span class="sort-icon"></span></th>
+              <th>Figlia di</th>
+              <th>Note</th>
+            </tr>
+            <!-- Riga 2: filtri per colonna -->
+            <tr class="header-filters">
+              <th>
+                <input type="text" id="filter-matricola" placeholder="Filtra…" data-filter="matricola">
+              </th>
+              <th>
+                <input type="text" id="filter-name" placeholder="Filtra…" data-filter="name">
+              </th>
+              <th>
+                <select id="filter-species" data-filter="species">
+                  <option value="">Tutte</option>
+                  <option value="mucca">Mucca</option>
+                  <option value="pecora">Pecora</option>
+                  <option value="capra">Capra</option>
+                  <option value="pollo">Pollo</option>
+                  <option value="coniglio">Coniglio</option>
+                </select>
+              </th>
+              <th style="min-width:200px;">
+                <div style="display:flex;gap:4px;align-items:center;font-size:0.75rem;">
+                  <input type="date" id="filter-dataNascitaDa" data-filter="dataNascitaDa" title="Da">
+                  <span>→</span>
+                  <input type="date" id="filter-dataNascitaA" data-filter="dataNascitaA" title="A">
+                </div>
+              </th>
+              <th>
+                <select id="filter-sesso" data-filter="sesso">
+                  <option value="">Tutti</option>
+                  <option value="maschio">Maschio</option>
+                  <option value="femmina">Femmina</option>
+                </select>
+              </th>
+              <th>
+                <input type="text" id="filter-razza" placeholder="Filtra…" data-filter="razza">
+              </th>
+              <th>
+                <input type="text" id="filter-figliaDi" placeholder="Filtra…" data-filter="figliaDi">
+              </th>
+              <th>
+                <input type="text" id="filter-note" placeholder="Filtra…" data-filter="note">
+              </th>
+            </tr>
+          </thead>
+          <tbody id="animaliBody">
+            <tr class="empty-row">
+              <td colspan="8">Caricamento…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination-bar" id="paginationBar">
+        <button id="prevPage" disabled>‹ Indietro</button>
+        <span id="pageInfo">Pagina 1</span>
+        <button id="nextPage" disabled>Avanti ›</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/view-animali.js"></script>
+  <script src="/logout.js"></script>
+</body>
+</html>

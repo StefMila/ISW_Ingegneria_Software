@@ -84,6 +84,82 @@ const registerAnimale = async (req, res) => {
     }
 };
 
+// visualizza tutti gli animali di un'azienda --> risponde a GET 
+// si poteva fare anche inline come handler della rotta, ma per mantenere il codice più pulito e leggibile ho deciso di estrarlo in una funzione a parte
+const getAnimali = async (req, res) => {
+    try {
+        const {
+            matricola,
+            sortBy = 'createdAt',
+            sortOrder = 'desc',
+            name,
+            species,
+            sesso,
+            razza,
+            figliaDi,
+            note,
+            dataNascitaDa,
+            dataNascitaA,
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        // Inserisco il numero di pagina e il limite di risultati per la paginazione, con valori di default se non specificati
+        const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
+        const parsedLimit = Math.max(parseInt(limit, 10) || 10, 1);
+        const skip = (parsedPage - 1) * parsedLimit;
+
+        // Whitelist dei campi ordinabili per evitare injection
+        const allowedSortFields = ['matricola', 'name', 'species', 'dataNascita', 'sesso', 'razza', 'createdAt'];
+        const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
+        const safeSortOrder = sortOrder === 'asc' ? 1 : -1;
+
+        // Costruisco il filtro combinando tutti i campi forniti + aziendaId obbligatorio
+        const filter = { aziendaId: req.params.aziendaId };
+
+        if (matricola) filter.matricola = { $regex: matricola.trim(), $options: 'i' };
+        if (name) filter.name = { $regex: name.trim(), $options: 'i' };
+        if (species) filter.species = species.trim().toLowerCase();
+        if (sesso) filter.sesso = sesso.trim().toLowerCase();
+        if (razza) filter.razza = { $regex: razza.trim(), $options: 'i' };
+        if (figliaDi) filter.figliaDi = { $regex: figliaDi.trim(), $options: 'i' };
+        if (note) filter.note = { $regex: note.trim(), $options: 'i' };
+
+        if (dataNascitaDa || dataNascitaA) {
+            filter.dataNascita = {};
+            if (dataNascitaDa) filter.dataNascita.$gte = new Date(dataNascitaDa);
+            if (dataNascitaA) filter.dataNascita.$lte = new Date(dataNascitaA);
+        }
+
+        // Recupero il totale degli animali che corrispondono al filtro per poter calcolare il numero totale di pagine
+        const totalItems = await animale.countDocuments(filter);
+        const animali = await animale.find(filter)
+            .sort({ [safeSortBy]: safeSortOrder })
+            .skip(skip)
+            .limit(parsedLimit);
+
+        return res.status(200).json({
+            items: animali,
+            pagination: {
+                page: parsedPage,
+                limit: parsedLimit,
+                totalItems,
+                totalPages: Math.ceil(totalItems / parsedLimit)
+            }
+        });
+    } catch (error) {
+        console.error('Errore durante il recupero degli animali:', error);
+        return res.status(500).json({
+            message: 'Errore interno del server'
+        });
+    }
+};
+
+
+
+
+
 router.post('/register', registerAnimale);
+router.get('/azienda/:aziendaId', getAnimali);
 export default router;
         
