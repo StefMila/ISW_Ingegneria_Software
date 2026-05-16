@@ -566,23 +566,30 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               
 
-  /api/animali/register:
+  /api/azienda/{aziendaId}/animali:
     post:
-      summary: Registra un nuovo animale
-      description: Permette a un allevatore autenticato di registrare un animale associato a un'azienda esistente.
+      summary: Registra un nuovo animale per un'azienda
+      description: Endpoint consigliato. Permette a un allevatore autenticato di registrare un animale nell'azienda indicata nel path.
       tags:
         - Animale
       security:
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          description: ID dell'azienda a cui associare l'animale
+          schema:
+            type: string
       requestBody:
         required: true
         description: Dati necessari per la registrazione dell'animale.
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateAnimaleRequest'
+              $ref: '#/components/schemas/CreateAnimaleInAziendaRequest'
             examples:
-              example1:
+              Mucca Stella:
                 value:
                   matricola: ITA00123
                   name: Stella
@@ -591,8 +598,18 @@ paths:
                   sesso: femmina
                   razza: frisona
                   figliaDi: ITA00099
-                  aziendaId: 665f8fd8ad8f8c0012f9c123
                   note: primo parto regolare
+
+              Mucca Luna:
+                value:
+                  matricola: ITA00124
+                  name: Luna
+                  species: mucca
+                  dataNascita: 2023-06-15
+                  sesso: femmina
+                  razza: frisona
+                  figliaDi: ITA00099
+                  note: prima gravidanza, monitorare attentamente
       responses:
         '201':
           description: Animale registrato con successo
@@ -624,7 +641,7 @@ paths:
               examples:
                 missingFields:
                   value:
-                    message: "Matricola, nome, specie, data di nascita, sesso, razza e aziendaId sono obbligatori"
+                    message: "Matricola, name, species, dataNascita e sesso sono obbligatori"
                 invalidData:
                   value:
                     message: "Dati non validi: verifica il formato della data di nascita e la validità dell'aziendaId"
@@ -639,7 +656,7 @@ paths:
                   value:
                     message: "Token mancante o formato non valido: Accesso negato"
         '403':
-          description: Permessi insufficienti (solo allevatore)
+          description: Permessi insufficienti o azienda non di proprietà dell'utente
           content:
             application/json:
               schema:
@@ -674,7 +691,254 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              
+    get:
+      summary: Visualizza gli animali di un'azienda
+      description: Endpoint consigliato. Restituisce l'elenco paginato degli animali dell'azienda selezionata con supporto a filtri per colonna e ordinamento.
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          description: ID dell'azienda di cui visualizzare la mandria
+          schema:
+            type: string
+        - in: query
+          name: matricola
+          required: false
+          description: Filtro testuale per matricola (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: name
+          required: false
+          description: Filtro testuale per nome animale (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: species
+          required: false
+          description: Filtro esatto per specie
+          schema:
+            type: string
+            enum:
+              - mucca
+              - pecora
+              - capra
+              - pollo
+              - coniglio
+        - in: query
+          name: sesso
+          required: false
+          description: Filtro esatto per sesso
+          schema:
+            type: string
+            enum:
+              - maschio
+              - femmina
+        - in: query
+          name: razza
+          required: false
+          description: Filtro testuale per razza (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: figliaDi
+          required: false
+          description: Filtro testuale per matricola madre (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: note
+          required: false
+          description: Filtro testuale per note (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: dataNascitaDa
+          required: false
+          description: Limite inferiore data di nascita (inclusivo)
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: dataNascitaA
+          required: false
+          description: Limite superiore data di nascita (inclusivo)
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: sortBy
+          required: false
+          description: Campo di ordinamento
+          schema:
+            type: string
+            enum:
+              - matricola
+              - name
+              - species
+              - dataNascita
+              - sesso
+              - razza
+              - createdAt
+            default: createdAt
+        - in: query
+          name: sortOrder
+          required: false
+          description: Direzione ordinamento
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        - in: query
+          name: page
+          required: false
+          description: Numero pagina (minimo 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Numero massimo elementi per pagina (minimo 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+      responses:
+        '200':
+          description: Elenco animali recuperato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimaliListResponse'
+              examples:
+                success:
+                  value:
+                    items:
+                      - _id: 665f9f10ad8f8c0012f9d111
+                        matricola: IT001BG001
+                        name: Margherita
+                        species: mucca
+                        dataNascita: 2019-03-12T00:00:00.000Z
+                        sesso: femmina
+                        razza: Frisona
+                        figliaDi: null
+                        aziendaId: 665f8fd8ad8f8c0012f9c123
+                        note: Alta produzione di latte
+                    pagination:
+                      page: 1
+                      limit: 10
+                      totalItems: 20
+                      totalPages: 2
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/azienda/{aziendaId}/animali/{id}:
+    delete:
+      summary: Elimina un animale
+      description: Elimina l'animale identificato dall'id specificato.
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID dell'animale da eliminare
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Animale eliminato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Animale eliminato con successo
+        '400':
+          description: ID animale non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID animale non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Animale non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Animale non trovato
+
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+
 
 components:
   securitySchemes:
@@ -963,6 +1227,61 @@ components:
           description: Note aggiuntive sull'animale
           example: primo parto regolare
 
+    CreateAnimaleInAziendaRequest:
+      type: object
+      description: Corpo della richiesta per la registrazione di un nuovo animale quando l'azienda e' indicata nel path
+      required:
+        - matricola
+        - name
+        - species
+        - dataNascita
+        - sesso
+      properties:
+        matricola:
+          type: string
+          description: Identificativo univoco dell'animale
+          minLength: 1
+          example: ITA00123
+        name:
+          type: string
+          description: Nome dell'animale
+          minLength: 1
+          example: Stella
+        species:
+          type: string
+          description: Specie dell'animale
+          enum:
+            - mucca
+            - pecora
+            - capra
+            - pollo
+            - coniglio
+          example: mucca
+        dataNascita:
+          type: string
+          format: date
+          description: Data di nascita dell'animale
+          example: 2022-03-10
+        sesso:
+          type: string
+          description: Sesso dell'animale
+          enum:
+            - maschio
+            - femmina
+          example: femmina
+        figliaDi:
+          type: string
+          description: Matricola della madre (se disponibile)
+          example: ITA00099
+        razza:
+          type: string
+          description: Razza dell'animale
+          example: frisona
+        note:
+          type: string
+          description: Note aggiuntive sull'animale
+          example: primo parto regolare
+
     AnimaleResponse:
       type: object
       description: Risposta di creazione animale
@@ -1005,3 +1324,74 @@ components:
             note:
               type: string
               example: primo parto regolare
+
+    AnimaleListItem:
+      type: object
+      description: Singolo animale restituito nella view della mandria
+      properties:
+        _id:
+          type: string
+          example: 665f9f10ad8f8c0012f9d111
+        matricola:
+          type: string
+          example: IT001BG001
+        name:
+          type: string
+          example: Margherita
+        species:
+          type: string
+          example: mucca
+        dataNascita:
+          type: string
+          format: date-time
+          example: 2019-03-12T00:00:00.000Z
+        sesso:
+          type: string
+          example: femmina
+        razza:
+          type: string
+          nullable: true
+          example: Frisona
+        figliaDi:
+          type: string
+          nullable: true
+          example: IT001BG000
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        note:
+          type: string
+          nullable: true
+          example: Alta produzione di latte
+
+    AnimaliPagination:
+      type: object
+      description: Metadati di paginazione della lista animali
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          example: 10
+        totalItems:
+          type: integer
+          minimum: 0
+          example: 20
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 2
+
+    AnimaliListResponse:
+      type: object
+      description: Risposta della view animali con elenco e paginazione
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnimaleListItem'
+        pagination:
+          $ref: '#/components/schemas/AnimaliPagination'

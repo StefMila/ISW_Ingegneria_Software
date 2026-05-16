@@ -4,6 +4,7 @@ import animale from '../models/animale.js';
 import azienda from '../models/azienda.js';
 import { checkAuth, checkUserType } from './auth.js';
 
+
 const router = express.Router();
 
 // Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo router
@@ -11,7 +12,7 @@ router.use(checkAuth);
 router.use(checkUserType('allevatore'));
 
 //handler per la registrazione di un nuovo animale --> risponde a POST su /api/animali/register
-const registerAnimale = async (req, res) => {
+export const registerAnimale = async (req, res) => {
     try {
         const { matricola, name, species, dataNascita, sesso, razza, figliaDi, aziendaId, note } = req.body;
 
@@ -86,7 +87,7 @@ const registerAnimale = async (req, res) => {
 
 // visualizza tutti gli animali di un'azienda --> risponde a GET 
 // si poteva fare anche inline come handler della rotta, ma per mantenere il codice più pulito e leggibile ho deciso di estrarlo in una funzione a parte
-const getAnimali = async (req, res) => {
+export const getAnimali = async (req, res) => {
     try {
         const {
             matricola,
@@ -155,7 +156,7 @@ const getAnimali = async (req, res) => {
     }
 };
 
-const deleteAnimale = async (req, res) => {
+export const deleteAnimale = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -164,22 +165,24 @@ const deleteAnimale = async (req, res) => {
                 message: 'ID della mucca è obbligatorio'
             });
         }
-        // Verifico che la mucca faccia parte dell'azienda interessata.
-        const azienda = await Azienda.findOne({ _id: req.aziendaId, ownerUserId: req.user._id });
+        
+        // Verifico che la mucca faccia parte dell'azienda posseduta dall'utente.
+        const az = await azienda.findOne({ ownerUserId: req.user.userId, _id: req.params.aziendaId });
 
-        if (!azienda) {
+        if (!az) {
             return res.status(403).json({
                 message: 'Questo animale non appartiene alla tua azienda'
             });
         }
         //TODO: controllare se l'animale è associato a lotti prodotto/cartelle cliniche/dati IoT: in caso affermativo, applicare soft delete.
-        const deletedAnimale = await Animale.findByIdAndDelete(id);
-
+        const deletedAnimale = await animale.findByIdAndDelete(id);
+        
         if (!deletedAnimale) {
             return res.status(404).json({
                 message: 'Animale non trovato'
             });
         }
+
         res.status(200).json({
             message: 'Animale eliminato con successo'
         });
@@ -199,8 +202,13 @@ const deleteAnimale = async (req, res) => {
 }; 
 
 
-
+// Endpoint legacy: mantenuti per compatibilita' con frontend/consumer esistenti.
 router.post('/register', registerAnimale);
 router.get('/azienda/:aziendaId', getAnimali);
+
+// Endpoint consigliati in stile nested resource.
+router.post('/azienda/:aziendaId/animali', registerAnimale);
+router.get('/azienda/:aziendaId/animali', getAnimali);
+router.delete('/azienda/:aziendaId/animali/:id', deleteAnimale);
 export default router;
         
