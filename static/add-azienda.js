@@ -27,8 +27,8 @@ if (aziendaForm) {
             aziendaFormMessage.textContent = 'La partita IVA è obbligatoria';
             return;
         }
-        if (vatNumber.length !== 11 || !/^\d{11}$/.test(vatNumber)) {
-            aziendaFormMessage.textContent = 'La partita IVA deve essere composta da 11 cifre';
+        if (vatNumber.length !== 13 || !/^IT\d{11}$/.test(vatNumber)) {
+            aziendaFormMessage.textContent = 'La partita IVA deve essere composta da 11 cifre precedute da "IT"';
             return;
         }
         if (!emailAzienda) {

@@ -13,9 +13,27 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+    <!-- Struttura simile a add-animale.html, con form per inserire i dati dell'azienda agricola -->
     <main class="dashboard-container">
-        <header  class="dashboard-header">
-            <h1 style="color: rgb(245, 248, 221);">Aggiungi Azienda 🚜</h1>
+        <header class="dashboard-header">
+            <div class="nav-buttons">
+                <a href="/home-allevatore.html" class="nav-home-btn">← Home</a>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-toggle">La tua azienda ▾</button>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="/add-azienda.html">Aggiungi azienda</a></li>
+                        <li><a href="/view-azienda.html">Elimina azienda</a></li>
+                    </ul>
+                </div>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-toggle">La tua mandria ▾</button>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="/add-animale.html">Aggiungi animale</a></li>
+                        <li><a href="/view-animali.html">Visualizza animali</a></li>
+                    </ul>
+                </div>
+            </div>
+            <h1 class="dashboard-title-light">Aggiungi Azienda 🚜</h1>
         </header>
         <section id="section-azienda" class="section">
             <form id="add-azienda-form" class="form">
@@ -42,9 +60,6 @@
             </form>
             <p id="addAziendaMessage" class="status"></p>
         </section>
-        <p>
-            <a href="/home-allevatore.html">Torna alla dashboard</a>
-        </p>
     </main>
 
     <script src="/add-azienda.js"></script>
