@@ -566,21 +566,28 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               
 
-  /api/animali/register:
+  /api/azienda/{aziendaId}/animali:
     post:
-      summary: Registra un nuovo animale
-      description: Permette a un allevatore autenticato di registrare un animale associato a un'azienda esistente.
+      summary: Registra un nuovo animale per un'azienda
+      description: Endpoint consigliato. Permette a un allevatore autenticato di registrare un animale nell'azienda indicata nel path.
       tags:
         - Animale
       security:
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          description: ID dell'azienda a cui associare l'animale
+          schema:
+            type: string
       requestBody:
         required: true
         description: Dati necessari per la registrazione dell'animale.
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateAnimaleRequest'
+              $ref: '#/components/schemas/CreateAnimaleInAziendaRequest'
             examples:
               Mucca Stella:
                 value:
@@ -591,7 +598,6 @@ paths:
                   sesso: femmina
                   razza: frisona
                   figliaDi: ITA00099
-                  aziendaId: 665f8fd8ad8f8c0012f9c123
                   note: primo parto regolare
 
               Mucca Luna:
@@ -603,7 +609,6 @@ paths:
                   sesso: femmina
                   razza: frisona
                   figliaDi: ITA00099
-                  aziendaId: 665f8fd8ad8f8c0012f9c123
                   note: prima gravidanza, monitorare attentamente
       responses:
         '201':
@@ -636,7 +641,7 @@ paths:
               examples:
                 missingFields:
                   value:
-                    message: "Matricola, nome, specie, data di nascita, sesso, razza e aziendaId sono obbligatori"
+                    message: "Matricola, name, species, dataNascita e sesso sono obbligatori"
                 invalidData:
                   value:
                     message: "Dati non validi: verifica il formato della data di nascita e la validità dell'aziendaId"
@@ -651,7 +656,7 @@ paths:
                   value:
                     message: "Token mancante o formato non valido: Accesso negato"
         '403':
-          description: Permessi insufficienti (solo allevatore)
+          description: Permessi insufficienti o azienda non di proprietà dell'utente
           content:
             application/json:
               schema:
@@ -686,11 +691,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-  /api/animali/azienda/{aziendaId}:
     get:
       summary: Visualizza gli animali di un'azienda
-      description: Restituisce l'elenco paginato degli animali dell'azienda selezionata con supporto a filtri per colonna e ordinamento.
+      description: Endpoint consigliato. Restituisce l'elenco paginato degli animali dell'azienda selezionata con supporto a filtri per colonna e ordinamento.
       tags:
         - Animale
       security:
@@ -845,7 +848,7 @@ paths:
                   value:
                     message: "Token mancante o formato non valido: Accesso negato"
         '403':
-          description: Permessi insufficienti (solo allevatore)
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
@@ -860,7 +863,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
- 
+
+  
 
 
 components:
@@ -1145,6 +1149,61 @@ components:
           type: string
           description: ID dell'azienda proprietaria dell'animale
           example: 665f8fd8ad8f8c0012f9c123
+        note:
+          type: string
+          description: Note aggiuntive sull'animale
+          example: primo parto regolare
+
+    CreateAnimaleInAziendaRequest:
+      type: object
+      description: Corpo della richiesta per la registrazione di un nuovo animale quando l'azienda e' indicata nel path
+      required:
+        - matricola
+        - name
+        - species
+        - dataNascita
+        - sesso
+      properties:
+        matricola:
+          type: string
+          description: Identificativo univoco dell'animale
+          minLength: 1
+          example: ITA00123
+        name:
+          type: string
+          description: Nome dell'animale
+          minLength: 1
+          example: Stella
+        species:
+          type: string
+          description: Specie dell'animale
+          enum:
+            - mucca
+            - pecora
+            - capra
+            - pollo
+            - coniglio
+          example: mucca
+        dataNascita:
+          type: string
+          format: date
+          description: Data di nascita dell'animale
+          example: 2022-03-10
+        sesso:
+          type: string
+          description: Sesso dell'animale
+          enum:
+            - maschio
+            - femmina
+          example: femmina
+        figliaDi:
+          type: string
+          description: Matricola della madre (se disponibile)
+          example: ITA00099
+        razza:
+          type: string
+          description: Razza dell'animale
+          example: frisona
         note:
           type: string
           description: Note aggiuntive sull'animale
