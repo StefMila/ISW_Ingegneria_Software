@@ -68,8 +68,12 @@ npm run seed
 
 Lo script crea/riutilizza un utente allevatore di test e popola aziende/animali.
 Credenziali principali seed:
-- email: `allevatore.test@muccapp.it`
-- password: `Password123!`
+| Tipo         | Email                       | Password     |
+|--------------|-----------------------------|--------------|
+| allevatore   | allevatore@muccapp.it       | Password123! |
+| distributore | distributore@muccapp.it     | Password123! |
+| veterinario  | veterinario@muccapp.it      | Password123! |
+| consumatore  | consumatore@muccapp.it      | Password123! |
 
 ## Documentazione API
 

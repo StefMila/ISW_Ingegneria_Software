@@ -5,11 +5,11 @@ const resetPasswordMessage = document.getElementById('resetPasswordMessage');
 if (resetPasswordForm) {
   resetPasswordForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-
+// Ottengo i valori di email, nuova password e conferma password inseriti dall'utente
     const email = document.getElementById('email').value.trim();
     const newPassword = document.getElementById('newPassword').value;
     const confirmedPassword = document.getElementById('confirmPassword').value;
-
+// Resetto l'area messaggi prima di effettuare le validazioni
     resetPasswordMessage.textContent = '';
     resetPasswordMessage.style.color = 'red';
 
@@ -28,7 +28,7 @@ if (resetPasswordForm) {
       resetPasswordMessage.textContent = 'Le password non coincidono.';
       return;
     }
-    
+    // invia la richiesta di reset password al server
     try {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',

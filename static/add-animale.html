@@ -33,7 +33,12 @@
                     </ul>
                 </div>
             </div>
-            <h1 class="dashboard-title-light">Aggiungi Animale 🐄</h1>
+            <h1 class="dashboard-title-light dashboard-title-centered">Aggiungi Animale 🐄</h1>
+            <div class="header-right-actions">
+                <span id="currentAziendaBadge" class="dashboard-header-pill">Azienda attiva: non selezionata</span>
+                <button id="logoutButton">Logout</button>
+            </div>
+            
         </header>
         <section id="section-animale" class="section">
             <form id="add-animale-form" class="form">
@@ -81,5 +86,6 @@
     </main>
 
     <script src="/add-animale.js"></script>
+    <script src="/logout.js"></script>
 </body>
 </html>

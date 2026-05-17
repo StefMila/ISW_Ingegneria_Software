@@ -1,21 +1,22 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import animale from '../models/animale.js';
-import Azienda from '../models/azienda.js';
+import azienda from '../models/azienda.js';
 import { checkAuth, checkUserType } from './auth.js';
+
 
 const router = express.Router();
 
-// Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo router
-router.use(checkAuth);
-router.use(checkUserType('allevatore'));
+// Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo routerrouter.use(checkAuth);
+router.use(checkUserType(['allevatore']));
 
+// Funzione di utilità per risolvere l'aziendaId da parametri o body, con validazione di base
 const resolveAziendaIdFromRequest = (req) => {
     const pathAziendaId = typeof req.params?.aziendaId === 'string' ? req.params.aziendaId.trim() : '';
     const bodyAziendaId = typeof req.body?.aziendaId === 'string' ? req.body.aziendaId.trim() : '';
     return pathAziendaId || bodyAziendaId;
 };
-
+// Funzione di utilità per verificare che l'azienda esista e sia di proprietà dell'utente autenticato
 const assertAziendaOwnedByUser = async (aziendaId, userId) => {
     if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
         return { ok: false, status: 400, message: 'aziendaId non è un ObjectId valido' };
@@ -36,14 +37,14 @@ const assertAziendaOwnedByUser = async (aziendaId, userId) => {
 //handler per la registrazione di un nuovo animale --> risponde a POST su /api/animali/register
 export const registerAnimale = async (req, res) => {
     try {
-        const { matricola, name, species, dataNascita, sesso, razza, figliaDi, note } = req.body;
-        const aziendaId = resolveAziendaIdFromRequest(req);
+        const { matricola, name, species, dataNascita, sesso, razza, figliaDi, aziendaId, note } = req.body;
 
         if (req.user.userType !== 'allevatore') {
             return res.status(403).json({
                 message: 'Solo gli allevatori possono registrare un\'azienda'
             });
         }
+        // Normalizzazione e validazione dei campi di input per prevenire errori e garantire coerenza
         const normalizedMatricola = typeof matricola === 'string' ? matricola.trim().toUpperCase() : '';
         const normalizedName = typeof name === 'string' ? name.trim() : '';
         const normalizedSpecies = typeof species === 'string' ? species.trim().toLowerCase() : '';
@@ -64,7 +65,7 @@ export const registerAnimale = async (req, res) => {
                 message: 'Esiste già un animale con questa matricola'
             });
         }
-
+// controllo ownership dell'azienda prima di procedere con la creazione dell'animale
         const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
         if (!ownershipCheck.ok) {
             return res.status(ownershipCheck.status).json({
@@ -106,21 +107,6 @@ export const registerAnimale = async (req, res) => {
 // si poteva fare anche inline come handler della rotta, ma per mantenere il codice più pulito e leggibile ho deciso di estrarlo in una funzione a parte
 export const getAnimali = async (req, res) => {
     try {
-        const aziendaId = resolveAziendaIdFromRequest(req);
-
-        if (!aziendaId) {
-            return res.status(400).json({
-                message: 'aziendaId è obbligatorio'
-            });
-        }
-
-        const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
-        if (!ownershipCheck.ok) {
-            return res.status(ownershipCheck.status).json({
-                message: ownershipCheck.message
-            });
-        }
-
         const {
             matricola,
             sortBy = 'createdAt',
@@ -148,7 +134,7 @@ export const getAnimali = async (req, res) => {
         const safeSortOrder = sortOrder === 'asc' ? 1 : -1;
 
         // Costruisco il filtro combinando tutti i campi forniti + aziendaId obbligatorio
-        const filter = { aziendaId };
+        const filter = { aziendaId: req.params.aziendaId };
 
         if (matricola) filter.matricola = { $regex: matricola.trim(), $options: 'i' };
         if (name) filter.name = { $regex: name.trim(), $options: 'i' };
@@ -188,8 +174,50 @@ export const getAnimali = async (req, res) => {
     }
 };
 
+export const deleteAnimale = async (req, res) => {
+    try {
+        const { id } = req.params;
 
+        if (!id) {
+            return res.status(400).json({
+                message: 'ID della mucca è obbligatorio'
+            });
+        }
+        
+        // Verifico che la mucca faccia parte dell'azienda posseduta dall'utente.
+        const az = await azienda.findOne({ ownerUserId: req.user.userId, _id: req.params.aziendaId });
 
+        if (!az) {
+            return res.status(403).json({
+                message: 'Questo animale non appartiene alla tua azienda'
+            });
+        }
+        //TODO: controllare se l'animale è associato a lotti prodotto/cartelle cliniche/dati IoT: in caso affermativo, applicare soft delete.
+        const deletedAnimale = await animale.findByIdAndDelete(id);
+        
+        if (!deletedAnimale) {
+            return res.status(404).json({
+                message: 'Animale non trovato'
+            });
+        }
+
+        res.status(200).json({
+            message: 'Animale eliminato con successo'
+        });
+    } catch (error) {
+        console.error('Errore durante l\'eliminazione dell\'animale:', error);
+        
+        //cast error per id non valido
+        if (error.name === 'CastError' && error.kind === 'ObjectId') {
+            return res.status(400).json({
+                message: 'ID dell\'animale non valido'
+            });
+        }
+        return res.status(500).json({
+            message: 'Errore interno del server'
+        });
+    }
+}; 
 
 
 // Endpoint legacy: mantenuti per compatibilita' con frontend/consumer esistenti.
@@ -199,5 +227,12 @@ router.get('/azienda/:aziendaId', getAnimali);
 // Endpoint consigliati in stile nested resource.
 router.post('/azienda/:aziendaId/animali', registerAnimale);
 router.get('/azienda/:aziendaId/animali', getAnimali);
+router.delete('/azienda/:aziendaId/animali/:id', deleteAnimale);
 export default router;
+
+
+
+
+
+
         

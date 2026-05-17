@@ -1,15 +1,15 @@
 function initLoginForm() {
     const loginForm = document.getElementById('loginForm');
     const loginMessage = document.getElementById('loginMessage');
-
+// Verifica che gli elementi del form e dell'area messaggi esistano nel DOM
     if (!loginForm || !loginMessage) {
         console.error('Form login o area messaggi non trovati nel DOM');
         return;
     }
-
+// Handler per il submit del form di login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-
+// Ottengo i valori di email e password inseriti dall'utente
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         loginMessage.style.color = '#1f2937';
@@ -25,7 +25,7 @@ function initLoginForm() {
             loginMessage.textContent = 'Password è obbligatoria';
             return;
         }
-
+// Effettuo la chiamata API per il login
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -41,7 +41,7 @@ function initLoginForm() {
                 loginMessage.textContent = data.message || 'Errore durante il login';
                 return;
             }
-
+// Salvo il token JWT e il tipo di utente restituiti dall'API nella localStorage per l'autenticazione e la gestione dei ruoli
             localStorage.setItem('token', data.token);
             // questo verifica i ruoli
             localStorage.setItem('userType', data.userType);

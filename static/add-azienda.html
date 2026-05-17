@@ -33,7 +33,12 @@
                     </ul>
                 </div>
             </div>
-            <h1 class="dashboard-title-light">Aggiungi Azienda 🚜</h1>
+            <h1 class="dashboard-title-light dashboard-title-centered">Aggiungi Azienda 🚜</h1>
+            <div class="header-right-actions">
+                <span id="currentAziendaBadge" class="dashboard-header-pill">Azienda attiva: non selezionata</span>
+                <button id="logoutButton">Logout</button>
+            </div>
+            
         </header>
         <section id="section-azienda" class="section">
             <form id="add-azienda-form" class="form">
@@ -63,5 +68,6 @@
     </main>
 
     <script src="/add-azienda.js"></script>
+    <script src="/logout.js"></script>
 </body>
 </html>

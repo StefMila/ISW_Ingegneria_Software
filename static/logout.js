@@ -1,10 +1,10 @@
 const logoutButton = document.getElementById('logoutButton');
 const logoutMessage = document.getElementById('logoutMessage');
-
+// Handler per il logout dell'utente
 if (logoutButton) {
     logoutButton.addEventListener('click', async () => {
         try {
-            
+            // Ottengo il token JWT dalla localStorage per l'autenticazione
             const token = localStorage.getItem('token');
 
             await fetch('/api/auth/logout', {
