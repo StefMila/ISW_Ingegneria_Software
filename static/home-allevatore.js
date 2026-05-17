@@ -1,18 +1,18 @@
 const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
 const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
-
+// DOM Elements
 const statusEl = document.getElementById('aziendaSelectionStatus');
 const controlsEl = document.getElementById('aziendaSelectionControls');
 const selectorEl = document.getElementById('aziendaSelector');
 const saveButtonEl = document.getElementById('saveAziendaSelectionButton');
 const currentAziendaBadgeEl = document.getElementById('currentAziendaBadge');
 let canSwitchAzienda = false;
-
+// Funzione per salvare l'azienda selezionata nella localStorage
 const setSelectedAzienda = (azienda) => {
   localStorage.setItem(SELECTED_AZIENDA_ID_KEY, azienda._id);
   localStorage.setItem(SELECTED_AZIENDA_NAME_KEY, azienda.companyName || 'Azienda senza nome');
 };
-
+// Funzione per renderizzare lo stato attuale della selezione dell'azienda
 const renderStatus = (text, color = '#1f2937') => {
   if (!statusEl) return;
   statusEl.style.color = color;
@@ -23,16 +23,16 @@ const renderCurrentAziendaBadge = (name) => {
   if (!currentAziendaBadgeEl) return;
   currentAziendaBadgeEl.textContent = `Azienda attiva: ${name || 'non selezionata'}`;
 };
-
+// Funzione per caricare le aziende di proprietà dell'utente e gestire la logica di selezione
 const loadOwnedAziende = async () => {
   const token = localStorage.getItem('token');
-
+// Se non abbiamo un token, non possiamo caricare le aziende, mostriamo un messaggio e usciamo
   if (!token) {
     renderCurrentAziendaBadge('non selezionata');
     renderStatus('Token mancante. Effettua nuovamente il login.', 'red');
     return;
   }
-
+// Carichiamo le aziende di proprietà dell'utente autenticato tramite l'API
   try {
     const response = await fetch('/api/azienda/mine', {
       headers: {
@@ -41,7 +41,7 @@ const loadOwnedAziende = async () => {
     });
 
     const data = await response.json();
-
+// Gestione della risposta del server per il caricamento delle aziende dell'utente
     if (!response.ok) {
       renderStatus(data.message || 'Errore nel caricamento delle aziende', 'red');
       return;

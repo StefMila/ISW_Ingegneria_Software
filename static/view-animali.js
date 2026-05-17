@@ -1,6 +1,6 @@
 const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
 const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
-
+// Variabili di stato
 let currentPage = 1;
 let currentFilters = {};
 let debounceTimer = null;
@@ -21,9 +21,9 @@ const formatDate = (iso) => {
   if (isNaN(d)) return '—';
   return d.toLocaleDateString('it-IT');
 };
-
+// Capitalizza la prima lettera di una stringa e rende il resto minuscolo, restituendo '—' se la stringa è vuota o non definita
 const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
-
+// Funzione per renderizzare messaggi di stato all'utente 
 const renderStatus = (text, color = '#1f2937') => {
   if (!statusMsg) return;
   statusMsg.style.color = color;
@@ -34,7 +34,7 @@ const renderStatus = (text, color = '#1f2937') => {
 const fetchAnimali = async () => {
   const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
   const token = localStorage.getItem('token');
-
+// Se non abbiamo id azienda o token, non possiamo caricare gli animali, mostriamo un messaggio e usciamo
   if (!aziendaId) {
     renderStatus('Nessuna azienda selezionata. Torna alla home e seleziona un\'azienda.', '#b45309');
     animaliBody.innerHTML = '<tr class="empty-row"><td colspan="8">Seleziona prima un\'azienda dalla home.</td></tr>';
@@ -57,7 +57,7 @@ const fetchAnimali = async () => {
     const response = await fetch(`/api/azienda/${aziendaId}/animali?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-
+// Gestione della risposta del server
     const data = await response.json();
 
     if (!response.ok) {
@@ -117,7 +117,7 @@ const renderSortIcons = () => {
     }
   });
 };
-
+// Renderizza la sezione di paginazione con informazioni sulla pagina corrente e abilita/disabilita i bottoni
 const renderPagination = ({ page = 1, totalPages = 1 }) => {
   pageInfo.textContent = `Pagina ${page} di ${totalPages}`;
   prevPageBtn.disabled = page <= 1;
@@ -158,11 +158,11 @@ document.querySelectorAll('.header-labels th[data-sort]').forEach((th) => {
     fetchAnimali();
   });
 });
-
+// Gestione click sui bottoni di paginazione
 prevPageBtn.addEventListener('click', () => {
   if (currentPage > 1) { currentPage--; fetchAnimali(); }
 });
-
+// Gestione click sui bottoni di paginazione
 nextPageBtn.addEventListener('click', () => {
   currentPage++;
   fetchAnimali();
