@@ -12,7 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import User from './app/models/user.js';
 import authRoutes from './app/routes/auth.js';
-import AziendaRoutes from './app/routes/azienda.js';
+import aziendaRoutes from './app/routes/azienda.js';
 import AnimaleRoutes from './app/routes/animale.js';
 
 
@@ -54,7 +54,7 @@ app.use(express.static(path.join(__dirname, 'static')));
 // Route per l'autenticazione, login, logout e recupero password, tutte le route sono prefissate da /api/auth
 app.use('/api/auth', authRoutes);
 // Alias route per compatibilita': consente chiamate su /api/azienda
-app.use('/api/azienda', AziendaRoutes);
+app.use('/api/azienda', aziendaRoutes);
 // Alias route per compatibilita': consente chiamate su /api/animali
 app.use('/api/animali', AnimaleRoutes);
 

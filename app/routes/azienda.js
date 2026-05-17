@@ -1,5 +1,5 @@
 import express from 'express';
-import Azienda from '../models/azienda.js';
+import azienda from '../models/azienda.js';
 import mongoose from 'mongoose';
 import { checkAuth, checkUserType } from './auth.js';
 import { registerAnimale, getAnimali, deleteAnimale } from './animale.js';
@@ -41,7 +41,7 @@ const registerAzienda = async (req, res) => {
             });
         }
         // Controllo se esiste già un'azienda con la stessa partita IVA
-        const existingAzienda = await Azienda.findOne({ vatNumber: normalizedVatNumber });
+        const existingAzienda = await azienda.findOne({ vatNumber: normalizedVatNumber });
 
         if (existingAzienda) {
             return res.status(409).json({
@@ -50,7 +50,7 @@ const registerAzienda = async (req, res) => {
         }
 
         // Creazione della nuova azienda
-        const newAzienda = new Azienda({
+        const newAzienda = new azienda({
             ownerUserId: req.user.userId,
             vatNumber: normalizedVatNumber,
             companyName: normalizedCompanyName,
@@ -102,7 +102,7 @@ router.delete('/:aziendaId/animali/:id', deleteAnimale);
 // Route per ottenere le aziende dell'utente autenticato (allevatore)
 router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
-        const items = await Azienda.find({ ownerUserId: req.user.userId })
+        const items = await azienda.find({ ownerUserId: req.user.userId })
             .select('_id companyName vatNumber address emailAzienda')
             .sort({ createdAt: 1 });
 
@@ -132,7 +132,7 @@ router.delete('/:id', checkAuth, checkUserType(['allevatore']), async (req, res)
             });
         }
         // TODO (relations): Prima di eliminare l'azienda, verificare che non ci siano mandrie o documenti associati ad essa, o implementare una cancellazione a cascata
-        const deletedAzienda = await Azienda.findByIdAndDelete(id);
+        const deletedAzienda = await azienda.findByIdAndDelete(id);
 
         if (!deletedAzienda) {
             return res.status(404).json({
