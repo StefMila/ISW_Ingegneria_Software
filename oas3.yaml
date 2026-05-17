@@ -309,11 +309,9 @@ paths:
   /api/auth/reset-password:
     post:
       summary: Reset della password
-      description: Permette agli utenti autenticati di reimpostare la propria password fornendo l'email e una nuova password.
+      description: Permette agli utenti di reimpostare la propria password fornendo l'email e una nuova password.
       tags:
         - Auth
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
         description: Dati necessari per il reset della password
@@ -324,7 +322,6 @@ paths:
               required:
                 - email
                 - newPassword
-                - confirmedPassword
               properties:
                 email:
                   type: string
@@ -335,11 +332,6 @@ paths:
                   type: string
                   format: password
                   description: Nuova password dell'utente
-                  example: NuovaPassword123
-                confirmedPassword:
-                  type: string
-                  format: password
-                  description: Conferma della nuova password
                   example: NuovaPassword123
       responses:
         '200':
@@ -361,33 +353,10 @@ paths:
               examples:
                 missingFields:
                   value:
-                    message: Email, newPassword e confirmedPassword sono obbligatori
-                passwordMismatch:
-                  value:
-                    message: La nuova password e quella di conferma non coincidono
+                    message: Email e newPassword sono obbligatori
                 weakPassword:
                   value:
                     message: La nuova password deve essere lunga almeno 8 caratteri.
-        '401':
-          description: Token mancante, non valido o scaduto
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingOrInvalidToken:
-                  value:
-                    message: "Token mancante o formato non valido: Accesso negato"
-        '403':
-          description: Token non valido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                forbiddenToken:
-                  value:
-                    message: "Token non valido: Accesso negato"
         '404':
           description: Utente non trovato
           content:

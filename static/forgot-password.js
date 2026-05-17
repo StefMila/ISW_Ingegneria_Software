@@ -32,8 +32,16 @@ if (forgotPasswordForm) {
                 forgotPasswordMessage.textContent = data.message || 'Errore durante il recupero password';
                 return;
             }
+            // // Salvo il token temporaneo per il reset password
+            // if (data.token) {
+            //     localStorage.setItem('resetToken', data.token);
+            // }
             forgotPasswordMessage.style.color = 'green';
             forgotPasswordMessage.textContent = data.message;
+            // // Reindirizzo a reset-password.html dopo 2 secondi
+            // setTimeout(() => {
+            //     window.location.href = '/reset-password.html';
+            // }, 2000);
         } catch (error) {
             console.error('Errore durante il recupero password:', error);
             forgotPasswordMessage.style.color = 'red';
