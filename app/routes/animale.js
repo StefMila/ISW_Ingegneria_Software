@@ -22,7 +22,7 @@ const assertAziendaOwnedByUser = async (aziendaId, userId) => {
         return { ok: false, status: 400, message: 'aziendaId non è un ObjectId valido' };
     }
 
-    const existingAzienda = await Azienda.findById(aziendaId).select('_id ownerUserId');
+    const existingAzienda = await azienda.findById(aziendaId).select('_id ownerUserId');
     if (!existingAzienda) {
         return { ok: false, status: 404, message: 'Azienda non trovata' };
     }

@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 import User from '../app/models/user.js';
-import Azienda from '../app/models/azienda.js';
+import azienda from '../app/models/azienda.js';
 import Animale from '../app/models/animale.js';
 
 // Carica le variabili d'ambiente dallo stesso .env usato dal server
@@ -142,22 +142,22 @@ async function seed() {
   const user = usersByType.allevatore;
   const aziendeAllevatore = [];
   for (const aziendaSeed of seedAziendeAllevatore) {
-    let azienda = await Azienda.findOne({ vatNumber: aziendaSeed.vatNumber });
-    if (azienda) {
-      if (String(azienda.ownerUserId) !== String(user._id)) {
-        azienda.ownerUserId = user._id;
-        await azienda.save();
-        console.log(`ℹ️   Azienda "${azienda.companyName}" riassegnata all'allevatore ${user.email}.`);
+    let aziendaItem = await azienda.findOne({ vatNumber: aziendaSeed.vatNumber });
+    if (aziendaItem) {
+      if (String(aziendaItem.ownerUserId) !== String(user._id)) {
+        aziendaItem.ownerUserId = user._id;
+        await aziendaItem.save();
+        console.log(`ℹ️   Azienda "${aziendaItem.companyName}" riassegnata all'allevatore ${user.email}.`);
       }
-      console.log(`ℹ️   Azienda "${azienda.companyName}" già esistente, riutilizzata.`);
+      console.log(`ℹ️   Azienda "${aziendaItem.companyName}" già esistente, riutilizzata.`);
     } else {
-      azienda = await Azienda.create({
+      aziendaItem = await azienda.create({
         ...aziendaSeed,
         ownerUserId: user._id,
       });
-      console.log(`🏡  Azienda creata: ${azienda.companyName} (${azienda._id})`);
+      console.log(`🏡  Azienda creata: ${aziendaItem.companyName} (${aziendaItem._id})`);
     }
-    aziendeAllevatore.push(azienda);
+    aziendeAllevatore.push(aziendaItem);
   }
 
   // Solo la prima azienda avrà la mandria seed.
