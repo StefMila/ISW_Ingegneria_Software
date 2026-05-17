@@ -914,73 +914,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-<<<<<<< HEAD
                 forbiddenOwnership:
                   value:
                     message: "Non hai i permessi per questa azienda"
         '404':
           description: Azienda non trovata
-=======
-  
-  /api/azienda/{aziendaId}/animali/{id}:
-    delete:
-      summary: Elimina un animale
-      description: Elimina l'animale identificato dall'id specificato.
-      tags:
-        - Animale
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: ID dell'animale da eliminare
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Animale eliminato con successo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-              examples:
-                success:
-                  value:
-                    message: Animale eliminato con successo
-        '400':
-          description: ID animale non valido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidId:
-                  value:
-                    message: ID animale non valido
-        '401':
-          description: Token mancante, non valido o scaduto
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingOrInvalidToken:
-                  value:
-                    message: "Token mancante o formato non valido: Accesso negato"
-        '403':
-          description: Permessi insufficienti (solo allevatore)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                forbiddenRole:
-                  value:
-                    message: "Permessi insufficienti: Accesso negato"
-        '404':
-          description: Animale non trovato
->>>>>>> 758b5bc76d51143face590211b4a4675f1e91379
           content:
             application/json:
               schema:
@@ -988,7 +926,6 @@ paths:
               examples:
                 notFound:
                   value:
-<<<<<<< HEAD
                     message: Azienda non trovata
 
   /api/animali/register:
@@ -1218,16 +1155,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-=======
-                    message: Animale non trovato
->>>>>>> 758b5bc76d51143face590211b4a4675f1e91379
 
-        '500':
-          description: Errore interno del server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
   
 
 
