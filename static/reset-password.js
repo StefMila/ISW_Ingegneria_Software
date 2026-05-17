@@ -30,9 +30,18 @@ if (resetPasswordForm) {
     }
     // invia la richiesta di reset password al server
     try {
+      // const resetToken = localStorage.getItem('resetToken');
+      // if (!resetToken) {
+      //   resetPasswordMessage.textContent = 'Token non trovato. Ripeti la procedura "Recupera Password".';
+      //   return;
+      // }
+      
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json'
+          // 'Authorization': `Bearer ${resetToken}`
+        },
         body: JSON.stringify({ email, newPassword })
       });
 
