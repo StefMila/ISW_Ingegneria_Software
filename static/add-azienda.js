@@ -1,6 +1,12 @@
 const aziendaForm = document.getElementById('add-azienda-form');
 const aziendaFormMessage = document.getElementById('addAziendaMessage');
+const currentAziendaBadge = document.getElementById('currentAziendaBadge');
 
+const selectedAziendaName = localStorage.getItem('selectedAziendaName') || 'non selezionata';
+if (currentAziendaBadge) {
+    currentAziendaBadge.textContent = `Azienda attiva: ${selectedAziendaName}`;
+}
+// Handler per la creazione di una nuova azienda 
 if (aziendaForm) {
     aziendaForm.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -36,6 +42,7 @@ if (aziendaForm) {
             return;
         }
         try {
+            // Ottengo il token JWT dalla localStorage per l'autenticazione
             const token = localStorage.getItem('token');
             const response = await fetch('/api/azienda', {
                 method: 'POST',
@@ -52,7 +59,7 @@ if (aziendaForm) {
                     website
                 })
             });
-
+// Gestione della risposta del server
             const data = await response.json();
             if (!response.ok) {
                 aziendaFormMessage.textContent = data.message || 'Errore durante la creazione dell\'azienda';

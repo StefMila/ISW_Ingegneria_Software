@@ -296,6 +296,14 @@ button:disabled {
   margin: 0;
 }
 
+.dashboard-header .dashboard-title-centered {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+}
+
 /* Logout con accento giallo */
 .dashboard-header #logoutButton {
   border-color: var(--yellow-gold);
@@ -388,6 +396,13 @@ button:disabled {
   .dashboard-header .header-right-actions {
     justify-content: flex-start;
     margin-left: 0;
+  }
+
+  .dashboard-header .dashboard-title-centered {
+    position: static;
+    transform: none;
+    width: 100%;
+    text-align: center;
   }
 }
 

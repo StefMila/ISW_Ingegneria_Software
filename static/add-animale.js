@@ -1,6 +1,12 @@
 const addAnimaleForm = document.getElementById('add-animale-form');
 const addAnimaleMessage = document.getElementById('addAnimaleMessage');
+const currentAziendaBadge = document.getElementById('currentAziendaBadge');
 
+const selectedAziendaName = localStorage.getItem('selectedAziendaName') || 'non selezionata';
+if (currentAziendaBadge) {
+    currentAziendaBadge.textContent = `Azienda attiva: ${selectedAziendaName}`;
+}
+// Trimma i valori di input da uno o più campi, restituendo la prima stringa non vuota trovata o una stringa vuota se nessun campo ha un valore valido
 const getTrimmedValue = (...ids) => {
     for (const id of ids) {
         const el = document.getElementById(id);
@@ -10,7 +16,7 @@ const getTrimmedValue = (...ids) => {
     }
     return '';
 };
-
+// Handler per la registrazione di un nuovo animale
 if (addAnimaleForm) {
     addAnimaleForm.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -72,7 +78,7 @@ if (addAnimaleForm) {
                     note
                 })
             });
-
+// Gestione della risposta del server
             const data = await response.json();
             if (!response.ok) {
                 addAnimaleMessage.textContent = data.message || 'Errore durante la registrazione dell\'animale';
