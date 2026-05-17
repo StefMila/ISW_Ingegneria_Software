@@ -75,27 +75,26 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Il server HTTP parte subito: Render richiede che il processo resti in ascolto sulla porta assegnata.
+app.listen(port, host, () => {
+  console.log(`Server in esecuzione su ${host}:${port}`);
 
+  if (host === '0.0.0.0') {
+    console.log(`In locale puoi aprire: http://localhost:${port}`);
+  }
+});
 
-
-// Connessione al database MongoDB tramite Mongoose --> usa l'indirizzo riportato nel file .env
-mongoose.connect(process.env.DB_URL)
-//se la connessione riesce, stampa messaggio positivo
-  .then(() => {
-    console.log('Connected to Database');
-
-// Il server parte solo dopo che il database è connesso.
-    app.listen(port, host, () => {
-      console.log(`Server in esecuzione su ${host}:${port}`);
-
-      // inserito per farlo funzionare con Render
-      if (host === '0.0.0.0') {
-        console.log(`In locale puoi aprire: http://localhost:${port}`);
-      }
+// Connessione al database MongoDB in background.
+if (!process.env.DB_URL) {
+  console.error('Variabile DB_URL non impostata: connessione al database non avviata');
+} else {
+  mongoose.connect(process.env.DB_URL)
+    .then(() => {
+      console.log('Connected to Database');
+    })
+    .catch((error) => {
+      console.error('Errore di connessione al database:', error);
     });
-  })
-  .catch((error) => {
-    console.error('Errore di connessione al database:', error);
-  });
+}
 
 
