@@ -914,6 +914,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+                forbiddenOwnership:
+                  value:
+                    message: "Non hai i permessi per questa azienda"
         '404':
           description: Azienda non trovata
           content:
@@ -925,7 +928,234 @@ paths:
                   value:
                     message: Azienda non trovata
 
-  
+  /api/animali/register:
+    post:
+      summary: Registra un nuovo animale per un'azienda
+      description: Endpoint legacy. Permette a un allevatore autenticato di registrare un animale passando l'azienda nel body della richiesta.
+      deprecated: true
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Dati necessari per la registrazione dell'animale.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnimaleRequest'
+      responses:
+        '201':
+          description: Animale registrato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimaleResponse'
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti o azienda non di proprietà dell'utente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Animale già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/animali/azienda/{aziendaId}:
+    get:
+      summary: Visualizza gli animali di un'azienda
+      description: Endpoint legacy. Restituisce l'elenco paginato degli animali dell'azienda selezionata con supporto a filtri per colonna e ordinamento.
+      deprecated: true
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          description: ID dell'azienda di cui visualizzare la mandria
+          schema:
+            type: string
+        - in: query
+          name: matricola
+          required: false
+          description: Filtro testuale per matricola (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: name
+          required: false
+          description: Filtro testuale per nome animale (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: species
+          required: false
+          description: Filtro esatto per specie
+          schema:
+            type: string
+            enum:
+              - mucca
+              - pecora
+              - capra
+              - pollo
+              - coniglio
+        - in: query
+          name: sesso
+          required: false
+          description: Filtro esatto per sesso
+          schema:
+            type: string
+            enum:
+              - maschio
+              - femmina
+        - in: query
+          name: razza
+          required: false
+          description: Filtro testuale per razza (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: figliaDi
+          required: false
+          description: Filtro testuale per matricola madre (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: note
+          required: false
+          description: Filtro testuale per note (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: dataNascitaDa
+          required: false
+          description: Limite inferiore data di nascita (inclusivo)
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: dataNascitaA
+          required: false
+          description: Limite superiore data di nascita (inclusivo)
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: sortBy
+          required: false
+          description: Campo di ordinamento
+          schema:
+            type: string
+            enum:
+              - matricola
+              - name
+              - species
+              - dataNascita
+              - sesso
+              - razza
+              - createdAt
+            default: createdAt
+        - in: query
+          name: sortOrder
+          required: false
+          description: Direzione ordinamento
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        - in: query
+          name: page
+          required: false
+          description: Numero pagina (minimo 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Numero massimo elementi per pagina (minimo 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+      responses:
+        '200':
+          description: Elenco animali recuperato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimaliListResponse'
+        '400':
+          description: aziendaId non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidAziendaId:
+                  value:
+                    message: "aziendaId non è un ObjectId valido"
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenOwnership:
+                  value:
+                    message: "Non hai i permessi per questa azienda"
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   
   /api/azienda/{aziendaId}/animali/{id}:
     delete:
@@ -936,12 +1166,6 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - in: path
-          name: aziendaId
-          required: true
-          description: ID dell'azienda proprietaria dell'animale
-          schema:
-            type: string
         - in: path
           name: id
           required: true
@@ -980,7 +1204,7 @@ paths:
                   value:
                     message: "Token mancante o formato non valido: Accesso negato"
         '403':
-          description: Permessi insufficienti (solo allevatore o animale non appartenente all'azienda)
+          description: Permessi insufficienti (solo allevatore)
           content:
             application/json:
               schema:
@@ -989,9 +1213,6 @@ paths:
                 forbiddenRole:
                   value:
                     message: "Permessi insufficienti: Accesso negato"
-                forbiddenOwnership:
-                  value:
-                    message: "Questo animale non appartiene alla tua azienda"
         '404':
           description: Animale non trovato
           content:
