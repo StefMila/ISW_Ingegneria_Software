@@ -224,20 +224,16 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 //Route per il reset password --> risponde a POST su /api/auth/reset-password
-router.post('/reset-password', checkAuth, async (req, res) => { //utilizzo il middleware checkAuth per verificare la validità del token JWT temporaneo
+// quando implementeremo l'invio email, questa route dovrà essere protetta da un middleware che verifica la validità del token JWT temporaneo generato nella fase di forgot-password, per garantire che solo chi ha ricevuto l'email possa accedere a questa funzionalità
+// aggiungere checkAuth come middleware per verificare la validità del token JWT temporaneo
+router.post('/reset-password', async (req, res) => {
   try {
-    const { email, newPassword, confirmedPassword } = req.body;
+    const { email, newPassword } = req.body;
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
-    // Controllo che email, nuova password e conferma password siano presenti
-    if (!normalizedEmail || !newPassword || !confirmedPassword) {
+    // Controllo che email e nuova password siano presenti
+    if (!normalizedEmail || !newPassword) {
       return res.status(400).json({
-        message: 'Email, newPassword e confirmedPassword sono obbligatori'
-      });
-    }
-    // Controllo che la nuova password coincida con la password di conferma
-    if (newPassword !== confirmedPassword) {
-      return res.status(400).json({
-        message: 'La nuova password e quella di conferma non coincidono'
+        message: 'Email e newPassword sono obbligatori'
       });
     }
     // Controllo se esiste un utente con l'email fornita
