@@ -30,49 +30,6 @@ const renderStatus = (text, color = '#1f2937') => {
   statusMsg.textContent = text;
 };
 
-const deleteAnimaleById = async (animaleId) => {
-  const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
-  const token = localStorage.getItem('token');
-
-  if (!animaleId) {
-    renderStatus('ID animale non valido.', 'red');
-    return;
-  }
-
-  if (!aziendaId || !token) {
-    renderStatus('Sessione non valida. Effettua nuovamente il login.', 'red');
-    return;
-  }
-
-  const confirmed = window.confirm('Confermi l\'eliminazione di questo animale?');
-  if (!confirmed) return;
-
-  try {
-    const response = await fetch(`/api/azienda/${aziendaId}/animali/${animaleId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      renderStatus(data.message || 'Errore durante l\'eliminazione dell\'animale.', 'red');
-      return;
-    }
-
-    renderStatus(data.message || 'Animale eliminato con successo.', 'green');
-
-    if (animaliBody.children.length === 1 && currentPage > 1) {
-      currentPage -= 1;
-    }
-
-    await fetchAnimali();
-  } catch (err) {
-    console.error('Errore durante l\'eliminazione dell\'animale:', err);
-    renderStatus('Errore di connessione durante l\'eliminazione.', 'red');
-  }
-};
-
 //  Fetch degli animali con filtri e paginazione
 const fetchAnimali = async () => {
   const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
@@ -80,7 +37,7 @@ const fetchAnimali = async () => {
 // Se non abbiamo id azienda o token, non possiamo caricare gli animali, mostriamo un messaggio e usciamo
   if (!aziendaId) {
     renderStatus('Nessuna azienda selezionata. Torna alla home e seleziona un\'azienda.', '#b45309');
-    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Seleziona prima un\'azienda dalla home.</td></tr>';
+    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="8">Seleziona prima un\'azienda dalla home.</td></tr>';
     return;
   }
 
@@ -105,7 +62,7 @@ const fetchAnimali = async () => {
 
     if (!response.ok) {
       renderStatus(data.message || 'Errore nel caricamento degli animali', 'red');
-      animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Errore nel caricamento.</td></tr>';
+      animaliBody.innerHTML = '<tr class="empty-row"><td colspan="8">Errore nel caricamento.</td></tr>';
       return;
     }
 
@@ -121,17 +78,17 @@ const fetchAnimali = async () => {
   } catch (err) {
     console.error('Errore durante il recupero degli animali:', err);
     renderStatus('Errore di connessione al server.', 'red');
-    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Errore di connessione.</td></tr>';
+    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="8">Errore di connessione.</td></tr>';
   }
 };
 
 //  Render della tabella degli animali
 const renderTable = (items) => {
   if (items.length === 0) {
-    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Nessun animale trovato.</td></tr>';
+    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="8">Nessun animale trovato.</td></tr>';
     return;
   }
-// Per ogni animale, creiamo una riga con i dati e un bottone di eliminazione. Se un campo è vuoto o non definito, mostriamo '—'
+
   animaliBody.innerHTML = items.map((a) => `
     <tr>
       <td>${a.matricola || '—'}</td>
@@ -142,11 +99,6 @@ const renderTable = (items) => {
       <td>${a.razza || '—'}</td>
       <td>${a.figliaDi || '—'}</td>
       <td>${a.note || '—'}</td>
-      <td>
-        <button class="delete-animal-btn" data-id="${a._id || ''}" title="Elimina animale" aria-label="Elimina animale">
-          <span class="delete-animal-icon" aria-hidden="true"></span>
-        </button>
-      </td>
     </tr>
   `).join('');
 };
@@ -190,13 +142,6 @@ document.querySelectorAll('[data-filter]').forEach((el) => {
   el.addEventListener('input', onFilterChange);
   el.addEventListener('change', onFilterChange);
 });
-// listener sul bottone di eliminazione. 
-animaliBody.addEventListener('click', (event) => {
-  const deleteButton = event.target.closest('.delete-animal-btn');
-  if (!deleteButton) return;
-
-  deleteAnimaleById(deleteButton.dataset.id);
-});
 
 // Gestione click sulle intestazioni ordinabili
 document.querySelectorAll('.header-labels th[data-sort]').forEach((th) => {
@@ -222,7 +167,6 @@ nextPageBtn.addEventListener('click', () => {
   currentPage++;
   fetchAnimali();
 });
-
 
 //  Avvio iniziale
 renderSortIcons();

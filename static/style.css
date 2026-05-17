@@ -1,14 +1,10 @@
 
-/*
-  Tema grafico MuccApp (verde):
-  - variabili centralizzate per colori e superfici
-  - usate in tutto il file per mantenere coerenza visiva
-*/
 :root {
   --green-dark:    #0f2704;   /* verde foresta */
   --green-mid:     #4a7c1f;   /* verde prato */
   --green-light:   #a8d55e;   /* verde tenero */
   --yellow-gold:   #e6a817;   /* giallo grano */
+  --yellow-light:  #fef3c7;   /* giallo paglia */
   --bg-from:       #eaf5d3;   /* sfondo verde chiaro */
   --bg-to:         #fef9c3;   /* sfondo giallo chiaro */
   --text-dark:     #1a2e05;
@@ -16,12 +12,10 @@
   --card-bg:       #fffffe;
 }
 
-/* padding/border nel calcolo delle dimensioni */
 * {
   box-sizing: border-box;
 }
 
-/* Layout base centrato per pagine di autenticazione e schermate semplici */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -41,14 +35,12 @@ a:hover {
   color: var(--green-dark);
 }
 
-/* Wrapper generico per pagine non dashboard */
 .container {
   width: 100%;
   max-width: 700px;
   padding: 24px;
 }
 
-/* Card principale  */
 .card {
   background-color: var(--card-bg);
   border-radius: 16px;
@@ -56,6 +48,14 @@ a:hover {
   box-shadow: 0 10px 30px rgba(45, 90, 27, 0.15);
   text-align: center;
   border-top: 4px solid var(--green-light);
+}
+
+.card-bianca {
+  height: auto;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 h1 {
@@ -75,7 +75,7 @@ h2 {
   color: var(--text-mid);
 }
 
-/* Bottoni globali */
+/* ---- Bottoni ---- */
 button {
   background-color: var(--green-mid);
   color: white;
@@ -86,17 +86,16 @@ button {
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
-/* Stato hover con cambio colore più scuro */
+
 button:hover {
   background-color: var(--green-dark);
 }
-/* Stato disabilitato con colore più chiaro e cursore non-allowed */
+
 button:disabled {
   background-color: #b5c9a0;
   cursor: not-allowed;
 }
 
-/* Link con aspetto da bottone (usato per navigazione rapida) */
 .button-link {
   display: inline-block;
   padding: 12px 20px;
@@ -123,7 +122,7 @@ button:disabled {
   justify-content: center;
 }
 
-/* Messaggi di stato e feedback utente */
+/* ---- Messaggi di stato ---- */
 .status {
   margin-top: 16px;
   font-weight: bold;
@@ -131,7 +130,7 @@ button:disabled {
   color: var(--text-mid);
 }
 
-/*  Form base  */
+/* ---- Form ---- */
 .form {
   display: flex;
   flex-direction: column;
@@ -164,7 +163,7 @@ button:disabled {
   margin-bottom: 8px;
 }
 
-/*  Auth container (login / signup / reset). box compatto usato nelle pagine di accesso. */
+/* ---- Auth container (login / signup / reset) ---- */
 .auth-container {
   width: 100%;
   max-width: 420px;
@@ -200,8 +199,7 @@ button:disabled {
   margin-top: 4px;
 }
 
-/*  Dashboard 
-  Header full-width con tecnica 100dvw + offset per estendersi oltre il container. */
+/* ---- Dashboard ---- */
 .dashboard-container {
   width: 100%;
   max-width: 900px;
@@ -226,14 +224,13 @@ button:disabled {
   gap: 12px;
   box-sizing: border-box;
 }
-/* Area azioni sinistra: Home + eventuali altri pulsanti di navigazione rapida */
+
 .dashboard-header .nav-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
 
-/* Area azioni destra: badge azienda attiva + logout */
 .dashboard-header .header-right-actions {
   display: flex;
   flex-wrap: wrap;
@@ -242,7 +239,7 @@ button:disabled {
   justify-content: flex-end;
   margin-left: auto;
 }
-/* Badge azienda attiva con stile pill e bordo verde chiaro */
+
 .dashboard-header .dashboard-header-pill {
   border: 2px solid var(--green-light);
   color: white;
@@ -253,16 +250,15 @@ button:disabled {
   white-space: nowrap;
   background-color: transparent;
 }
-/* Stato hover per pill badge (se si vuole renderlo cliccabile in futuro) */
+
 .dashboard-header .dashboard-header-pill-button {
   cursor: pointer;
 }
-/* Hover con leggero cambio di sfondo per feedback visivo */
+
 .dashboard-header .dashboard-header-pill-button:hover {
   background-color: rgba(168, 213, 94, 0.25);
 }
 
-/* Bottone Home con stile coerente ai controlli header */
 .nav-home-btn {
   background-color: var(--green-mid);
   border: 2px solid var(--green-light);
@@ -276,12 +272,12 @@ button:disabled {
   display: inline-flex;
   align-items: center;
 }
-/* Stato hover per bottone Home */
+
 .nav-home-btn:hover {
   background-color: var(--green-dark);
   color: var(--green-light);
 }
-/* Altri bottoni header (es. logout) con stile coerente ma colore differente per distinguere azioni importanti */
+
 .dashboard-header button {
   background-color: transparent;
   border: 2px solid var(--green-light);
@@ -290,16 +286,16 @@ button:disabled {
   font-size: 0.9rem;
   border-radius: 8px;
 }
-/* Stato hover per bottoni header */
+
 .dashboard-header button:hover {
   background-color: rgba(168, 213, 94, 0.25);
 }
-/* Titolo dashboard con colore chiaro per risaltare sullo sfondo scuro */
+
 .dashboard-header .dashboard-title-light {
   color: rgb(245, 248, 221);
   margin: 0;
 }
-/* Titolo dashboard centrato assoluto (usato nella view animali) */
+
 .dashboard-header .dashboard-title-centered {
   position: absolute;
   left: 50%;
@@ -308,17 +304,17 @@ button:disabled {
   white-space: nowrap;
 }
 
-/* Logout con accento giallo per distinguerlo dalle altre azioni */
+/* Logout con accento giallo */
 .dashboard-header #logoutButton {
   border-color: var(--yellow-gold);
   color: var(--yellow-gold);
 }
-/* Hover con cambio di sfondo giallo chiaro per evidenziare azione importante */
+
 .dashboard-header #logoutButton:hover {
   background-color: rgba(230, 168, 23, 0.2);
 }
 
-/* Card sezione dashboard (riutilizzabile) */
+/* Alias per sezioni dashboard usato nella home allevatore */
 .section {
   background: var(--card-bg);
   border-radius: 12px;
@@ -328,12 +324,11 @@ button:disabled {
   border-left: 4px solid var(--green-light);
 }
 
-/*  Navbar dropdown ----
-  Menu contestuali aperti via :focus-within (accessibile anche da tastiera). */
+/* ---- Navbar dropdown ---- */
 .nav-dropdown {
   position: relative;
 }
-/* Menu dropdown assoluto, nascosto di default. Si posiziona sotto il trigger con un piccolo offset. */
+
 .nav-dropdown-menu {
   display: none;
   position: absolute;
@@ -349,7 +344,7 @@ button:disabled {
   z-index: 100;
   border-top: 3px solid var(--yellow-gold);
 }
-/* Voci del menu dropdown */
+
 .nav-dropdown-menu li a {
   display: block;
   padding: 10px 18px;
@@ -358,7 +353,7 @@ button:disabled {
   font-size: 0.95rem;
   transition: background 0.15s;
 }
-/* Stato hover per voci dropdown */
+
 .nav-dropdown-menu li a:hover {
   background-color: var(--bg-from);
   color: var(--green-dark);
@@ -371,8 +366,20 @@ button:disabled {
 }
 
 
+.dashboard-section {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(45, 90, 27, 0.1);
+  border-left: 4px solid var(--green-light);
+}
+
+.dashboard-section h2 {
+  margin-top: 0;
+}
+
 @media (max-width: 900px) {
-  /* In mobile le aree header diventano stacked su più righe */
   .dashboard-container {
     padding: 0 12px 16px;
   }
@@ -399,8 +406,7 @@ button:disabled {
   }
 }
 
-/* ---- Tabella animali con filtri ----
-  Tabella responsiva: scroll orizzontale nel wrapper su viewport stretti. */
+/* ---- Tabella animali con filtri ---- */
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -421,27 +427,27 @@ button:disabled {
   color: #f0f7e6;
   padding: 10px 12px;
   text-align: left;
+
+  .animali-table thead tr.header-labels th[data-sort] {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .animali-table thead tr.header-labels th[data-sort]:hover {
+    background: #1f4a08;
+  }
+
+  .animali-table thead tr.header-labels th.sorted {
+    background: #2d6e10;
+    color: var(--yellow-gold);
+  }
+
+  .sort-icon {
+    font-size: 0.75rem;
+    opacity: 0.85;
+  }
   font-weight: bold;
   white-space: nowrap;
-}
-
-.animali-table thead tr.header-labels th[data-sort] {
-  cursor: pointer;
-  user-select: none;
-}
-
-.animali-table thead tr.header-labels th[data-sort]:hover {
-  background: #1f4a08;
-}
-
-.animali-table thead tr.header-labels th.sorted {
-  background: #2d6e10;
-  color: var(--yellow-gold);
-}
-
-.sort-icon {
-  font-size: 0.75rem;
-  opacity: 0.85;
 }
 
 .animali-table thead tr.header-filters th {
@@ -486,63 +492,6 @@ button:disabled {
   color: var(--text-dark);
 }
 
-.animali-table tbody td:last-child {
-  text-align: center;
-}
-
-/* Azione elimina sulla riga animale */
-.delete-animal-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #c13c3c;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.delete-animal-btn .delete-animal-icon {
-  position: relative;
-  width: 12px;
-  height: 12px;
-  display: block;
-}
-
-.delete-animal-btn .delete-animal-icon::before,
-.delete-animal-btn .delete-animal-icon::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 2px;
-  background: #b42318;
-  border-radius: 2px;
-  transform-origin: center;
-}
-
-.delete-animal-btn .delete-animal-icon::before {
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.delete-animal-btn .delete-animal-icon::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-.delete-animal-btn:hover {
-  background: #fde8e8;
-  border-color: #b42318;
-}
-
-.delete-animal-btn:active {
-  transform: scale(0.97);
-}
-
 .animali-table tbody tr.empty-row td {
   text-align: center;
   color: var(--text-mid);
@@ -550,7 +499,7 @@ button:disabled {
   padding: 24px;
 }
 
-/* Paginazione lista animali */
+/* Paginazione */
 .pagination-bar {
   display: flex;
   align-items: center;
@@ -570,7 +519,7 @@ button:disabled {
   color: var(--text-mid);
 }
 
-/* Contenitore pagina con larghezza estesa per tabelle dense */
+/* Contenitore pagina con larghezza estesa per la tabella */
 .dashboard-container-wide {
   width: 100%;
   max-width: 1300px;
