@@ -1,0 +1,107 @@
+					Days	10	New estimates of effort - Remaining at end of day									
+																
+ID_BackLog	Product Backlog Item_link	Sprint Task 	Note	Volunteer 	Stato Lavori 	Initial Estimate of Effort 	1	2	3	4	5	6	7	8	9	10
+36	Definizione della struttura della repository e delle convenzioni di branch, così da lavorare in modo ordinato e consistente.	decidere struttura del repository 	decidere struttura del repository 	Stefania Milani	Terminata	½	0	0	0	0	0	0	0	0	0	0
+		decidere branch strategy(main, develop, e le branch feature) 	decidere branch strategy(main, develop, e le branch feature) 	Elena Carmagnani	Terminata	½	0	0	0	0	0	0	0	0	0	0
+		decidere convenzione nomi file/cartelle	decidere convenzione nomi file/cartelle	Alice Bortolotti	Terminata	½	0	0	0	0	0	0	0	0	0	0
+		decidere stack minimo( backend, frontend, database, test)	decidere stack minimo( backend, frontend, database, test)	Alice Bortolotti	Terminata	½	0	0	0	0	0	0	0	0	0	0
+		inizializzare progetto con package.json	inizializzare progetto con package.json	Elena Carmagnani	Terminata	½	0	0	0	0	0	0	0	0	0	0
+		creare .gitignore	creare .gitignore	Elena Carmagnani	Terminata	½	0	0	0	0	0	0	0	0	0	0
+		creare README.md	creare README.md	Elena Carmagnani	Terminata	½	½	½	0	0	0	0	0	0	0	0
+		creare struttura cartelle	creare struttura cartelle	Elena Carmagnani	Terminata	½	0	0	0	0	0	0	0	0	0	0
+		definire script npm base(start,dev,test)	definire script npm base(start,dev,test)	Elena Carmagnani	Terminata	½	½	½	0	0	0	0	0	0	0	0
+		definire regole commit	definire regole commit	Elena Carmagnani	Terminata	½	½	½	½	½	0	0	0	0	0	0
+37	Separazione tra logica applicativa, parametri di configurazione e segreti (credenziali), differenziando i contesti di Sviluppo (Dev) e Test.	Studio e analisi 	Scouting:  - la configurazione base di una web app e della struttura tipica da utilizzare	Stefania Milani	Terminata	5	0	0	0	0	0	0	0	0	0	0
+		Design API	- elencare le variabili necessarie (port, db_url, email_user, email_pass, frontend_url, chiavi API)  - elencare le variabili locali, segreti Github	Stefania Milani	Terminata	½	½	0	0	0	0	0	0	0	0	0
+		Implementazione REST	set up locale:  - creare .env.example - creare .env locale - caricare variabili con dotenv - verificare che l’app legga le variabili sicurezza: - inserire .env in .gitignore - non committare segreti reali - documentare come configurare l’ambiente GitHub: - configurare repository secrets in GitHub - collegare i secrets alla GitHub Actions se necessario	Stefania Milani	Terminata	½	0	0	0	0	0	0	0	0	0	0
+		Sviluppo UI	frontend statico / separato che chiama le API	Stefania Milani	Terminata	½	½	½	0	0	0	0	0	0	0	0
+		Testing	design test case .env	Stefania Milani	Terminata	2	2	2	0	0	0	0	0	0	0	0
+		Deploy		Stefania Milani	Terminata	½	½	½	0	0	0	0	0	0	0	0
+44	Studiare i requisiti minimi di sicurezza per evitare accessi non autorizzati.	Studio e analisi 	Studio minimo: capire differenza tra:  - autenticazione e autorizzazione - capire JWT - capire hash password (bcrypt) - capire ruoli utente - capire route pubbliche vs protette	Alice Bortolotti	Terminata	13	13	8	0	0	0	0	0	0	0	0
+		Design API	Decisioni progettuali: - scegliere metodo auth: JWT - definire i ruoli (consumatore, azienda, distributore) - definire i permessi per ruolo  - definire durata token  - definire dove salvare il token lato client	Alice Bortolotti	Terminata	2	2	2	2	3	1	0	0	0	0	0
+7	Come utente, voglio registrarmi, affinchè possa usufruire di tutte le funzionalità offerte dall'applicazione. 	Design API	Analisi: - definire campi obbligatori(email, password, ruolo, nome opzionale)  - definire i vincoli (email valida, password minima, email univoca) 	Stefania Milani	Terminata	2	2	2	0	0	0	0	0	0	0	0
+		Implementazione REST	Backend  creare endpoint POST /auth/signup  - hash password con bcrypt  - salvare utente	Stefania Milani	Terminata	20	20	20	0	0	0	0	0	0	0	0
+		Progettazione e implementazione DB	- creare model User  - campi (email, passwordHash, role, createdAt) 	Stefania Milani	Terminata	3	3	3	0	0	0	0	0	0	0	0
+		Sviluppo UI	Frontend - creare pagina di registrazione  - creare form signup - validare campi client-side  - mostrare errori leggibili  - mostrare messaggio successo	Stefania Milani	Terminata	8	8	8	0	0	0	0	0	0	0	0
+		Testing	Test:  - signup valido - email invalida - password troppo corta - ruolo mancante - verificare duplicati email	Stefania Milani	Terminata	2	2	2	0	0	0	0	0	0	0	0
+		Documentazione		Stefania Milani	Terminata	2	5	3	2	0	0	0	0	0	0	0
+		Deploy		Stefania Milani	Terminata	½	½	½	0	0	0	0	0	0	0	0
+8	Come utente, voglio autenticarmi, affinchè possa accedere alla applicazione.	Studio e analisi 	Analisi:  - definire input login (email, password)  - definire output (token, ruolo, dati minimi utenti)	Stefania Milani	Terminata	2	2	2	2	0	0	0	0	0	0	0
+		Implementazione REST	Backend: - endpoint POST /auth/login - cercare utente per email  - confrontare password con bcypt  - generare JWT  - restituire token e ruolo  - messaggio errore generico 	Stefania Milani	Terminata	40	40	30	20	0	0	0	0	0	0	0
+		Sviluppo UI	Frontend - pagina login - form login - salvataggio token - redirect dopo login - gestione errore credenziali	Stefania Milani	Terminata	8	8	8	8	0	0	0	0	0	0	0
+		Testing	Test - login corretto - password errata - utente inesistente - campi vuoti	Stefania Milani	Terminata	2	2	2	2	0	0	0	0	0	0	0
+		Documentazione		Stefania Milani	Terminata	2	2	2	2	0	0	0	0	0	0	0
+		Deploy		Stefania Milani	Terminata	½	½	½	½	0	0	0	0	0	0	0
+9	Come utente, voglio disconnettermi, affinchè durante il non utilizzo, l'applicazione sia messa in sicurezza. 	Studio e analisi 	Analisi - decidere logout client-side - decidere dove tenere il token (localStorage, sessionStorage, cookie) - documentare la scelta	Stefania Milani	Terminata	2	2	2	2	2	1	1	1	0	0	0
+		Implementazione REST	Backend: - opzionale endpoint logout - middleware route protette	Stefania Milani	Terminata	13	13	13	13	13	6	6	6	0	0	0
+		Sviluppo UI	Frontend - pulsante logout - rimozione token - pulizia stato utente - redirect a login/home - blocco accesso a pagine protette dopo logout	Stefania Milani	Terminata	8	8	8	8	8	4	4	4	0	0	0
+		Testing	Test - token rimosso - route private non più accessibili - back button non riapre dati sensibili	Alice Bortolotti	Terminata	2	2	2	2	2	1	1	1	0	0	0
+		Deploy		Stefania Milani	Terminata	½	½	½	½	½	½	½	½	½	½	0
+10	Come utente, voglio poter recuperare la password del mio account affinchè, in caso di dimenticanza, io possa comunque accedere al mio account.  	Studio e analisi 	Analisi - decidere implementazione (via email) - definire token reset con scadenza  - definire messaggio anti enumeration (????)	Stefania Milani	Terminata	2	2	2	1	1	0	0	0	0	0	0
+		Implementazione REST	Backend - endpoint POST /auth/forgot-password - generare token reset - salvare token e scadenza - inviare email o simulare invio - endpoint POST /auth/reset-password - verificare token - aggiornare password hash - invalidare token	Stefania Milani	Terminata	40	40	40	30	30	20	20	20	20	20	0
+		Sviluppo UI	Frontend - pagina “password dimenticata” - pagina “reimposta password” - form nuova password - messaggi utente	Stefania Milani	Terminata	8	8	8	4	4	0	0	0	0	0	0
+		Documentazione		Stefania Milani	Terminata	2	2	2	2	2	0	0	0	0	0	0
+		Testing	Test - email esistente - email non esistente - token valido - token scaduto - password troppo debole 	Alice Bortolotti	Terminata	2	2	2	2	2	1	1	1	0	0	0
+		Deploy		Stefania Milani	Terminata	½	½	½	½	½	0	0	0	0	0	0
+28	Implementare il modulo di sicurezza con autenticazione, requisiti password e gestione dei livelli di autorizzazione. 	Studio e analisi 	Analisi - decidere route pubbliche - decidere route protette - decidere autorizzazioni per ruolo	Alice Bortolotti	Terminata	3	3	3	3	3	2	0	0	0	0	0
+		Implementazione REST	Backend - middleware verifica JWT - middleware verifica ruolo - protezione endpoint privati - gestione 401 e 403 - validazione scadenza token	Alice Bortolotti	Terminata	40	40	40	40	40	40	40	0	0	0	0
+		Sviluppo UI	Frontend - route guard / controllo accesso pagine - redirect a login se token mancante - blocco UI per utenti non autorizzati	Alice Bortolotti	Terminata	40	40	40	40	40	40	40	40	3	0	0
+		Documentazione		Alice Bortolotti	Terminata	3	3	3	3	3	3	3	3	1	0	0
+		Testing	Test - accesso senza token → 401 - token non valido → 401/403 - utente con ruolo errato → 403 - token scaduto → accesso negato	Alice Bortolotti	Terminata	2	2	2	2	2	2	2	2	½	0	0
+		Deploy		Alice Bortolotti	Terminata	½	½	½	½	½	½	½	½	½	0	0
+11	Come allevatore autenticato, voglio accedere alla mia area personale e  inserire le informazioni relative alla/e mia azienda/e, affinchè tutti i dati siano nel mio sistema. 	Design API	Il design deve riflettere la stabilità dell'azienda e la sicurezza del dato: - Identità unica - Contratto di Identità	Stefania Milani	Terminata	5	5	5	5	5	5	0	0	0	0	0
+		Implementazione metodo REST	Backend garante della coerenza del profilo aziendale: - Validazione della Logica - Middleware di Tracciabilità - Sanitizzazione input	Stefania Milani	Terminata	13	13	13	13	13	13	0	0	0	0	0
+		Progettazione e implementazione DB	Struttura solida ma flessibile per future certificazioni: - Schema MongoDB - Indici Unici	Stefania Milani	Terminata	3	3	3	3	3	3	0	0	0	0	0
+		Sviluppo UI	Deve guidare l'utente nell'inserimento dei dati aziendali complessi - Form con Validazione Real-time - Gestione Conflitti - Dashboard di Tracciabilità	Stefania Milani	Terminata	13	13	13	13	20	20	13	0	0	0	0
+		Documentazione	Chiarezza su come configurare l'identità digitale dell'allevamento: - Manuale Variabili d'Ambiente - Business Rules	Stefania Milani	Terminata	2	2	2	2	2	2	2	0	0	0	0
+		Testing	Mettere alla prova la "memoria" e la resistenza del sistema: - Integrità del Dato - Test di Sovrascrittura - Audit Trail Verification	Stefania Milani	Terminata	2	2	2	2	2	2	2	0	0	0	0
+		Deploy	Passaggio finale per rendere l'allevamento operativo nel sistema: - Configurazione Segreti - Migrazione e Seed - Monitoraggio Integrità	Stefania Milani	Terminata	½	½	½	½	½	½	½	0	0	0	0
+47	Come allevatore, voglio visualizzare le informazioni relative alla mia azienda, affinchè sia sempre al corrente di tutto ciò che succede al suo interno. 	Design API	Deve garantire che il client riceva sempre lo stato più recente del database, includendo i metadati di tracciabilità: - Endpoint di Lettura - Inclusione Metadati - Polling vs WebSockets	Elena Carmagnani	In corso 	8	8	8	8	8	8	8	8	8	8	8
+		Implementazione metodo REST	Deve filtrare e preparare i dati per una visualizzazione sicura: - Data Aggregation - Cache Integrity - Security Scoping	Elena Carmagnani	In corso 	8	8	8	8	8	8	8	8	8	8	8
+		Progettazione e implementazione DB	Organizzare i dati affinché la "storia" dell'allevamento sia facile da consultare: - View Materializzate o Aggregazioni - Collezione Audit per la UI	Elena Carmagnani	In corso 	3	3	3	3	3	3	3	3	3	3	3
+		Sviluppo UI	L'interfaccia trasforma i dati in consapevolezza aziendale: - Dashboard di Riepilogo - Timeline di Tracciabilità - Indicatori di Sincronizzazione	Elena Carmagnani	Non iniziata 	8	8	8	8	8	8	8	8	8	8	8
+		Documentazione	Spiegare come leggere e interpretare i dati visualizzati: - Guida ai Metadati - Configurazione Environment - Manuale Utente	Elena Carmagnani	Non iniziata 	2	2	2	2	2	2	2	2	2	2	2
+		Testing	Verificare che la visualizzazione sia lo specchio fedele della realtà: - Visual Integrity Test - Permission Test - Load Testing sulla Visualizzazione	Elena Carmagnani	Non iniziata 	2	2	2	2	2	2	2	2	2	2	2
+		Deploy	Mettere ala "centrale di controllo" online in modo sicuro: - HTTPS Enforcement - Monitoring della Latenza - Segreti UI	Elena Carmagnani	Non iniziata 	½	½	½	½	½	½	½				
+46	Come allevatore, voglio eliminare le informazioni relative al mio allevamento, affinchè tutti i dati siano aggiornati nel mio sistema. 	Design API		Stefania Milani	Terminata	8	8	8	8	8	4	4	0	0	0	0
+		Implementazione metodo REST	Creare endpoint DELETE per eliminazione allevamento con controllo autorizzazioni e gestione errori in caso di record collegati. 	Stefania Milani	Terminata	8	8	8	8	8	4	4	0	0	0	0
+		Sviluppo UI	Inserire finestra di conferma eliminazione e notifiche di successo/errore.	Stefania Milani	Bloccata	8	8	8	8	8	8	8	8	8	8	8
+		Documentazione	Documentare endpoint, codici di risposta e vincoli di eliminazione.	Stefania Milani	Terminata	2	2	2	2	2	2	2	2	0	0	0
+		Testing	Testare eliminazione valida, tentativi non autorizzati e gestione relazioni esistenti.	Stefania Milani	Bloccata	2	2	2	2	2	2	2	0	0	0	0
+		Deploy	Verificare migrazioni DB e corretto funzionamento API in ambiente di staging e produzione.	Stefania Milani	Bloccata	½	½	½	½	½	½	½	½	½	½	½
+13	Come allevatore, voglio inserire nel sistema le anagrafiche dei miei animali, affinché possa visualizzare tutte le loro cartelle cliniche.	Design API		Stefania Milani	Terminata	8	8	8	8	8	8	8	0	0	0	0
+		Implementazione metodo REST	Creare endpoint POST per inserimento anagrafica animale con validazione campi obbligatori e unicità matricola.	Stefania Milani	Terminata	8	8	8	8	8	20	8	0	0	0	0
+		Progettazione e implementazione DB	Definire tabella animali con relazioni verso allevamento	Stefania Milani	Terminata	3	3	3	3	3	3	3	0	0	0	0
+		Sviluppo UI	Realizzare form di inserimento con validazioni lato client e messaggi di errore chiari.	Stefania Milani	Terminata	8	8	8	8	8	8	8	0	0	0	0
+		Documentazione	Descrivere payload richiesti, struttura dati e vincoli di validazione.	Stefania Milani	Terminata	2	2	2	2	2	2	2	0	0	0	0
+		Testing	Testare inserimento corretto, campi mancanti e duplicazione dati identificativi.	Stefania Milani	Terminata	2	2	2	2	2	2	2	0	0	0	0
+		Deploy	Applicare migrazioni DB e verificare sincronizzazione frontend-backend.	Stefania Milani	Terminata	½	½	½	½	½	½	½	0	0	0	0
+49	Come allevatore, voglio visualizzare le informazioni relative alle mucche, affinché io sia sempre al corrente delle loro condizioni.	Design API		Stefania Milani	Terminata	8	8	8	8	8	8	8	8	5	5	0
+		Implementazione metodo REST	Creare endpoint GET con supporto a ricerca, filtri e paginazione.	Stefania Milani	Terminata	8	8	8	8	8	8	8	8	8	8	0
+		Progettazione e implementazione DB	Ottimizzare query tramite indici sui campi di ricerca più utilizzati.	Stefania Milani	Terminata	3	3	3	3	3	3	3	3	3	3	0
+		Sviluppo UI	Mostrare elenco dettagliato delle mucche con possibilità di ricerca e visualizzazione scheda completa.	Stefania Milani	Terminata	8	8	8	8	8	8	8	8	8	8	0
+		Documentazione	Documentare parametri di ricerca, formato risposta e gestione paginazione.	Stefania Milani	Terminata	2	2	2	2	2	2	2	2	2	2	0
+		Testing	Verificare correttezza dati restituiti, performance query e gestione dataset vuoti.	Stefania Milani	Terminata	2	2	2	2	2	2	2	2	2	2	0
+		Deploy	Monitorare performance API e corretto caricamento dati in produzione.	Stefania Milani	Terminata	½	½	½	½	½	½	½	½	½	½	0
+50	Come allevatore, voglio eliminare le informazioni relative alle mucche, affinchè solo i dati necessari siano nel mio sistema. 	Design API		Alice Bortolotti	Terminata	8	8	8	8	8	8	8	8	8	8	0
+		Implementazione metodo REST	Creare endpoint DELETE per rimozione mucca.	Alice Bortolotti	Terminata	8	8	8	8	8	8	8	8	8	8	0
+		Sviluppo UI	Aggiungere conferma eliminazione e feedback visivo post-operazione.	Stefania Milani	Terminata	8	8	8	8	8	8	8	8	8	8	0
+		Documentazione	Specificare comportamento della cancellazione e impatto sui dati correlati.	Alice Bortolotti	Terminata	2	2	2	2	2	2	2	2	2	2	0
+		Testing	Testare eliminazione senza dati associati e gestione errori.	Alice Bortolotti	Terminata	2	2	2	2	2	2	2	2	2	2	0
+		Deploy	Validare consistenza dati dopo il deploy e verificare log applicativi.	Stefania Milani	Terminata	½	½	½	½	½	½	½	½	½	½	0
+45	Come allevatore, voglio modificare le informazioni relative alla mia allevatore, affinchè tutti i dati siano aggiornati nel mio sistema. 	Design API			Non iniziata 	8	8	8	8	8	8	8	8	8	8	8
+		Implementazione metodo REST	Creare endpoint PUT/PATCH per aggiornamento dati allevamento con validazione input.		Non iniziata 	8	8	8	8	8	8	8	8	8	8	8
+		Progettazione e implementazione DB	Garantire aggiornamento consistente dei dati e gestione versionamento modifiche.		Non iniziata 	3	3	3	3	3	3	3	3	3	3	3
+		Sviluppo UI	Implementare schermata modifica con caricamento dati esistenti e validazioni.		Non iniziata 	8	8	8	8	8	8	8	8	8	8	8
+		Documentazione	Descrivere campi modificabili e regole di aggiornamento.		Non iniziata 	2	2	2	2	2	2	2	2	2	2	2
+		Testing	Verificare aggiornamenti corretti, campi invalidi e gestione concorrenza.		Non iniziata 	2	2	2	2	2	2	2	2	2	2	2
+		Deploy	Eseguire test regressivi post-rilascio e controllo compatibilità API.		Non iniziata 	½	½	½	½	½	½	½	½	½	½	½
+48	Come allevatore, voglio modifica le informazioni relative alle mucche, affinchè tutti i dati nel sistema rispecchino la corrente realtà delle cose. 	Design API			Non iniziata 	8	8	8	8	8	8	8	8	8	8	8
+		Implementazione metodo REST	Creare endpoint PUT/PATCH per modifica dati mucca con controlli sui campi sensibili.		Non iniziata 	8	8	8	8	8	8	8	8	8	8	8
+		Progettazione e implementazione DB	Gestire storico modifiche e mantenere integrità dei dati anagrafici e clinici.		Non iniziata 	3	3	3	3	3	3	3	3	3	3	3
+		Sviluppo UI	Fornire interfaccia intuitiva per modifica dati con validazioni dinamiche.		Non iniziata 	8	8	8	8	8	8	8	8	8	8	8
+		Documentazione	Documentare regole di aggiornamento e struttura delle richieste API.		Non iniziata 	2	2	2	2	2	2	2	2	2	2	2
+		Testing	Testare modifiche parziali, dati non validi e aggiornamenti simultanei.		Non iniziata 	2	2	2	2	2	2	2	2	2	2	2
+		Deploy	Verificare corretto aggiornamento dati in ambiente produttivo e monitorare errori runtime.		Non iniziata 	½	½	½	½	½	½	½	½	½	½	½
+Total						349	347	330	259	231	197	166	109	55	51	31
+Ideal						349	314,1	279,2	244,3	209,4	174,5	139,6	104,7	69,8	34,9	0
