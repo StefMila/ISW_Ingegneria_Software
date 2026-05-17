@@ -1,10 +1,10 @@
 const forgotPasswordForm = document.getElementById('forgot-password-form');
 const forgotPasswordMessage = document.getElementById('forgotPasswordMessage');
-
+// Handler per il recupero password 
 if (forgotPasswordForm) {
     forgotPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-
+// Ottengo l'email inserita dall'utente
         const email = document.getElementById('email').value.trim();
         forgotPasswordMessage.style.color = '#1f2937';
         forgotPasswordMessage.textContent = 'Verifica email...';

@@ -1,6 +1,6 @@
 /**
  * Script di seeding del database.
- * Popola MongoDB con dati di test: 1 utente allevatore, 1 azienda, 20 animali.
+ * Popola MongoDB con dati di test: 4 utenti, 3 aziende per l'allevatore, 20 animali su 1 azienda.
  *
  * Uso:
  *   node scripts/seed.js
@@ -25,17 +25,65 @@ dotenv.config({ path: path.join(__dirname, '../server/.env') });
 
 const MONGO_URI = process.env.DB_URL || process.env.MONGODB_URI || process.env.MONGO_URI;
 if (!MONGO_URI) {
-  console.error('❌  Variabile DB_URL non trovata nel file server/.env');
+  console.error('  Variabile DB_URL non trovata nel file server/.env');
   process.exit(1);
 }
 
 // ─── Dati di test ────────────────────────────────────────────────────────────
 
-const TEST_USER_EMAIL = 'allevatore.test@muccapp.it';
-const EXTRA_USER_EMAIL = 'test1@example.it';
+const seedUsers = [
+  {
+    name: 'Mario',
+    surname: 'Rossi',
+    email: 'allevatore@muccapp.it',
+    userType: 'allevatore',
+  },
+  {
+    name: 'Sara',
+    surname: 'Bianchi',
+    email: 'distributore@muccapp.it',
+    userType: 'distributore',
+  },
+  {
+    name: 'Luca',
+    surname: 'Verdi',
+    email: 'veterinario@muccapp.it',
+    userType: 'veterinario',
+  },
+  {
+    name: 'Giulia',
+    surname: 'Neri',
+    email: 'consumatore@muccapp.it',
+    userType: 'consumatore',
+  },
+];
 
-// Animali assegnati a test1@example.it (sottoinsieme con matricole distinte)
-const animaliDataExtra = [
+const seedAziendeAllevatore = [
+  {
+    companyName: 'Azienda Agricola Test',
+    vatNumber: 'IT12345678901',
+    address: 'Via della Campagna 1, 24100 Bergamo BG',
+    emailAzienda: 'info@agricolatest.it',
+    phoneNumber: '035 123456',
+  },
+  {
+    companyName: 'Fattoria Pianura',
+    vatNumber: 'IT12345678902',
+    address: 'Via dei Prati 12, 24100 Bergamo BG',
+    emailAzienda: 'contatti@fattoriapianura.it',
+    phoneNumber: '035 654321',
+  },
+  {
+    companyName: 'Cascina Colle Verde',
+    vatNumber: 'IT12345678903',
+    address: 'Strada del Colle 7, 24100 Bergamo BG',
+    emailAzienda: 'info@colleverde.it',
+    phoneNumber: '035 987654',
+  },
+];
+
+// Animali associati all'azienda dell'allevatore di test
+const animaliData = [
   { matricola: 'IT002BG001', name: 'Luna',      species: 'mucca',    dataNascita: '2020-04-10', sesso: 'femmina', razza: 'Frisona',       note: 'Produzione elevata' },
   { matricola: 'IT002BG002', name: 'Sole',      species: 'mucca',    dataNascita: '2021-08-22', sesso: 'femmina', razza: 'Pezzata Rossa', note: '' },
   { matricola: 'IT002BG003', name: 'Tempesta',  species: 'mucca',    dataNascita: '2019-06-15', sesso: 'maschio', razza: 'Charolais',     note: 'Riproduttore' },
@@ -72,37 +120,48 @@ async function seed() {
   await mongoose.connect(MONGO_URI);
   console.log('✅  Connesso.');
 
-  // 1. Utente allevatore
-  let user = await User.findOne({ email: TEST_USER_EMAIL });
-  if (user) {
-    console.log(`ℹ️   Utente "${TEST_USER_EMAIL}" già esistente, riutilizzato.`);
-  } else {
-    const passwordHash = await bcrypt.hash('Password123!', 12);
-    user = await User.create({
-      name: 'Mario',
-      surname: 'Rossi',
-      email: TEST_USER_EMAIL,
-      passwordHash,
-      userType: 'allevatore',
-    });
-    console.log(`👤  Utente creato: ${user.email}  (password: Password123!)`);
+  const passwordHash = await bcrypt.hash('Password123!', 12);
+
+  // 1. Utenti di test
+  const usersByType = {};
+  for (const userData of seedUsers) {
+    let user = await User.findOne({ email: userData.email });
+    if (user) {
+      console.log(`ℹ️   Utente "${userData.email}" già esistente, riutilizzato.`);
+    } else {
+      user = await User.create({
+        ...userData,
+        passwordHash,
+      });
+      console.log(`👤  Utente creato: ${user.email}  (${user.userType}, password: Password123!)`);
+    }
+    usersByType[userData.userType] = user;
   }
 
-  // 2. Azienda
-  let azienda = await Azienda.findOne({ ownerUserId: user._id });
-  if (azienda) {
-    console.log(`ℹ️   Azienda "${azienda.companyName}" già esistente, riutilizzata.`);
-  } else {
-    azienda = await Azienda.create({
-      companyName: 'Azienda Agricola Test',
-      ownerUserId: user._id,
-      vatNumber: 'IT12345678901',
-      address: 'Via della Campagna 1, 24100 Bergamo BG',
-      emailAzienda: 'info@agricolatest.it',
-      phoneNumber: '035 123456',
-    });
-    console.log(`🏡  Azienda creata: ${azienda.companyName} (${azienda._id})`);
+  // 2. Tre aziende dell'allevatore
+  const user = usersByType.allevatore;
+  const aziendeAllevatore = [];
+  for (const aziendaSeed of seedAziendeAllevatore) {
+    let azienda = await Azienda.findOne({ vatNumber: aziendaSeed.vatNumber });
+    if (azienda) {
+      if (String(azienda.ownerUserId) !== String(user._id)) {
+        azienda.ownerUserId = user._id;
+        await azienda.save();
+        console.log(`ℹ️   Azienda "${azienda.companyName}" riassegnata all'allevatore ${user.email}.`);
+      }
+      console.log(`ℹ️   Azienda "${azienda.companyName}" già esistente, riutilizzata.`);
+    } else {
+      azienda = await Azienda.create({
+        ...aziendaSeed,
+        ownerUserId: user._id,
+      });
+      console.log(`🏡  Azienda creata: ${azienda.companyName} (${azienda._id})`);
+    }
+    aziendeAllevatore.push(azienda);
   }
+
+  // Solo la prima azienda avrà la mandria seed.
+  const aziendaMandria = aziendeAllevatore[0];
 
   // 3. Animali — salta quelli con matricola già presente
   let inseriti = 0;
@@ -113,7 +172,7 @@ async function seed() {
 
     await Animale.create({
       ...dati,
-      aziendaId: azienda._id,
+      aziendaId: aziendaMandria._id,
       note: dati.note || undefined,
       figliaDi: dati.figliaDi || undefined,
     });
@@ -121,53 +180,22 @@ async function seed() {
   }
   console.log(`🐄  Animali inseriti: ${inseriti}  |  già presenti (saltati): ${saltati}`);
 
-  // 4. Utente test1@example.it
-  console.log(`\n── Seeding utente extra: ${EXTRA_USER_EMAIL} ──`);
-  let userExtra = await User.findOne({ email: EXTRA_USER_EMAIL });
-  if (!userExtra) {
-    console.log(`⚠️   Utente "${EXTRA_USER_EMAIL}" non trovato nel database. Crealo prima tramite signup oppure aggiungi la logica di creazione nello script.`);
-  } else {
-    // Trova o crea l'azienda per questo utente
-    let aziendaExtra = await Azienda.findOne({ ownerUserId: userExtra._id });
-    if (aziendaExtra) {
-      console.log(`ℹ️   Azienda "${aziendaExtra.companyName}" già esistente per ${EXTRA_USER_EMAIL}, riutilizzata.`);
-    } else {
-      aziendaExtra = await Azienda.create({
-        companyName: 'Azienda di Test1',
-        ownerUserId: userExtra._id,
-        vatNumber: 'IT98765432101',
-        address: 'Via del Prato 5, 20100 Milano MI',
-        emailAzienda: 'info@test1azienda.it',
-      });
-      console.log(`🏡  Azienda creata: ${aziendaExtra.companyName} (${aziendaExtra._id})`);
-    }
-
-    let inseritiExtra = 0;
-    let saltatiExtra = 0;
-    for (const dati of animaliDataExtra) {
-      const esiste = await Animale.findOne({ matricola: dati.matricola });
-      if (esiste) { saltatiExtra++; continue; }
-      await Animale.create({
-        ...dati,
-        aziendaId: aziendaExtra._id,
-        note: dati.note || undefined,
-        figliaDi: dati.figliaDi || undefined,
-      });
-      inseritiExtra++;
-    }
-    console.log(`🐄  Animali per ${EXTRA_USER_EMAIL} — inseriti: ${inseritiExtra}  |  saltati: ${saltatiExtra}`);
-  }
-
   // ── Riepilogo credenziali ──────────────────────────────────────────────────
   console.log('\n📋  Riepilogo dati di test:');
-  console.log(`    [1] Email:    ${TEST_USER_EMAIL}`);
-  console.log(`        Password: Password123!`);
-  console.log(`        Ruolo:    allevatore`);
-  console.log(`        Azienda:  ${azienda.companyName}  (id: ${azienda._id})`);
-  if (userExtra) {
-    const az = await Azienda.findOne({ ownerUserId: userExtra._id });
-    console.log(`    [2] Email:    ${EXTRA_USER_EMAIL}  (utente esistente)`);
-    if (az) console.log(`        Azienda:  ${az.companyName}  (id: ${az._id})`);
+  for (const [index, userData] of seedUsers.entries()) {
+    const seededUser = usersByType[userData.userType];
+    console.log(`    [${index + 1}] Email:    ${userData.email}`);
+    console.log(`        Password: Password123!`);
+    console.log(`        Ruolo:    ${userData.userType}`);
+    if (userData.userType === 'allevatore') {
+      console.log('        Aziende:');
+      for (const az of aziendeAllevatore) {
+        const suffix = String(az._id) === String(aziendaMandria._id) ? ' [mandria]' : '';
+        console.log(`          - ${az.companyName}  (id: ${az._id})${suffix}`);
+      }
+    } else {
+      console.log(`        Utente:   ${seededUser._id}`);
+    }
   }
   console.log('');
 

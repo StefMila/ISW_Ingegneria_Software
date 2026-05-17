@@ -6,16 +6,16 @@ import { checkAuth, checkUserType } from './auth.js';
 
 const router = express.Router();
 
-// Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo router
-router.use(checkAuth);
-router.use(checkUserType('allevatore'));
+// Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo routerrouter.use(checkAuth);
+router.use(checkUserType(['allevatore']));
 
+// Funzione di utilità per risolvere l'aziendaId da parametri o body, con validazione di base
 const resolveAziendaIdFromRequest = (req) => {
     const pathAziendaId = typeof req.params?.aziendaId === 'string' ? req.params.aziendaId.trim() : '';
     const bodyAziendaId = typeof req.body?.aziendaId === 'string' ? req.body.aziendaId.trim() : '';
     return pathAziendaId || bodyAziendaId;
 };
-
+// Funzione di utilità per verificare che l'azienda esista e sia di proprietà dell'utente autenticato
 const assertAziendaOwnedByUser = async (aziendaId, userId) => {
     if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
         return { ok: false, status: 400, message: 'aziendaId non è un ObjectId valido' };
@@ -44,6 +44,7 @@ export const registerAnimale = async (req, res) => {
                 message: 'Solo gli allevatori possono registrare un\'azienda'
             });
         }
+        // Normalizzazione e validazione dei campi di input per prevenire errori e garantire coerenza
         const normalizedMatricola = typeof matricola === 'string' ? matricola.trim().toUpperCase() : '';
         const normalizedName = typeof name === 'string' ? name.trim() : '';
         const normalizedSpecies = typeof species === 'string' ? species.trim().toLowerCase() : '';
@@ -64,7 +65,7 @@ export const registerAnimale = async (req, res) => {
                 message: 'Esiste già un animale con questa matricola'
             });
         }
-
+// controllo ownership dell'azienda prima di procedere con la creazione dell'animale
         const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
         if (!ownershipCheck.ok) {
             return res.status(ownershipCheck.status).json({
@@ -188,10 +189,6 @@ export const getAnimali = async (req, res) => {
     }
 };
 
-
-
-
-
 // Endpoint legacy: mantenuti per compatibilita' con frontend/consumer esistenti.
 router.post('/register', registerAnimale);
 router.get('/azienda/:aziendaId', getAnimali);
@@ -199,5 +196,12 @@ router.get('/azienda/:aziendaId', getAnimali);
 // Endpoint consigliati in stile nested resource.
 router.post('/azienda/:aziendaId/animali', registerAnimale);
 router.get('/azienda/:aziendaId/animali', getAnimali);
+
 export default router;
+
+
+
+
+
+
         

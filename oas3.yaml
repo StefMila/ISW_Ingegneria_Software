@@ -106,9 +106,12 @@ paths:
                 invalidUserType:
                   value:
                     message: ruolo non valido.
-                invalidEmailOrPassword:
+                invalidEmail:
                   value:
-                    message: Password deve essere almeno di 8 caratteri e e email deve essere in formato valido
+                    message: Email non valida.
+                invalidPassword:
+                  value:
+                    message: La password deve essere lunga almeno 8 caratteri.
 
         '409':
           description: Utente già esistente
@@ -194,9 +197,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
-                invalidCredentials:
+                invalidEmail:
                   value:
                     message: Email non valida
+                invalidPassword:
+                  value:
+                    message: Password non valida
         '500':
           description: Errore interno del server
           content:
@@ -209,32 +215,32 @@ paths:
                     message: Errore interno del server
 
   /api/auth/logout:
-      post:
-        summary: Disconnette un utente
-        description: Effettua il logout dell'utente. In questa versione il token viene rimosso lato client; la revoca server-side sarà gestita in una fase successiva.
-        tags:
-          - Auth
-        responses:
-          '200':
-            description: Logout effettuato con successo
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/MessageResponse'
-                examples:
-                  success:
-                    value:
-                      message: Logout effettuato con successo
-          '500':
-            description: Errore interno del server
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-                examples:
-                  serverError:
-                    value:
-                      message: Errore interno del server
+    post:
+      summary: Disconnette un utente
+      description: Effettua il logout dell'utente. In questa versione il token viene rimosso lato client; la revoca server-side sarà gestita in una fase successiva.
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Logout effettuato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Logout effettuato con successo
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
 
   /api/auth/forgot-password:
     post:
@@ -279,6 +285,16 @@ paths:
                 missingFields:
                   value:
                     message: Email è obbligatoria
+        '404':
+          description: Utente non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                userNotFound:
+                  value:
+                    message: Utente non trovato
         '500':
           description: Errore interno del server
           content:
@@ -291,85 +307,107 @@ paths:
                     message: Errore interno del server
 
   /api/auth/reset-password:
-      post:
-        summary: Reset della password
-        description: Permette agli utenti di reimpostare la propria password fornendo l'email e una nuova password. In questa versione non è implementato un sistema di token per la verifica dell'identità, ma sarà aggiunto in futuro.
-        tags:
-          - Auth
-        requestBody:
-          required: true
-          description: Dati necessari per il reset della password
+    post:
+      summary: Reset della password
+      description: Permette agli utenti autenticati di reimpostare la propria password fornendo l'email e una nuova password.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Dati necessari per il reset della password
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - newPassword
+                - confirmedPassword
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email dell'utente che richiede il reset della password
+                  example: mario.rossi@example.com
+                newPassword:
+                  type: string
+                  format: password
+                  description: Nuova password dell'utente
+                  example: NuovaPassword123
+                confirmedPassword:
+                  type: string
+                  format: password
+                  description: Conferma della nuova password
+                  example: NuovaPassword123
+      responses:
+        '200':
+          description: Password aggiornata con successo
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - email
-                  - newPassword
-                  - confirmedPassword
-                properties:
-                  email:
-                    type: string
-                    format: email
-                    description: Email dell'utente che richiede il reset della password
-                    example: mario.rossi@example.com
-                  newPassword:
-                    type: string
-                    format: password
-                    description: Nuova password dell'utente
-                    example: NuovaPassword123
-                  confirmedPassword:
-                    type: string
-                    format: password
-                    description: Conferma della nuova password
-                    example: NuovaPassword123
-        responses:
-          '200':
-            description: Password aggiornata con successo
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/MessageResponse'
-                examples:
-                  success:
-                    value:
-                      message: Password aggiornata con successo
-          '400':
-            description: Dati mancanti o non validi
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-                examples:
-                  missingFields:
-                    value:
-                      message: Email, newPassword e confirmedPassword sono obbligatori
-                  passwordMismatch:
-                    value:
-                      message: La nuova password e quella di conferma non coincidono
-                  weakPassword:
-                    value:
-                      message: La nuova password deve essere lunga almeno 8 caratteri
-          '404':
-            description: Utente non trovato con l'email fornita
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-                examples:
-                  userNotFound:
-                    value:
-                      message: Utente non trovato con l'email fornita
-          '500':
-            description: Errore interno del server
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-                examples:
-                  serverError:
-                    value:
-                      message: Errore interno del server
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Password aggiornata con successo
+        '400':
+          description: Dati mancanti o non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Email, newPassword e confirmedPassword sono obbligatori
+                passwordMismatch:
+                  value:
+                    message: La nuova password e quella di conferma non coincidono
+                weakPassword:
+                  value:
+                    message: La nuova password deve essere lunga almeno 8 caratteri.
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Token non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenToken:
+                  value:
+                    message: "Token non valido: Accesso negato"
+        '404':
+          description: Utente non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                userNotFound:
+                  value:
+                    message: Utente non trovato
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
 
   /api/azienda:
     post:
@@ -621,12 +659,12 @@ paths:
                 success:
                   value:
                     message: "Animale registrato con successo"
-                    animal:
-                      id: "665f8fd8ad8f8c0012f9c456"
+                    animale:
+                      _id: "665f8fd8ad8f8c0012f9c456"
                       matricola: "ITA00123"
                       name: "Stella"
                       species: "mucca"
-                      dataNascita: "2022-03-10"
+                      dataNascita: "2022-03-10T00:00:00.000Z"
                       sesso: "femmina"
                       razza: "frisona"
                       figliaDi: "ITA00099"
@@ -641,10 +679,10 @@ paths:
               examples:
                 missingFields:
                   value:
-                    message: "Matricola, name, species, dataNascita e sesso sono obbligatori"
+                    message: "Matricola, name, species, dataNascita, sesso e aziendaId sono obbligatori"
                 invalidData:
                   value:
-                    message: "Dati non validi: verifica il formato della data di nascita e la validità dell'aziendaId"
+                    message: "Dati animale non validi"
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -665,6 +703,9 @@ paths:
                 forbiddenRole:
                   value:
                     message: "Permessi insufficienti: Accesso negato"
+                forbiddenOwnership:
+                  value:
+                    message: "Non hai i permessi per questa azienda"
         '404':
           description: Azienda non trovata
           content:
@@ -837,6 +878,16 @@ paths:
                       limit: 10
                       totalItems: 20
                       totalPages: 2
+        '400':
+          description: aziendaId non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidAziendaId:
+                  value:
+                    message: "aziendaId non è un ObjectId valido"
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -857,6 +908,247 @@ paths:
                 forbiddenRole:
                   value:
                     message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                forbiddenOwnership:
+                  value:
+                    message: "Non hai i permessi per questa azienda"
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Azienda non trovata
+
+  /api/animali/register:
+    post:
+      summary: Registra un nuovo animale per un'azienda
+      description: Endpoint legacy. Permette a un allevatore autenticato di registrare un animale passando l'azienda nel body della richiesta.
+      deprecated: true
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Dati necessari per la registrazione dell'animale.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnimaleRequest'
+      responses:
+        '201':
+          description: Animale registrato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimaleResponse'
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti o azienda non di proprietà dell'utente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Animale già esistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/animali/azienda/{aziendaId}:
+    get:
+      summary: Visualizza gli animali di un'azienda
+      description: Endpoint legacy. Restituisce l'elenco paginato degli animali dell'azienda selezionata con supporto a filtri per colonna e ordinamento.
+      deprecated: true
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          description: ID dell'azienda di cui visualizzare la mandria
+          schema:
+            type: string
+        - in: query
+          name: matricola
+          required: false
+          description: Filtro testuale per matricola (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: name
+          required: false
+          description: Filtro testuale per nome animale (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: species
+          required: false
+          description: Filtro esatto per specie
+          schema:
+            type: string
+            enum:
+              - mucca
+              - pecora
+              - capra
+              - pollo
+              - coniglio
+        - in: query
+          name: sesso
+          required: false
+          description: Filtro esatto per sesso
+          schema:
+            type: string
+            enum:
+              - maschio
+              - femmina
+        - in: query
+          name: razza
+          required: false
+          description: Filtro testuale per razza (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: figliaDi
+          required: false
+          description: Filtro testuale per matricola madre (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: note
+          required: false
+          description: Filtro testuale per note (contains, case-insensitive)
+          schema:
+            type: string
+        - in: query
+          name: dataNascitaDa
+          required: false
+          description: Limite inferiore data di nascita (inclusivo)
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: dataNascitaA
+          required: false
+          description: Limite superiore data di nascita (inclusivo)
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: sortBy
+          required: false
+          description: Campo di ordinamento
+          schema:
+            type: string
+            enum:
+              - matricola
+              - name
+              - species
+              - dataNascita
+              - sesso
+              - razza
+              - createdAt
+            default: createdAt
+        - in: query
+          name: sortOrder
+          required: false
+          description: Direzione ordinamento
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        - in: query
+          name: page
+          required: false
+          description: Numero pagina (minimo 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Numero massimo elementi per pagina (minimo 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+      responses:
+        '200':
+          description: Elenco animali recuperato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnimaliListResponse'
+        '400':
+          description: aziendaId non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidAziendaId:
+                  value:
+                    message: "aziendaId non è un ObjectId valido"
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenOwnership:
+                  value:
+                    message: "Non hai i permessi per questa azienda"
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Errore interno del server
           content:
@@ -923,6 +1215,7 @@ components:
           description: Tipologia dell'utente registrato
           enum:
             - allevatore
+            - distributore
             - veterinario
             - consumatore
           example: consumatore
@@ -975,11 +1268,21 @@ components:
           type: string
           description: JWT restituito dal server per autenticare le richieste successive.
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        email:
+          type: string
+          format: email
+          description: Email dell'utente autenticato
+          example: mario.rossi@example.com
+        id:
+          type: string
+          description: Identificativo dell'utente autenticato
+          example: 665f8d90ad8f8c0012f9b456
         userType:
           type: string
           description: Ruolo dell'utente autenticato.
           enum:
             - allevatore
+            - distributore
             - veterinario
             - consumatore
           example: allevatore
