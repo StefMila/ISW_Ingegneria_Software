@@ -22,6 +22,7 @@ dotenv.config({ path: new URL('./server/.env', import.meta.url) });
 
 // dichiaro le variabili di ambiente per la connessione al database e la porta del server
 const port = Number(process.env.PORT) || 3000;
+const host = process.env.HOST || '0.0.0.0';
 //creo l'app 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -84,8 +85,13 @@ mongoose.connect(process.env.DB_URL)
     console.log('Connected to Database');
 
 // Il server parte solo dopo che il database è connesso.
-    app.listen(port,'127.0.0.1', () => {
-      console.log(`Server in esecuzione su http://localhost:${port}`);
+    app.listen(port, host, () => {
+      console.log(`Server in esecuzione su ${host}:${port}`);
+
+      // inserito per farlo funzionare con Render
+      if (host === '0.0.0.0') {
+        console.log(`In locale puoi aprire: http://localhost:${port}`);
+      }
     });
   })
   .catch((error) => {
