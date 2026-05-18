@@ -27,6 +27,7 @@ const host = process.env.HOST || '0.0.0.0';
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const server = http.createServer((req, res) => {
     if (req.url === '/api/health' && req.method === 'GET') {
         const body = JSON.stringify({
