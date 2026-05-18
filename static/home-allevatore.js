@@ -109,22 +109,6 @@ const loadOwnedAziende = async () => {
   }
 };
 
-if (currentAziendaBadgeEl) {
-  currentAziendaBadgeEl.addEventListener('click', () => {
-    if (!canSwitchAzienda || !controlsEl) {
-      renderStatus('Hai una sola azienda attiva: selezione non necessaria.', '#1f2937');
-      return;
-    }
-
-    controlsEl.hidden = !controlsEl.hidden;
-
-    if (!controlsEl.hidden && selectorEl) {
-      selectorEl.focus();
-      renderStatus('Seleziona l\'azienda e premi "Seleziona azienda" per confermare.', '#1f2937');
-    }
-  });
-}
-
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadOwnedAziende);
 } else {

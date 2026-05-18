@@ -84,9 +84,9 @@ const fetchAnimali = async () => {
     return;
   }
 
-  // Aggiorna il badge azienda
+  // Aggiorna il badge azienda (testo senza sovrascrivere la freccia gestita dal switcher)
   const aziendaName = localStorage.getItem(SELECTED_AZIENDA_NAME_KEY) || aziendaId;
-  if (currentAziendaBadge) currentAziendaBadge.textContent = `Azienda attiva: ${aziendaName}`;
+  if (currentAziendaBadge) currentAziendaBadge.textContent = `Azienda attiva: ${aziendaName} ▾`;
 
   // Costruisce i query params dai filtri attivi + paginazione
   const params = new URLSearchParams({ page: currentPage, limit: 20 });
@@ -125,15 +125,23 @@ const fetchAnimali = async () => {
   }
 };
 
+// Mappa id→dati animale usata per l'editing inline
+const rowDataMap = new Map();
+// Sanitizza un valore per uso come attributo HTML
+const escAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
 //  Render della tabella degli animali
 const renderTable = (items) => {
+  rowDataMap.clear();
   if (items.length === 0) {
     animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Nessun animale trovato.</td></tr>';
     return;
   }
-// Per ogni animale, creiamo una riga con i dati e un bottone di eliminazione. Se un campo è vuoto o non definito, mostriamo '—'
+
+  items.forEach(a => rowDataMap.set(String(a._id), a));
+
   animaliBody.innerHTML = items.map((a) => `
-    <tr>
+    <tr data-id="${a._id || ''}">
       <td>${a.matricola || '—'}</td>
       <td>${a.name || '—'}</td>
       <td>${capitalize(a.species)}</td>
@@ -143,6 +151,9 @@ const renderTable = (items) => {
       <td>${a.figliaDi || '—'}</td>
       <td>${a.note || '—'}</td>
       <td>
+        <button class="edit-animal-btn" data-id="${a._id || ''}" title="Modifica animale" aria-label="Modifica animale">
+          <span class="edit-animal-icon" aria-hidden="true">✎</span>
+        </button>
         <button class="delete-animal-btn" data-id="${a._id || ''}" title="Elimina animale" aria-label="Elimina animale">
           <span class="delete-animal-icon" aria-hidden="true"></span>
         </button>
@@ -190,13 +201,123 @@ document.querySelectorAll('[data-filter]').forEach((el) => {
   el.addEventListener('input', onFilterChange);
   el.addEventListener('change', onFilterChange);
 });
-// listener sul bottone di eliminazione. 
-animaliBody.addEventListener('click', (event) => {
+// Listener unificato per i pulsanti della tabella (modifica, elimina, salva, annulla)
+animaliBody.addEventListener('click', async (event) => {
   const deleteButton = event.target.closest('.delete-animal-btn');
-  if (!deleteButton) return;
+  if (deleteButton) { deleteAnimaleById(deleteButton.dataset.id); return; }
 
-  deleteAnimaleById(deleteButton.dataset.id);
+  const editButton = event.target.closest('.edit-animal-btn');
+  if (editButton) {
+    const tr = editButton.closest('tr');
+    const animale = rowDataMap.get(editButton.dataset.id);
+    if (animale) openInlineEdit(tr, animale);
+    return;
+  }
+
+  const saveButton = event.target.closest('.save-animal-btn');
+  if (saveButton) { await saveInlineEdit(saveButton.closest('tr'), saveButton.dataset.id); return; }
+
+  const cancelButton = event.target.closest('.cancel-edit-btn');
+  if (cancelButton) {
+    const animale = rowDataMap.get(cancelButton.dataset.id);
+    if (animale) restoreRow(cancelButton.closest('tr'), animale);
+    return;
+  }
 });
+
+//  Funzioni per gestione inline edit e delete degli animali (la delete è confermata da un prompt, l'edit apre dei campi modificabili direttamente nella riga, con salvataggio o annullamento)
+
+const rowHtml = (a) => `
+  <td>${a.matricola || '—'}</td>
+  <td>${a.name || '—'}</td>
+  <td>${capitalize(a.species)}</td>
+  <td>${formatDate(a.dataNascita)}</td>
+  <td>${capitalize(a.sesso)}</td>
+  <td>${a.razza || '—'}</td>
+  <td>${a.figliaDi || '—'}</td>
+  <td>${a.note || '—'}</td>
+  <td>
+    <button class="edit-animal-btn" data-id="${a._id || ''}" title="Modifica animale" aria-label="Modifica animale">
+      <span class="edit-animal-icon" aria-hidden="true">✎</span>
+    </button>
+    <button class="delete-animal-btn" data-id="${a._id || ''}" title="Elimina animale" aria-label="Elimina animale">
+      <span class="delete-animal-icon" aria-hidden="true"></span>
+    </button>
+  </td>`;
+// Apre la modalità di modifica inline per una riga della tabella, sostituendo i campi con input e select precompilati con i dati dell'animale
+const openInlineEdit = (tr, a) => {
+  if (tr.classList.contains('editing')) return;
+  tr.classList.add('editing');
+  tr.innerHTML = `
+    <td>${a.matricola || '—'}</td>
+    <td><input class="inline-input" data-field="name" value="${escAttr(a.name)}"></td>
+    <td>
+      <select class="inline-input" data-field="species">
+        <option value="">—</option>
+        <option value="mucca" ${a.species === 'mucca' ? 'selected' : ''}>Mucca</option>
+        <option value="pecora" ${a.species === 'pecora' ? 'selected' : ''}>Pecora</option>
+        <option value="capra" ${a.species === 'capra' ? 'selected' : ''}>Capra</option>
+        <option value="pollo" ${a.species === 'pollo' ? 'selected' : ''}>Pollo</option>
+        <option value="coniglio" ${a.species === 'coniglio' ? 'selected' : ''}>Coniglio</option>
+      </select>
+    </td>
+    <td><input class="inline-input" type="date" data-field="dataNascita" value="${a.dataNascita ? a.dataNascita.split('T')[0] : ''}"></td>
+    <td>
+      <select class="inline-input" data-field="sesso">
+        <option value="">—</option>
+        <option value="maschio" ${a.sesso === 'maschio' ? 'selected' : ''}>Maschio</option>
+        <option value="femmina" ${a.sesso === 'femmina' ? 'selected' : ''}>Femmina</option>
+      </select>
+    </td>
+    <td><input class="inline-input" data-field="razza" value="${escAttr(a.razza)}"></td>
+    <td><input class="inline-input" data-field="figliaDi" value="${escAttr(a.figliaDi)}"></td>
+    <td><input class="inline-input" data-field="note" value="${escAttr(a.note)}"></td>
+    <td>
+      <button class="save-animal-btn" data-id="${a._id}" title="Salva" aria-label="Salva">✔</button>
+      <button class="cancel-edit-btn" data-id="${a._id}" title="Annulla" aria-label="Annulla">✕</button>
+    </td>`;
+};
+// Ripristina la riga alla visualizzazione normale con i dati originali, rimuovendo la modalità di modifica
+const restoreRow = (tr, a) => {
+  tr.classList.remove('editing');
+  tr.innerHTML = rowHtml(a);
+};
+// Salva le modifiche di un animale effettuate in modalità inline edit, inviando una richiesta PATCH al server e aggiornando la tabella al successo
+const saveInlineEdit = async (tr, animaleId) => {
+  const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
+  const token = localStorage.getItem('token');
+// Validazione base: serve l'id dell'animale, l'id dell'azienda e il token per procedere con la richiesta
+  if (!animaleId || !aziendaId || !token) {
+    renderStatus('Dati mancanti per aggiornare l\'animale.', 'red');
+    return;
+  }
+// Costruisce l'oggetto con i campi modificati da inviare al server, prendendo i valori dagli input della riga
+  const formData = {};
+  tr.querySelectorAll('[data-field]').forEach(el => {
+    const val = el.value.trim();
+    if (val) formData[el.dataset.field] = val;
+  });
+// Invia la richiesta di aggiornamento al server e gestisce la risposta, mostrando messaggi di successo o errore e aggiornando la tabella
+  try {
+    const response = await fetch(`/api/azienda/${aziendaId}/animali/${animaleId}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      renderStatus(data.message || 'Errore durante la modifica dell\'animale.', 'red');
+      return;
+    }
+    renderStatus('Animale modificato con successo!', 'green');
+    await fetchAnimali();
+  } catch (err) {
+    console.error('Errore durante la modifica:', err);
+    renderStatus('Errore di connessione durante la modifica.', 'red');
+  }
+};
+
 
 // Gestione click sulle intestazioni ordinabili
 document.querySelectorAll('.header-labels th[data-sort]').forEach((th) => {
@@ -223,6 +344,14 @@ nextPageBtn.addEventListener('click', () => {
   fetchAnimali();
 });
 
+
+// Quando l'utente cambia azienda dal dropdown condiviso, resetta e ricarica
+window.addEventListener('aziendaChanged', () => {
+  currentPage = 1;
+  currentFilters = {};
+  document.querySelectorAll('[data-filter]').forEach(el => { el.value = ''; });
+  fetchAnimali();
+});
 
 //  Avvio iniziale
 renderSortIcons();
