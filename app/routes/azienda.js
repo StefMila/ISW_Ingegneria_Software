@@ -2,7 +2,7 @@ import express from 'express';
 import azienda from '../models/azienda.js';
 import mongoose from 'mongoose';
 import { checkAuth, checkUserType } from './auth.js';
-import { registerAnimale, getAnimali, deleteAnimale } from './animale.js';
+import { registerAnimale, getAnimali, deleteAnimale, updateAnimale } from './animale.js';
 
 const router = express.Router();
 
@@ -98,6 +98,7 @@ router.post('/', checkAuth, checkUserType(['allevatore']), registerAzienda);
 router.post('/:aziendaId/animali', registerAnimale);
 router.get('/:aziendaId/animali', getAnimali);
 router.delete('/:aziendaId/animali/:id', deleteAnimale);
+router.patch('/:aziendaId/animali/:id', updateAnimale);
 
 // Route per ottenere le aziende dell'utente autenticato (allevatore)
 router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) => {

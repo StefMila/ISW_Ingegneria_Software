@@ -45,6 +45,17 @@ function initLoginForm() {
             localStorage.setItem('token', data.token);
             // questo verifica i ruoli
             localStorage.setItem('userType', data.userType);
+
+            // Auto-seleziona la prima azienda disponibile (se non già impostata)
+            try {
+              const azRes  = await fetch('/api/azienda/mine', { headers: { Authorization: `Bearer ${data.token}` } });
+              const azData = await azRes.json().catch(() => ({}));
+              if (azRes.ok && Array.isArray(azData.items) && azData.items.length > 0) {
+                localStorage.setItem('selectedAziendaId',   azData.items[0]._id);
+                localStorage.setItem('selectedAziendaName', azData.items[0].companyName || '');
+              }
+            } catch (_) { /* ignora errori non bloccanti */ }
+
             if(data.userType === 'allevatore') {
                 loginMessage.style.color = 'green';
                 loginMessage.textContent = 'Login effettuato con successo';
