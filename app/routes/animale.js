@@ -34,10 +34,11 @@ const assertAziendaOwnedByUser = async (aziendaId, userId) => {
     return { ok: true };
 };
 
-//handler per la registrazione di un nuovo animale --> risponde a POST su /api/animali/register
+//handler per la registrazione di un nuovo animale --> risponde a POST su /api/azienda/{aziendaId}/animali
 export const registerAnimale = async (req, res) => {
     try {
-        const { matricola, name, species, dataNascita, sesso, razza, figliaDi, aziendaId, note } = req.body;
+        const { matricola, name, species, dataNascita, sesso, razza, figliaDi, note } = req.body;
+        const aziendaId = resolveAziendaIdFromRequest(req);
 
         if (req.user.userType !== 'allevatore') {
             return res.status(403).json({
@@ -173,7 +174,7 @@ export const getAnimali = async (req, res) => {
         });
     }
 };
-
+// handler per eliminare un animale --> risponde a DELETE su /api/animali/azienda/:aziendaId/animali/:id
 export const deleteAnimale = async (req, res) => {
     try {
         const { id } = req.params;
@@ -218,6 +219,64 @@ export const deleteAnimale = async (req, res) => {
         });
     }
 }; 
+// handler per modificare un animale --> risponde a PATCH su /api/animali/azienda/:aziendaId/animali/:id
+export const updateAnimale = async (req, res) => {
+    try {
+        const { id, aziendaId } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                message: 'ID dell\'animale è obbligatorio'
+            });
+        }
+
+        // Verifica ownership: l'azienda deve esistere ed essere dell'utente autenticato
+        const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
+        if (!ownershipCheck.ok) {
+            return res.status(ownershipCheck.status).json({ message: ownershipCheck.message });
+        }
+
+        const existingAnimale = await animale.findById(id);
+        if (!existingAnimale) {
+            return res.status(404).json({ message: 'Animale non trovato' });
+        }
+
+        // Verifica che l'animale appartenga all'azienda nell'URL
+        if (String(existingAnimale.aziendaId) !== String(aziendaId)) {
+            return res.status(403).json({ message: 'Questo animale non appartiene alla tua azienda' });
+        }
+
+        // Whitelist dei campi modificabili: matricola, aziendaId e _id non sono modificabili
+        const { name, species, dataNascita, sesso, razza, figliaDi, note } = req.body;
+        let hasUpdate = false;
+
+        if ('name' in req.body) { existingAnimale.name = typeof name === 'string' ? name.trim() : name; hasUpdate = true; }
+        if ('species' in req.body) { existingAnimale.species = typeof species === 'string' ? species.trim().toLowerCase() : species; hasUpdate = true; }
+        if ('dataNascita' in req.body) { existingAnimale.dataNascita = dataNascita; hasUpdate = true; }
+        if ('sesso' in req.body) { existingAnimale.sesso = typeof sesso === 'string' ? sesso.trim().toLowerCase() : sesso; hasUpdate = true; }
+        if ('razza' in req.body) { existingAnimale.razza = typeof razza === 'string' ? razza.trim() : razza; hasUpdate = true; }
+        if ('figliaDi' in req.body) { existingAnimale.figliaDi = typeof figliaDi === 'string' ? figliaDi.trim() || undefined : figliaDi; hasUpdate = true; }
+        if ('note' in req.body) { existingAnimale.note = typeof note === 'string' ? note.trim() || undefined : note; hasUpdate = true; }
+
+        if (!hasUpdate) {
+            return res.status(400).json({ message: 'Nessun campo valido da aggiornare' });
+        }
+
+        await existingAnimale.save();
+
+        return res.status(200).json({
+            message: 'Animale aggiornato con successo',
+            animale: existingAnimale
+        });
+    } catch (error) {
+        console.error('Errore durante l\'aggiornamento dell\'animale:', error);
+        if (error.name === 'ValidationError' || error.name === 'CastError') {
+            return res.status(400).json({ message: 'Dati animale non validi' });
+        }
+        return res.status(500).json({ message: 'Errore interno del server' });
+    }
+};
+
 
 
 // Endpoint legacy: mantenuti per compatibilita' con frontend/consumer esistenti.
@@ -228,6 +287,7 @@ router.get('/azienda/:aziendaId', getAnimali);
 router.post('/azienda/:aziendaId/animali', registerAnimale);
 router.get('/azienda/:aziendaId/animali', getAnimali);
 router.delete('/azienda/:aziendaId/animali/:id', deleteAnimale);
+router.patch('/azienda/:aziendaId/animali/:id', updateAnimale);
 export default router;
 
 

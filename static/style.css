@@ -490,20 +490,49 @@ button:disabled {
   text-align: center;
 }
 
-/* Azione elimina sulla riga animale */
+/* Azioni sulla riga animale: modifica ed elimina affiancati */
+.animali-table tbody td:last-child {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-animal-btn,
 .delete-animal-btn {
   width: 28px;
   height: 28px;
   padding: 0;
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #c13c3c;
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.edit-animal-btn {
+  border: 1px solid var(--green-mid);
+  color: var(--green-mid);
+  font-size: 14px;
+}
+
+.edit-animal-btn:hover {
+  background: #e8f5d4;
+  border-color: var(--green-dark);
+  color: var(--green-dark);
+}
+
+.edit-animal-btn:active {
+  transform: scale(0.97);
+}
+
+/* Azione elimina sulla riga animale */
+.delete-animal-btn {
+  position: relative;
+  border: 1px solid #c13c3c;
 }
 
 .delete-animal-btn .delete-animal-icon {
@@ -577,4 +606,106 @@ button:disabled {
   padding: 0 24px 24px;
   align-self: flex-start;
   margin-top: 0;
+}
+
+/*  SWITCHER AZIENDA (DROPDOWN BADGE)  */
+.azienda-switcher-menu {
+  right: 0;
+  left: auto;
+  width: 100%;
+  min-width: 100%;
+  background: linear-gradient(180deg, #1f3f0e 0%, #143107 100%);
+  border-top: 2px solid #90c94f;
+  border: 1px solid #90c94f;
+}
+
+.azienda-switcher-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #2f5a18;
+  text-align: left;
+  color: #eef7dd;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.azienda-switcher-menu li:last-child .azienda-switcher-item {
+  border-bottom: none;
+}
+
+.azienda-switcher-item:hover {
+  background-color: #2f5f16;
+  color: #ffffff;
+}
+
+.azienda-switcher-item:focus {
+  outline: none;
+  background-color: #3b731d;
+  color: #ffffff;
+}
+
+/*  EDITING INLINE TABELLA ANIMALI  */
+.animali-table tbody tr.editing td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.inline-input {
+  width: 100%;
+  padding: 5px 7px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  border: 1px solid var(--green-mid);
+  border-radius: 5px;
+  color: var(--text-dark);
+  background: #f9fdf4;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.inline-input:focus {
+  outline: none;
+  border-color: var(--green-dark);
+  box-shadow: 0 0 0 2px rgba(74,124,31,0.15);
+}
+
+.save-animal-btn,
+.cancel-edit-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  transition: all 0.15s;
+  background: transparent;
+}
+
+.save-animal-btn {
+  border-color: var(--green-mid);
+  color: var(--green-mid);
+}
+
+.save-animal-btn:hover {
+  background: #e8f5d4;
+  border-color: var(--green-dark);
+  color: var(--green-dark);
+}
+
+.cancel-edit-btn {
+  border-color: #b42318;
+  color: #b42318;
+}
+
+.cancel-edit-btn:hover {
+  background: #fde8e8;
 }

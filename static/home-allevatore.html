@@ -44,7 +44,10 @@
       </div>
 
       <div class="header-right-actions">
-        <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button" type="button">Azienda attiva: non selezionata</button>
+        <div class="nav-dropdown" id="aziendaSwitcherDropdown">
+          <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button" type="button">Azienda attiva: non selezionata ▾</button>
+          <ul class="nav-dropdown-menu azienda-switcher-menu" id="aziendaSwitcherMenu"></ul>
+        </div>
         <button id="logoutButton">Logout</button>
       </div>
     </header>
@@ -61,6 +64,7 @@
 
   </main>
 
+  <script src="/azienda-switcher.js"></script>
   <script src="/home-allevatore.js"></script>
   <script src="/logout.js"></script>
 </body>

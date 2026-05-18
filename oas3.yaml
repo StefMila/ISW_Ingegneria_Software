@@ -877,12 +877,6 @@ paths:
                 forbiddenRole:
                   value:
                     message: "Permessi insufficienti: Accesso negato"
-        '500':
-          description: Errore interno del server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Azienda non trovata
           content:
@@ -893,10 +887,114 @@ paths:
                 notFound:
                   value:
                     message: Azienda non trovata
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+ 
 
   
   
   /api/azienda/{aziendaId}/animali/{id}:
+    patch:
+      summary: Modifica un animale
+      description: Modifica i dati dell'animale identificato dall'id specificato. L'aziendaId nel path viene usata solo per verificare che l'animale appartenga all'azienda di proprietà dell'utente autenticato. I campi matricola, aziendaId e _id non sono modificabili.
+      tags:
+        - Animale
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          description: ID dell'azienda proprietaria dell'animale
+          schema:
+            type: string
+        - in: path
+          name: id
+          required: true
+          description: ID dell'animale da modificare
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Dati da aggiornare dell'animale. Tutti i campi sono opzionali, ma almeno uno deve essere presente.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAnimalRequest'
+            examples:
+              updateNameAndNote:
+                value:
+                  name: Stella Nuova
+                  note: "Aggiornamento nome e note"
+              updateRazza:
+                value:
+                  razza: Jersey
+      responses:
+        '200':
+          description: Animale modificato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Animale'
+              examples:
+                success:
+                  value:
+                    _id: 6a0b3d8a5695e23292cb349d
+                    matricola: MAT001
+                    name: Stella Nuova
+                    aziendaId: 6a0b3d0b5695e23292cb349c
+                    species: Bos taurus
+                    razza: Jersey
+                    dataNascita: '2020-01-15'
+                    sesso: F
+                    figliaDi: null
+                    note: "Aggiornamento nome e note"
+                    createdAt: '2025-05-18T10:30:00.000Z'
+                    updatedAt: '2025-05-18T14:45:00.000Z'
+        '400':
+          description: ID animale non valido o dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID animale non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  value:
+                    message: Non autorizzato
+        '403':
+          description: L'animale non appartiene all'azienda dell'utente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  value:
+                    message: L'animale non appartiene a questa azienda
+        '404':
+          description: Azienda o animale non trovati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Animale non trovato
     delete:
       summary: Elimina un animale
       description: Elimina l'animale identificato dall'id specificato.
@@ -1334,6 +1432,50 @@ components:
           description: Note aggiuntive sull'animale
           example: primo parto regolare
 
+    Animale:
+      type: object
+      description: Rappresentazione di un animale registrato
+      properties:
+        _id:
+          type: string
+          example: 665f9f10ad8f8c0012f9d111
+        matricola:
+          type: string
+          example: ITA00123
+        name:
+          type: string
+          example: Stella
+        species:
+          type: string
+          example: mucca
+        dataNascita:
+          type: string
+          format: date-time
+          example: 2022-03-10T00:00:00.000Z
+        sesso:
+          type: string
+          example: femmina
+        razza:
+          type: string
+          example: frisona
+        figliaDi:
+          type: string
+          example: ITA00099
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        note:
+          type: string
+          example: primo parto regolare
+        createdAt:
+          type: string
+          format: date-time
+          example: 2022-05-01T12:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2022-06-01T15:30:00.000Z
+
     AnimaleResponse:
       type: object
       description: Risposta di creazione animale
@@ -1436,6 +1578,50 @@ components:
           type: integer
           minimum: 0
           example: 2
+
+    UpdateAnimalRequest:
+      type: object
+      description: Corpo della richiesta per la modifica di un animale. Tutti i campi sono opzionali, ma almeno uno deve essere presente. I campi matricola, aziendaId e _id non sono modificabili.
+      properties:
+        name:
+          type: string
+          description: Nome dell'animale
+          minLength: 1
+          example: Stella
+        species:
+          type: string
+          description: Specie dell'animale
+          enum:
+            - mucca
+            - pecora
+            - capra
+            - pollo
+            - coniglio
+          example: mucca
+        dataNascita:
+          type: string
+          format: date
+          description: Data di nascita dell'animale
+          example: 2022-03-10
+        sesso:
+          type: string
+          description: Sesso dell'animale
+          enum:
+            - maschio
+            - femmina
+          example: femmina
+        figliaDi:
+          type: string
+          description: Matricola della madre (se disponibile)
+          example: ITA00099
+        razza:
+          type: string
+          description: Razza dell'animale
+          example: frisona
+        note:
+          type: string
+          description: Note aggiuntive sull'animale
+          example: primo parto regolare
 
     AnimaliListResponse:
       type: object

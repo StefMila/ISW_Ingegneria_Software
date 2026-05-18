@@ -35,7 +35,10 @@
             </div>
             <h1 class="dashboard-title-light dashboard-title-centered">Aggiungi Azienda 🚜</h1>
             <div class="header-right-actions">
-                <span id="currentAziendaBadge" class="dashboard-header-pill">Azienda attiva: non selezionata</span>
+                <div class="nav-dropdown" id="aziendaSwitcherDropdown">
+                  <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button" type="button">Azienda attiva: non selezionata ▾</button>
+                  <ul class="nav-dropdown-menu azienda-switcher-menu" id="aziendaSwitcherMenu"></ul>
+                </div>
                 <button id="logoutButton">Logout</button>
             </div>
             
@@ -67,6 +70,7 @@
         </section>
     </main>
 
+    <script src="/azienda-switcher.js"></script>
     <script src="/add-azienda.js"></script>
     <script src="/logout.js"></script>
 </body>
