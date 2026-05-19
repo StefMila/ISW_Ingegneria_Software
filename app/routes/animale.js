@@ -7,7 +7,8 @@ import { checkAuth, checkUserType } from './auth.js';
 
 const router = express.Router();
 
-// Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo routerrouter.use(checkAuth);
+// Implemento il controllo dell'autenticazione e del ruolo per tutte le rotte di questo router
+router.use(checkAuth);
 router.use(checkUserType(['allevatore']));
 
 // Funzione di utilità per risolvere l'aziendaId da parametri o body, con validazione di base
