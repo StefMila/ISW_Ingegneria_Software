@@ -46,6 +46,9 @@ function initLoginForm() {
             // questo verifica i ruoli
             localStorage.setItem('userType', data.userType);
 
+            console.log('Token salvato:', !!data.token);
+            console.log('UserType salvato:', data.userType);
+
             // Auto-seleziona la prima azienda disponibile (se non già impostata)
             try {
               const azRes  = await fetch('/api/azienda/mine', { headers: { Authorization: `Bearer ${data.token}` } });
@@ -55,18 +58,29 @@ function initLoginForm() {
                 localStorage.setItem('selectedAziendaName', azData.items[0].companyName || '');
               }
             } catch (_) { /* ignora errori non bloccanti */ }
+            // Reindirizzo l'utente alla home page specifica in base al suo ruolo
+            loginMessage.style.color = 'green';
+            loginMessage.textContent = 'Login effettuato con successo';
 
-            if(data.userType === 'allevatore') {
-                loginMessage.style.color = 'green';
-                loginMessage.textContent = 'Login effettuato con successo';
-                window.location.href = '/home-allevatore.html';
-            }else{
-                window.location.href = '/home.html';
-            }
-            // questo andrà sistemato quando creiamo anche gli altri utenti, per ora reindirizza tutti alla stessa home
-            // loginMessage.style.color = 'green';
-            // loginMessage.textContent = 'Login effettuato con successo';
-            // window.location.href = '/home.html';
+            // Piccolo delay per assicurare che localStorage sia sincronizzato prima del redirect
+            setTimeout(() => {
+              switch (data.userType) {
+                  case 'allevatore':
+                      window.location.href = '/home-allevatore.html';
+                      break;
+                  case 'veterinario':
+                      window.location.href = '/home-veterinario.html';
+                      break;
+                  case 'consumatore':
+                      window.location.href = '/home-consumatore.html';
+                      break;
+                  case 'distributore':
+                      window.location.href = '/home-distributore.html';
+                      break;
+                  default:
+                      window.location.href = '/home.html';
+              }
+            }, 100);
         } catch (error) {
             console.error('Errore durante il login:', error);
             loginMessage.style.color = 'red';
