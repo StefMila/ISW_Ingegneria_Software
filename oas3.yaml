@@ -59,6 +59,7 @@ paths:
                   email: mario.rossi@example.com
                   password: Password123
                   userType: consumatore
+                  acceptedTerms: true
               allevatore:
                 value:
                   name: Marisa
@@ -66,6 +67,7 @@ paths:
                   email: marisa.rossi@example.com
                   password: Password123
                   userType: allevatore
+                  acceptedTerms: true
               distributore:
                 value:
                   name: Luca
@@ -73,6 +75,7 @@ paths:
                   email: luca.verdi@example.com
                   password: Password123
                   userType: distributore
+                  acceptedTerms: true
               veterinario:
                 value:
                   name: Laura
@@ -80,6 +83,7 @@ paths:
                   email: laura.bianchi@example.com
                   password: Password123
                   userType: veterinario
+                  acceptedTerms: true
 
       responses:
         '201':
@@ -112,6 +116,9 @@ paths:
                 invalidPassword:
                   value:
                     message: La password deve essere lunga almeno 8 caratteri.
+                termsNotAccepted:
+                  value:
+                    message: È necessario accettare i Termini e Condizioni per registrarsi.
 
         '409':
           description: Utente già esistente
@@ -1108,6 +1115,7 @@ components:
         - email
         - password
         - userType
+        - acceptedTerms
       properties:
         name:
           type: string
@@ -1139,6 +1147,10 @@ components:
             - veterinario
             - consumatore
           example: consumatore
+        acceptedTerms:
+          type: boolean
+          description: Indica se l'utente ha accettato o meno i Termini e Condizioni
+          example: true
 
     MessageResponse:
       type: object
