@@ -35,6 +35,10 @@ const userSchema = new Schema({
         required: true,
         enum: userTypes
     },
+    acceptedTerms: { // Questo campo va tracciato (Normativa GDPR)
+        type: Boolean,
+        required: true
+    },
 }, { timestamps: true }
 );
 
