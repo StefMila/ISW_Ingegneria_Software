@@ -346,6 +346,58 @@ button:disabled {
   margin-top: 4px;
 }
 
+/* Checkbox accettazione termini (da aggiungere al form di signup) */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}   
+
+.checkbox-container input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #b5c9a0;
+  border-radius: 4px;
+  background: #f9fdf4;
+}
+
+.checkmark {
+  display: inline-block;
+  width: 12px;
+  height: 6px;
+  border-left: 3px solid var(--green-mid);
+  border-bottom: 3px solid var(--green-mid);
+  transform: rotate(-45deg);
+  margin-left: -16px;
+  margin-top: -2px;
+}
+
+.checkbox-container:hover .checkmark {
+  background-color: var(--green-mid);
+}
+
+.checkbox-container input:checked + .checkmark { /* problema: la checkbox diventa rosa invece di verde*/
+  border-color: var(--green-mid);
+}
+
+.checkmark::after {
+  content: '';
+  position: absolute;
+  display: none;
+}
+
+.checkbox-container input:checked + .checkmark::after {
+  display: block;
+  left: 4px;
+  top: 0px;
+  width: 6px;
+  height: 12px;
+  border-left: 3px solid var(--green-dark);
+  border-bottom: 3px solid var(--green-dark);
+  transform: rotate(-45deg);
+}
+
 /*  Dashboard 
   Header full-width con tecnica 100dvw + offset per estendersi oltre il container. */
 .dashboard-container {
