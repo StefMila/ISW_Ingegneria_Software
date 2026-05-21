@@ -37,24 +37,28 @@ const seedUsers = [
     surname: 'Rossi',
     email: 'allevatore@muccapp.it',
     userType: 'allevatore',
+    acceptedTerms: true ,
   },
   {
     name: 'Sara',
     surname: 'Bianchi',
     email: 'distributore@muccapp.it',
     userType: 'distributore',
+    acceptedTerms: true ,
   },
   {
     name: 'Luca',
     surname: 'Verdi',
     email: 'veterinario@muccapp.it',
     userType: 'veterinario',
+    acceptedTerms: true ,
   },
   {
     name: 'Giulia',
     surname: 'Neri',
     email: 'consumatore@muccapp.it',
     userType: 'consumatore',
+    acceptedTerms: true ,
   },
 ];
 
