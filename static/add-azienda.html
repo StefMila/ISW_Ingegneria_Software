@@ -48,8 +48,14 @@
                 <label for="nomeAzienda">Nome Azienda:</label>
                 <input type="text" id="nomeAzienda" name="nomeAzienda" placeholder="Inserisci il nome dell'azienda" required>
 
-                <label for="indirizzo">Indirizzo:</label>
-                <input type="text" id="indirizzo" name="indirizzo" placeholder="Inserisci l'indirizzo dell'azienda" required>
+                <label for="indirizzo">Indirizzo (opzionale):</label>
+                <!-- Campo indirizzo con autocompletamento Google Places -->
+                <input type="text" id="indirizzo" name="indirizzo" placeholder="Inizia a digitare l'indirizzo..." autocomplete="off">
+                <!-- Pulsante per usare la posizione attuale del dispositivo -->
+                <button type="button" id="getLocationBtn">Usa la mia posizione attuale</button>
+                <!-- Campi nascosti per latitudine e longitudine -->
+                <input type="hidden" id="lat" name="lat">
+                <input type="hidden" id="lng" name="lng">
 
                 <label for="partitaIva">Partita IVA:</label>
                 <input type="text" id="partitaIva" name="partitaIva" placeholder="Inserisci la partita IVA dell'azienda" required>
@@ -63,6 +69,9 @@
                 <label for="website">Sito Web:</label>
                 <input type="url" id="website" name="website" placeholder="Inserisci il sito web dell'azienda" >
 
+                <label for="productCategories">Categorie prodotto (array):</label>
+                <input type="text" id="productCategories" name="productCategories" placeholder="Es. latte, formaggi, yogurt">
+
                 
                 <button type="submit">Salva Azienda</button>
             </form>
@@ -70,8 +79,78 @@
         </section>
     </main>
 
-    <script src="/azienda-switcher.js"></script>
-    <script src="/add-azienda.js"></script>
-    <script src="/logout.js"></script>
+        <!-- Caricamento dinamico Google Places API key dal backend -->
+        <script>
+        // Funzione per caricare dinamicamente lo script Google Maps con la chiave ottenuta dal backend
+        function loadGoogleMapsScript(apiKey, callback) {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+            script.async = true;
+            script.defer = true;
+            script.onload = callback;
+            document.head.appendChild(script);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Recupera la chiave dal backend
+            fetch('/api/config')
+                .then(res => res.json())
+                .then(cfg => {
+                    if (cfg.googleMapsKey) {
+                        loadGoogleMapsScript(cfg.googleMapsKey, initAutocomplete);
+                    } else {
+                        alert('Chiave Google Maps non trovata.');
+                    }
+                });
+        });
+
+        // Inizializza l'autocomplete di Google Places sull'input indirizzo
+        function initAutocomplete() {
+            const input = document.getElementById('indirizzo');
+            const latInput = document.getElementById('lat');
+            const lngInput = document.getElementById('lng');
+            if (window.google && google.maps && google.maps.places) {
+                const autocomplete = new google.maps.places.Autocomplete(input, {
+                    types: ['geocode'],
+                    componentRestrictions: { country: 'it' } // Limita all'Italia
+                });
+                // Quando l'utente seleziona un indirizzo dal suggerimento
+                autocomplete.addListener('place_changed', function() {
+                    const place = autocomplete.getPlace();
+                    if (place.geometry && place.geometry.location) {
+                        latInput.value = place.geometry.location.lat();
+                        lngInput.value = place.geometry.location.lng();
+                    }
+                });
+            }
+            // Gestione click su "Usa la mia posizione attuale"
+            const getLocationBtn = document.getElementById('getLocationBtn');
+            if (getLocationBtn) {
+                getLocationBtn.addEventListener('click', function() {
+                    if (navigator.geolocation) {
+                        getLocationBtn.disabled = true;
+                        getLocationBtn.textContent = 'Rilevamento posizione...';
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            latInput.value = position.coords.latitude;
+                            lngInput.value = position.coords.longitude;
+                            // Opzionale: puoi usare le API di Google Maps Geocoding per convertire lat/lng in indirizzo
+                            input.value = `Lat: ${position.coords.latitude}, Lng: ${position.coords.longitude}`;
+                            getLocationBtn.textContent = 'Usa la mia posizione attuale';
+                            getLocationBtn.disabled = false;
+                        }, function(error) {
+                            alert('Impossibile ottenere la posizione: ' + error.message);
+                            getLocationBtn.textContent = 'Usa la mia posizione attuale';
+                            getLocationBtn.disabled = false;
+                        });
+                    } else {
+                        alert('Geolocalizzazione non supportata dal browser.');
+                    }
+                });
+            }
+        }
+        </script>
+        <script src="/azienda-switcher.js"></script>
+        <script src="/add-azienda.js"></script>
+        <script src="/logout.js"></script>
 </body>
 </html>

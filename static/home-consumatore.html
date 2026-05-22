@@ -12,8 +12,23 @@
   <!-- Fine controllo accesso -->
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-  <h1>Benvenuto, consumatore!</h1>
-  <!-- Contenuto specifico per il consumatore -->
+<body class="home-consumatore-page">
+  <div id="menu-root"></div>
+  <!-- script per caricare dinamicamente il menu laterale da menu.html, in modo da poterlo condividere tra più pagine senza duplicare il codice -->
+   <script>
+    fetch('/menu.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('menu-root').innerHTML = html;
+      })
+      .catch(err => {
+        console.error('Errore caricamento menu:', err);
+      });
+  </script>
+
+  <main class="consumer-content">
+    <h1>Benvenuto, consumatore!</h1>
+    <p>Apri il menu laterale con l'icona in alto a sinistra.</p>
+  </main>
 </body>
 </html>
