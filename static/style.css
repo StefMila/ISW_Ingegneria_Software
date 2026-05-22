@@ -1,3 +1,149 @@
+/* --- Stili specifici per esplora.html --- */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Contenitore della barra di ricerca sopra la mappa */
+.search-container {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  display: flex;
+  gap: 10px;
+}
+
+.search-container input {
+  padding: 8px;
+  width: 200px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.search-container button {
+  padding: 8px 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.search-container button.geo-btn {
+  background-color: #2196F3;
+}
+
+/* Failsafe: nasconde eventuali vecchi filtri categoria ancora presenti in cache HTML */
+.category-toolbar,
+.category-filters,
+.category-filter-btn {
+  display: none !important;
+}
+
+/* La mappa occupa tutto lo schermo */
+gmp-map {
+  height: 100%;
+  width: 100%;
+}
+
+#mappaElencoLayout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 0 12px;
+  margin-top: 88px;
+}
+
+#mapCol {
+  flex: 1;
+  min-width: 0;
+}
+
+#elencoWrapper {
+  position: relative;
+  width: 360px;
+  max-width: 40vw;
+  flex: 0 0 auto;
+  transition: width 0.25s ease;
+}
+
+#myMap {
+  height: 72vh;
+  width: 100%;
+}
+
+#elencoAziende {
+  width: 100%;
+  max-height: 72vh;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+  transition: opacity 0.2s ease;
+}
+
+#elencoToggleBtn {
+  position: absolute;
+  left: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 52px;
+  border: 1px solid #d5d5d5;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  z-index: 4;
+}
+
+body.elenco-collapsed #elencoWrapper {
+  width: 24px;
+  max-width: 24px;
+}
+
+body.elenco-collapsed #elencoAziende {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 980px) {
+  .search-container {
+    top: 104px;
+  }
+
+  #mappaElencoLayout {
+    flex-direction: column;
+    margin-top: 96px;
+  }
+
+  #elencoWrapper {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #elencoAziende {
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+  }
+
+  #elencoToggleBtn {
+    display: none;
+  }
+}
 
 /*
   Tema grafico MuccApp (verde):
@@ -316,6 +462,178 @@ button:disabled {
 /* Hover con cambio di sfondo giallo chiaro per evidenziare azione importante */
 .dashboard-header #logoutButton:hover {
   background-color: rgba(230, 168, 23, 0.2);
+}
+
+/* Home consumatore: sidebar apribile da hamburger */
+.home-consumatore-page {
+  display: block;
+  align-items: initial;
+  justify-content: initial;
+  min-height: 100vh;
+  color: var(--text-dark);
+}
+
+.home-consumatore-page .menu-checkbox {
+  position: fixed;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.home-consumatore-page .top-left-actions {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-consumatore-page .menu-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  border: 2px solid var(--green-light);
+  background: var(--green-dark);
+  color: #f0f7e6;
+  font-size: 1.55rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(15, 39, 4, 0.25);
+}
+
+.home-consumatore-page .home-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  border: 2px solid var(--green-light);
+  background: var(--green-dark);
+  color: #f0f7e6;
+  font-size: 1.4rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(15, 39, 4, 0.25);
+}
+
+.home-consumatore-page .menu-icon:hover,
+.home-consumatore-page .home-icon:hover {
+  background: #1f4a08;
+  color: #ffffff;
+}
+
+.home-consumatore-page .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(86vw, 320px);
+  height: 100vh;
+  padding: 78px 14px 20px;
+  background: linear-gradient(180deg, #133607 0%, #2f6316 100%);
+  box-shadow: 10px 0 24px rgba(0, 0, 0, 0.28);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  z-index: 1150;
+  overflow-y: auto;
+}
+
+.home-consumatore-page .sidebar-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.home-consumatore-page .sidebar-menu > li {
+  margin-bottom: 8px;
+}
+
+.home-consumatore-page .sidebar-menu a {
+  display: block;
+  color: #f3f9e8;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.home-consumatore-page .sidebar-menu a:hover {
+  background: rgba(168, 213, 94, 0.18);
+  color: #ffffff;
+}
+
+.home-consumatore-page .sidebar-menu .dropdown > a {
+  font-weight: bold;
+}
+
+.home-consumatore-page .submenu {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0 0 0 10px;
+  border-left: 2px solid rgba(168, 213, 94, 0.55);
+}
+
+.home-consumatore-page .submenu li {
+  margin-bottom: 4px;
+}
+
+.home-consumatore-page .submenu a {
+  font-size: 0.95rem;
+}
+
+.home-consumatore-page .sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.36);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 1100;
+}
+
+.home-consumatore-page .menu-checkbox:checked ~ .sidebar {
+  transform: translateX(0);
+}
+
+.home-consumatore-page .menu-checkbox:checked ~ .sidebar-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.home-consumatore-page .consumer-content {
+  padding: 92px 20px 20px;
+  max-width: 900px;
+}
+
+@media (max-width: 520px) {
+  .home-consumatore-page .top-left-actions {
+    top: 10px;
+    left: 10px;
+    gap: 8px;
+  }
+
+  .home-consumatore-page .menu-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .home-consumatore-page .home-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.2rem;
+  }
+
+  .home-consumatore-page .sidebar {
+    width: 88vw;
+    padding-top: 66px;
+  }
+
+  .home-consumatore-page .consumer-content {
+    padding-top: 70px;
+  }
 }
 
 /* Card sezione dashboard (riutilizzabile) */
