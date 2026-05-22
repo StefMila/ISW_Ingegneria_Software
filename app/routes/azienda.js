@@ -6,7 +6,7 @@ import { checkAuth, checkUserType } from './auth.js';
 import { registerAnimale, getAnimali, deleteAnimale, updateAnimale } from './animale.js';
 
 const router = express.Router();
-
+// Funzione di normalizzazione per le categorie prodotto accettando sia array che stringa separata da virgole
 function normalizeCategories(input) {
     const rawValues = Array.isArray(input)
         ? input

@@ -31,24 +31,12 @@
     </script>
 <!-- Barra di ricerca e filtri -->
     <div class="search-container">
-      <div class="search-main-row">
-        <input type="text" id="searchInput" placeholder="Cerca azienda, luogo o categoria...">
-        <button onclick="filtraAziende()">Cerca</button>
-        <button class="geo-btn" onclick="cercaIntornoAMe()">📍 Intorno a me</button>
-        <label style="margin-left:10px;font-size:0.95em;">Raggio:
-          <input type="number" id="raggioInput" min="1" max="100" value="10" style="width:55px;"> km
-        </label>
-      </div>
-    </div>
-
-    <div class="category-toolbar" aria-label="Filtri categorie prodotto">
-      <div class="category-filters">
-        <button type="button" class="category-filter-btn is-active" data-category="" onclick="filtraCategoriaPreset('')">Tutte</button>
-        <button type="button" class="category-filter-btn" data-category="latte" onclick="filtraCategoriaPreset('latte')">🥛 Latte</button>
-        <button type="button" class="category-filter-btn" data-category="yogurt" onclick="filtraCategoriaPreset('yogurt')">🥣 Yogurt</button>
-        <button type="button" class="category-filter-btn" data-category="formaggio" onclick="filtraCategoriaPreset('formaggio')">🧀 Formaggio</button>
-        <button type="button" class="category-filter-btn" data-category="gelato" onclick="filtraCategoriaPreset('gelato')">🍨 Gelato</button>
-      </div>
+      <input type="text" id="searchInput" placeholder="Cerca azienda, luogo o categoria...">
+      <button onclick="filtraAziende()">Cerca</button>
+      <button class="geo-btn" onclick="cercaIntornoAMe()">📍 Intorno a me</button>
+      <label style="margin-left:10px;font-size:0.95em;">Raggio:
+        <input type="number" id="raggioInput" min="1" max="100" value="10" style="width:55px;"> km
+      </label>
     </div>
 
     <div id="mappaElencoLayout">
@@ -79,7 +67,6 @@
       let mappaComponent;
       let markerAttivi = [];
       let elencoCollapsed = false;
-      let categoriaPresetAttiva = '';
       // Funzione per mostrare/nascondere l'elenco laterale e aggiornare l'icona del pulsante
       function setElencoCollapsed(collapsed) {
         elencoCollapsed = collapsed;
@@ -93,40 +80,6 @@
       // Inizialmente nascondi l'elenco su schermi piccoli
       function toggleElencoLaterale() {
         setElencoCollapsed(!elencoCollapsed);
-      }
-
-      function aggiornaBottoniCategoria() {
-        document.querySelectorAll('.category-filter-btn').forEach(btn => {
-          const active = btn.dataset.category === categoriaPresetAttiva;
-          btn.classList.toggle('is-active', active);
-        });
-      }
-
-      function categoriaPresetMatch(azienda) {
-        if (!categoriaPresetAttiva) return true;
-        const alias = {
-          latte: ['latte', 'milk'],
-          yogurt: ['yogurt', 'yoghurt'],
-          formaggio: ['formaggio', 'formaggi', 'cheese'],
-          gelato: ['gelato', 'ice cream', 'sorbetto']
-        };
-        const termini = alias[categoriaPresetAttiva] || [categoriaPresetAttiva];
-        const testoCategorie = `${azienda.categoria || ''} ${(azienda.categorie || []).join(' ')}`.toLowerCase();
-        return termini.some(t => testoCategorie.includes(t));
-      }
-
-      function getAziendeFiltratePerPreset() {
-        return databaseAziende.filter(categoriaPresetMatch);
-      }
-
-      function filtraCategoriaPreset(categoria) {
-        categoriaPresetAttiva = categoria;
-        aggiornaBottoniCategoria();
-        const input = document.getElementById('searchInput');
-        if (categoria) {
-          input.value = categoria;
-        }
-        filtraAziende();
       }
       // Funzione per mostrare i dettagli di un'azienda in un box flottante vicino al punto cliccato
       function mostraDettagliAzienda(azienda, clickEvent, markerElement) {
@@ -283,9 +236,8 @@
         const input = document.getElementById("searchInput");
         const testoCercato = input.value.trim();
         const testoNorm = testoCercato.toLowerCase();
-        const aziendeBase = getAziendeFiltratePerPreset();
         if (!testoCercato) {
-          mostraAziendeSuMappa(aziendeBase);
+          mostraAziendeSuMappa(databaseAziende);
           lastSearchCoords = null;
           mappaComponent.setAttribute("center", "41.8719,12.5674");
           mappaComponent.setAttribute("zoom", "6");
@@ -294,7 +246,7 @@
 
         // Prima tenta un filtro testuale locale (nome/categoria/citta/indirizzo).
         // In questo modo la barra funziona anche per categorie.
-        const risultatiTestuali = aziendeBase.filter(az => {
+        const risultatiTestuali = databaseAziende.filter(az => {
           const categoriaPrincipale = (az.categoria || '').toLowerCase();
           const categorieProdotto = Array.isArray(az.categorie) ? az.categorie.join(' ').toLowerCase() : '';
           const nome = (az.nome || '').toLowerCase();
@@ -326,7 +278,7 @@
               lastSearchCoords = { lat, lng };
               // Filtra aziende entro raggio
               const raggioKm = getRaggioKm();
-              const risultati = aziendeBase.filter(az => distanzaKm(lat, lng, az.lat, az.lng) <= raggioKm);
+              const risultati = databaseAziende.filter(az => distanzaKm(lat, lng, az.lat, az.lng) <= raggioKm);
               mostraAziendeSuMappa(risultati);
               if (risultati.length > 0) {
                 mappaComponent.setAttribute("center", `${lat},${lng}`);
@@ -353,7 +305,7 @@
               lastSearchCoords = { lat: utenteLat, lng: utenteLng };
               // Filtra aziende entro raggio
               const raggioKm = getRaggioKm();
-              const risultati = getAziendeFiltratePerPreset().filter(az => distanzaKm(utenteLat, utenteLng, az.lat, az.lng) <= raggioKm);
+              const risultati = databaseAziende.filter(az => distanzaKm(utenteLat, utenteLng, az.lat, az.lng) <= raggioKm);
               mostraAziendeSuMappa(risultati);
               if (risultati.length > 0) {
                 mappaComponent.setAttribute("center", `${utenteLat},${utenteLng}`);
