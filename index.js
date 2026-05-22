@@ -68,6 +68,11 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
 
+// Endpoint per esporre la chiave Google Maps al frontend
+app.get('/api/config', (req, res) => {
+  res.json({ googleMapsKey: process.env.GOOGLE_MAPS_API_KEY });
+});
+
 // Endpoint di test per verificare che il server sia attivo
 app.get('/api/health', (req, res) => {
   res.status(200).json({
