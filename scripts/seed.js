@@ -69,6 +69,7 @@ const seedAziendeAllevatore = [
     address: 'Via della Campagna 1, 24100 Bergamo BG',
     emailAzienda: 'info@agricolatest.it',
     phoneNumber: '035 123456',
+    categories: ['latte', 'formaggi'],
   },
   {
     companyName: 'Fattoria Pianura',
@@ -76,6 +77,7 @@ const seedAziendeAllevatore = [
     address: 'Via dei Prati 12, 24100 Bergamo BG',
     emailAzienda: 'contatti@fattoriapianura.it',
     phoneNumber: '035 654321',
+    categories: ['carne', 'salumi'],
   },
   {
     companyName: 'Cascina Colle Verde',
@@ -83,6 +85,7 @@ const seedAziendeAllevatore = [
     address: 'Strada del Colle 7, 24100 Bergamo BG',
     emailAzienda: 'info@colleverde.it',
     phoneNumber: '035 987654',
+    categories: ['uova', 'yogurt'],
   },
 ];
 
@@ -148,11 +151,31 @@ async function seed() {
   for (const aziendaSeed of seedAziendeAllevatore) {
     let aziendaItem = await azienda.findOne({ vatNumber: aziendaSeed.vatNumber });
     if (aziendaItem) {
+      let aziendaUpdated = false;
+
       if (String(aziendaItem.ownerUserId) !== String(user._id)) {
         aziendaItem.ownerUserId = user._id;
-        await aziendaItem.save();
+        aziendaUpdated = true;
         console.log(`ℹ️   Azienda "${aziendaItem.companyName}" riassegnata all'allevatore ${user.email}.`);
       }
+
+      const seedCategories = Array.isArray(aziendaSeed.categories)
+        ? [...new Set(aziendaSeed.categories.map((c) => String(c).trim().toLowerCase()).filter(Boolean))]
+        : [];
+      const currentCategories = Array.isArray(aziendaItem.categories)
+        ? aziendaItem.categories.map((c) => String(c).trim().toLowerCase()).filter(Boolean)
+        : [];
+      const mergedCategories = [...new Set([...currentCategories, ...seedCategories])];
+
+      if (mergedCategories.length !== currentCategories.length) {
+        aziendaItem.categories = mergedCategories;
+        aziendaUpdated = true;
+      }
+
+      if (aziendaUpdated) {
+        await aziendaItem.save();
+      }
+
       console.log(`ℹ️   Azienda "${aziendaItem.companyName}" già esistente, riutilizzata.`);
     } else {
       aziendaItem = await azienda.create({
