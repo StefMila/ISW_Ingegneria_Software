@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mappa Aziende con Filtri</title>
+    <!-- Nota: la chiave API viene caricata dinamicamente dal backend per evitare di esporla direttamente nel codice client -->
+    <script>
+      fetch('/api/config')
+        .then(res => res.json())
+        .then(config => {
+          // Carica Google Maps JS API
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsKey}&callback=initApp&libraries=places,maps,marker&v=beta`;
+          script.async = true;
+          document.head.appendChild(script);
+        });
+    </script>
+     <link rel="stylesheet" href="style.css">
+  </head>
+  <body class="home-consumatore-page">
+     <div id="menu-root"></div>
+     <!-- script per caricare dinamicamente il menu laterale da menu.html, in modo da poterlo condividere tra più pagine senza duplicare il codice -->
+    <script>
+    fetch('/menu.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('menu-root').innerHTML = html;
+      })
+      .catch(err => {
+        console.error('Errore caricamento menu:', err);
+      });
+    </script>
+<!-- Barra di ricerca e filtri -->
+    <div class="search-container">
+      <div class="search-main-row">
+        <input type="text" id="searchInput" placeholder="Cerca azienda, luogo o categoria...">
+        <button onclick="filtraAziende()">Cerca</button>
+        <button class="geo-btn" onclick="cercaIntornoAMe()">📍 Intorno a me</button>
+        <label style="margin-left:10px;font-size:0.95em;">Raggio:
+          <input type="number" id="raggioInput" min="1" max="100" value="10" style="width:55px;"> km
+        </label>
+      </div>
+    </div>
+
+    <div class="category-toolbar" aria-label="Filtri categorie prodotto">
+      <div class="category-filters">
+        <button type="button" class="category-filter-btn is-active" data-category="" onclick="filtraCategoriaPreset('')">Tutte</button>
+        <button type="button" class="category-filter-btn" data-category="latte" onclick="filtraCategoriaPreset('latte')">🥛 Latte</button>
+        <button type="button" class="category-filter-btn" data-category="yogurt" onclick="filtraCategoriaPreset('yogurt')">🥣 Yogurt</button>
+        <button type="button" class="category-filter-btn" data-category="formaggio" onclick="filtraCategoriaPreset('formaggio')">🧀 Formaggio</button>
+        <button type="button" class="category-filter-btn" data-category="gelato" onclick="filtraCategoriaPreset('gelato')">🍨 Gelato</button>
+      </div>
+    </div>
+
+    <div id="mappaElencoLayout">
+      <div id="mapCol">
+        <!-- Mappa posizione di apertura -->
+        <gmp-map id="myMap" center="41.8719,12.5674" zoom="6" map-id="DEMO_MAP_ID"></gmp-map>
+      </div>
+<!-- Elenco aziende trovato -->
+      <div id="elencoWrapper">
+        <button id="elencoToggleBtn" type="button" onclick="toggleElencoLaterale()" aria-label="Nascondi elenco aziende">&#9664;</button>
+        <div id="elencoAziende"></div>
+      </div>
+    </div>
+
+    <!-- Box per i dettagli dell'azienda -->
+    <div id="dettaglioAzienda" style="display:none;position:fixed;max-width:420px;width:calc(100vw - 24px);padding:14px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.18);font-size:1rem;z-index:30;"></div>
+
+    <script>
+      // Carica le aziende reali dal backend
+      let databaseAziende = [];
+      let lastSearchCoords = null; // {lat, lng}
+      // Funzione per ottenere il raggio di ricerca in km, con un default di 10 km se l'input è vuoto o non valido
+      function getRaggioKm() {
+        const val = Number(document.getElementById('raggioInput')?.value);
+        return (!isNaN(val) && val > 0) ? val : 10;
+      }
+      // Variabili globali per la mappa e i marker attivi
+      let mappaComponent;
+      let markerAttivi = [];
+      let elencoCollapsed = false;
+      let categoriaPresetAttiva = '';
+      // Funzione per mostrare/nascondere l'elenco laterale e aggiornare l'icona del pulsante
+      function setElencoCollapsed(collapsed) {
+        elencoCollapsed = collapsed;
+        document.body.classList.toggle('elenco-collapsed', collapsed);
+        const toggleBtn = document.getElementById('elencoToggleBtn');
+        if (toggleBtn) {
+          toggleBtn.innerHTML = collapsed ? '&#9654;' : '&#9664;';
+          toggleBtn.setAttribute('aria-label', collapsed ? 'Mostra elenco aziende' : 'Nascondi elenco aziende');
+        }
+      }
+      // Inizialmente nascondi l'elenco su schermi piccoli
+      function toggleElencoLaterale() {
+        setElencoCollapsed(!elencoCollapsed);
+      }
+
+      function aggiornaBottoniCategoria() {
+        document.querySelectorAll('.category-filter-btn').forEach(btn => {
+          const active = btn.dataset.category === categoriaPresetAttiva;
+          btn.classList.toggle('is-active', active);
+        });
+      }
+
+      function categoriaPresetMatch(azienda) {
+        if (!categoriaPresetAttiva) return true;
+        const alias = {
+          latte: ['latte', 'milk'],
+          yogurt: ['yogurt', 'yoghurt'],
+          formaggio: ['formaggio', 'formaggi', 'cheese'],
+          gelato: ['gelato', 'ice cream', 'sorbetto']
+        };
+        const termini = alias[categoriaPresetAttiva] || [categoriaPresetAttiva];
+        const testoCategorie = `${azienda.categoria || ''} ${(azienda.categorie || []).join(' ')}`.toLowerCase();
+        return termini.some(t => testoCategorie.includes(t));
+      }
+
+      function getAziendeFiltratePerPreset() {
+        return databaseAziende.filter(categoriaPresetMatch);
+      }
+
+      function filtraCategoriaPreset(categoria) {
+        categoriaPresetAttiva = categoria;
+        aggiornaBottoniCategoria();
+        const input = document.getElementById('searchInput');
+        if (categoria) {
+          input.value = categoria;
+        }
+        filtraAziende();
+      }
+      // Funzione per mostrare i dettagli di un'azienda in un box flottante vicino al punto cliccato
+      function mostraDettagliAzienda(azienda, clickEvent, markerElement) {
+        const box = document.getElementById('dettaglioAzienda');
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(azienda.lat + ',' + azienda.lng)}`;
+        const categoriaInfo = azienda.categoria || (Array.isArray(azienda.categorie) && azienda.categorie.length ? azienda.categorie.join(', ') : '');
+        box.innerHTML =
+          `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">` +
+            `<div>` +
+              `<h3 style="margin:0 0 8px 0;">${azienda.nome}</h3>` +
+              (categoriaInfo ? `<div><b>Categoria:</b> ${categoriaInfo}</div>` : '') +
+              (azienda.indirizzo ? `<div><b>Indirizzo:</b> ${azienda.indirizzo}</div>` : '') +
+              (azienda.citta ? `<div><b>Città:</b> ${azienda.citta}</div>` : '') +
+              (azienda.email ? `<div><b>Email:</b> <a href="mailto:${azienda.email}">${azienda.email}</a></div>` : '') +
+              (azienda.telefono ? `<div><b>Telefono:</b> ${azienda.telefono}</div>` : '') +
+              (azienda.sito ? `<div><b>Sito:</b> <a href="${azienda.sito}" target="_blank" rel="noopener noreferrer">${azienda.sito}</a></div>` : '') +
+            `</div>` +
+            `<button type="button" onclick="this.closest('#dettaglioAzienda').style.display='none'">Chiudi</button>` +
+          `</div>` +
+          `<div style="margin-top:12px;">` +
+            `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="button-link">Apri su Google Maps</a>` +
+          `</div>`;
+        // Prima mostra il box per calcolarne le dimensioni, poi posizionalo vicino al click o al marker
+        box.style.display = 'block';
+
+        // Posiziona il box vicino al click, ma sempre dentro la viewport.
+        let clickX = window.innerWidth / 2;
+        let clickY = window.innerHeight / 2;
+        // Prova a ottenere le coordinate del click in diversi modi per massima compatibilità
+        if (clickEvent && typeof clickEvent.clientX === 'number' && typeof clickEvent.clientY === 'number') {
+          clickX = clickEvent.clientX;
+          clickY = clickEvent.clientY;
+          // Se il clickEvent è un evento di Google Maps, potrebbe avere le coordinate in domEvent
+        } else if (clickEvent && clickEvent.domEvent && typeof clickEvent.domEvent.clientX === 'number' && typeof clickEvent.domEvent.clientY === 'number') {
+          clickX = clickEvent.domEvent.clientX;
+          clickY = clickEvent.domEvent.clientY;
+          // Altrimenti, se abbiamo un markerElement, proviamo a posizionare il box sopra di esso
+        } else if (markerElement && typeof markerElement.getBoundingClientRect === 'function') {
+          const markerRect = markerElement.getBoundingClientRect();
+          clickX = markerRect.left + (markerRect.width / 2);
+          clickY = markerRect.top;
+        }
+        // Aggiungi un margine di sicurezza per evitare che il box esca dallo schermo
+        const margin = 12;
+        const boxRect = box.getBoundingClientRect();
+        let left = clickX + 12;
+        let top = clickY - (boxRect.height / 2);
+        // Assicurati che il box rimanga dentro la viewport
+        left = Math.min(Math.max(margin, left), window.innerWidth - boxRect.width - margin);
+        top = Math.min(Math.max(margin, top), window.innerHeight - boxRect.height - margin);
+        // Applica la posizione calcolata al box
+        box.style.left = `${left}px`;
+        box.style.top = `${top}px`;
+      }
+
+      // Funzione che parte in automatico quando Google Maps è pronto
+      function initApp() {
+        mappaComponent = document.getElementById("myMap");
+        // Autocompletamento indirizzo sulla barra di ricerca
+        if (window.google && google.maps && google.maps.places) {
+          const input = document.getElementById('searchInput');
+          const autocomplete = new google.maps.places.Autocomplete(input, {
+            types: ['geocode'],
+            componentRestrictions: { country: 'it' }
+          });
+          // Se l'utente seleziona un suggerimento, aggiorna il campo e filtra
+          autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            if (place && place.formatted_address) {
+              input.value = place.formatted_address;
+              filtraAziende();
+            }
+          });
+        }
+        // Carica aziende dal backend
+        fetch('/api/azienda/public')
+          .then(res => res.json())
+          .then(data => {
+            databaseAziende = (data.items || []).map(az => ({
+              categorie: Array.isArray(az.productCategories) ? az.productCategories : (az.productCategories ? az.productCategories.split(',').map(c => c.trim()) : []),
+              nome: az.companyName,
+              categoria: (az.categories && az.categories.length > 0) ? az.categories[0] : '',
+              indirizzo: az.address,
+              lat: az.geo && az.geo.lat ? az.geo.lat : (az.location && az.location.coordinates && az.location.coordinates[1]),
+              lng: az.geo && az.geo.lng ? az.geo.lng : (az.location && az.location.coordinates && az.location.coordinates[0]),
+              citta: az.city || '',
+              email: az.emailAzienda || '',
+              telefono: az.phoneNumber || '',
+              sito: az.website || ''
+            })).map(az => ({
+              ...az,
+              categoria: az.categoria || (az.categorie.length ? az.categorie[0] : '')
+            })).filter(az => az.lat && az.lng);
+            mostraAziendeSuMappa(databaseAziende);
+          })
+          .catch(err => {
+            alert('Errore nel caricamento delle aziende: ' + err);
+          });
+      }
+
+      // 2. FUNZIONE PER DISEGNARE I PIN SULLA MAPPA
+      function mostraAziendeSuMappa(aziende) {
+        // Cancella i marker precedenti se ce ne sono
+        markerAttivi.forEach(m => m.remove());
+        markerAttivi = [];
+        // Aggiungi un marker per ogni azienda
+        aziende.forEach(azienda => {
+          const marker = document.createElement("gmp-advanced-marker");
+          marker.setAttribute("position", `${azienda.lat},${azienda.lng}`);
+          marker.setAttribute("title", azienda.nome + (azienda.categoria ? ` (${azienda.categoria})` : '') + (azienda.indirizzo ? ' - ' + azienda.indirizzo : ''));
+          marker.setAttribute("category", azienda.categoria || '');
+          marker.addEventListener('click', (event) => {
+            mostraDettagliAzienda(azienda, event, marker);
+          });
+          mappaComponent.appendChild(marker);
+          markerAttivi.push(marker);
+        });
+        // Mostra elenco sotto la mappa
+        mostraElencoAziende(aziende);
+      }
+      // Funzione per mostrare l'elenco delle aziende trovate sotto la mappa
+      function mostraElencoAziende(aziende) {
+        const elenco = document.getElementById('elencoAziende');
+        if (!aziende.length) {
+          elenco.innerHTML = '<em>Nessuna azienda trovata.</em>';
+          return;
+        }
+        elenco.innerHTML = '<b>Aziende trovate:</b><ul style="padding-left:18px;">' + aziende.map(az =>
+          `<li><b>${az.nome}</b><br>`+
+          (az.categoria ? '<b>Categoria:</b> ' + az.categoria + '<br>' : '')+
+          (az.indirizzo ? az.indirizzo + '<br>' : '')+
+          (az.citta ? az.citta + '<br>' : '')+
+          (az.email ? 'Email: '+az.email+'<br>' : '')+
+          (az.telefono ? 'Tel: '+az.telefono+'<br>' : '')+
+          (az.sito ? 'Sito: <a href="'+az.sito+'" target="_blank">'+az.sito+'</a>' : '')+
+          '</li>'
+        ).join('') + '</ul>';
+      }
+
+      // 3. FUNZIONE DEL FILTRO DI RICERCA
+      // Calcola distanza tra due coordinate (Haversine)
+      function distanzaKm(lat1, lng1, lat2, lng2) {
+        const R = 6371; // raggio Terra km
+        const dLat = (lat2-lat1)*Math.PI/180;
+        const dLng = (lng2-lng1)*Math.PI/180;
+        const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+                  Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+                  Math.sin(dLng/2)*Math.sin(dLng/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      // Filtro per luogo digitato o selezionato
+      function filtraAziende() {
+        const input = document.getElementById("searchInput");
+        const testoCercato = input.value.trim();
+        const testoNorm = testoCercato.toLowerCase();
+        const aziendeBase = getAziendeFiltratePerPreset();
+        if (!testoCercato) {
+          mostraAziendeSuMappa(aziendeBase);
+          lastSearchCoords = null;
+          mappaComponent.setAttribute("center", "41.8719,12.5674");
+          mappaComponent.setAttribute("zoom", "6");
+          return;
+        }
+
+        // Prima tenta un filtro testuale locale (nome/categoria/citta/indirizzo).
+        // In questo modo la barra funziona anche per categorie.
+        const risultatiTestuali = aziendeBase.filter(az => {
+          const categoriaPrincipale = (az.categoria || '').toLowerCase();
+          const categorieProdotto = Array.isArray(az.categorie) ? az.categorie.join(' ').toLowerCase() : '';
+          const nome = (az.nome || '').toLowerCase();
+          const citta = (az.citta || '').toLowerCase();
+          const indirizzo = (az.indirizzo || '').toLowerCase();
+          return categoriaPrincipale.includes(testoNorm) ||
+                 categorieProdotto.includes(testoNorm) ||
+                 nome.includes(testoNorm) ||
+                 citta.includes(testoNorm) ||
+                 indirizzo.includes(testoNorm);
+        });
+        
+        if (risultatiTestuali.length > 0) {
+          mostraAziendeSuMappa(risultatiTestuali);
+          const primo = risultatiTestuali[0];
+          mappaComponent.setAttribute("center", `${primo.lat},${primo.lng}`);
+          mappaComponent.setAttribute("zoom", "10");
+          lastSearchCoords = null;
+          return;
+        }
+
+        // Usa Google Geocoder per ottenere le coordinate del luogo
+        if (window.google && google.maps && google.maps.Geocoder) {
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ address: testoCercato }, function(results, status) {
+            if (status === 'OK' && results[0] && results[0].geometry && results[0].geometry.location) {
+              const lat = results[0].geometry.location.lat();
+              const lng = results[0].geometry.location.lng();
+              lastSearchCoords = { lat, lng };
+              // Filtra aziende entro raggio
+              const raggioKm = getRaggioKm();
+              const risultati = aziendeBase.filter(az => distanzaKm(lat, lng, az.lat, az.lng) <= raggioKm);
+              mostraAziendeSuMappa(risultati);
+              if (risultati.length > 0) {
+                mappaComponent.setAttribute("center", `${lat},${lng}`);
+                mappaComponent.setAttribute("zoom", "12");
+              } else {
+                alert("Nessuna azienda trovata entro " + raggioKm + " km da questo luogo.");
+              }
+            } else {
+              alert("Luogo non trovato. Prova a selezionare un suggerimento.");
+            }
+          });
+        } else {
+          alert("Autocomplete non disponibile. Riprova più tardi.");
+        }
+      }
+
+      // 4. FUNZIONE "CERCA INTORNO A ME" (Usa il GPS del dispositivo)
+      function cercaIntornoAMe() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const utenteLat = position.coords.latitude;
+              const utenteLng = position.coords.longitude;
+              lastSearchCoords = { lat: utenteLat, lng: utenteLng };
+              // Filtra aziende entro raggio
+              const raggioKm = getRaggioKm();
+              const risultati = getAziendeFiltratePerPreset().filter(az => distanzaKm(utenteLat, utenteLng, az.lat, az.lng) <= raggioKm);
+              mostraAziendeSuMappa(risultati);
+              if (risultati.length > 0) {
+                mappaComponent.setAttribute("center", `${utenteLat},${utenteLng}`);
+                mappaComponent.setAttribute("zoom", "13");
+              } else {
+                alert("Nessuna azienda trovata entro " + raggioKm + " km dalla tua posizione.");
+              }
+            },
+            () => {
+              alert("Impossibile accedere alla tua posizione. Controlla i permessi del browser.");
+            }
+          );
+        } else {
+          alert("Il tuo browser non supporta la geolocalizzazione.");
+        }
+      }
+    </script>
+  </body>
+</html>

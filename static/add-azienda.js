@@ -17,16 +17,18 @@ if (aziendaForm) {
         const phoneNumber  = document.getElementById('telefono').value.trim();
         const emailAzienda = document.getElementById('email').value.trim();
         const website      = document.getElementById('website').value.trim();
+        const productCategoriesInput = document.getElementById('productCategories').value.trim();
+        const lat          = document.getElementById('lat').value.trim();
+        const lng          = document.getElementById('lng').value.trim();
+        const productCategories = productCategoriesInput
+            ? [...new Set(productCategoriesInput.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean))]
+            : [];
 
         aziendaFormMessage.style.color = 'red';
         aziendaFormMessage.textContent = '';
 
         if (!companyName) {
             aziendaFormMessage.textContent = 'Il nome dell\'azienda è obbligatorio';
-            return;
-        }
-        if (!address) {
-            aziendaFormMessage.textContent = 'L\'indirizzo è obbligatorio';
             return;
         }
         if (!vatNumber) {
@@ -39,6 +41,11 @@ if (aziendaForm) {
         }
         if (!emailAzienda) {
             aziendaFormMessage.textContent = 'L\'email azienda è obbligatoria';
+            return;
+        }
+        // In questo flusso la posizione e' basata sulle coordinate
+        if (!lat || !lng || Number.isNaN(Number(lat)) || Number.isNaN(Number(lng))) {
+            aziendaFormMessage.textContent = 'Seleziona un indirizzo dai suggerimenti o usa la posizione attuale per ottenere le coordinate';
             return;
         }
         try {
@@ -56,7 +63,10 @@ if (aziendaForm) {
                     vatNumber,
                     phoneNumber,
                     emailAzienda,
-                    website
+                    website,
+                    categories: productCategories,
+                    lat,
+                    lng
                 })
             });
 // Gestione della risposta del server
