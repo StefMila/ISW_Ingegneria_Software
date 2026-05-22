@@ -12,7 +12,7 @@ if (signupForm && signupMessage) {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const userType = document.getElementById('userType').value;
-        const acceptedTerms = document.getElementById('acceptedTerms').checked; //problema: ritorna undefined 
+        const acceptedTerms = document.getElementById('acceptedTerms').checked; 
         signupMessage.textContent = 'Registrazione in corso...';
         signupMessage.style.color = 'black';
 // Validazione dei campi
