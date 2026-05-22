@@ -17,11 +17,13 @@ tags:
     description: Endpoint per la registrazione e gestione aziende
   - name: Animale
     description: Endpoint per la registrazione e gestione animali
+  - name: Mappa
+    description: Endpoint di supporto all'integrazione mappa (configurazione client e dataset pubblico aziende)
 
 paths:
   /api/health:
     get:
-      summary: Verifica che il server sia attivo
+      summary: Stato server
       description: Restituisce lo stato del server per verificare che il backend sia raggiungibile e funzionante
       tags:
         - Health
@@ -37,6 +39,70 @@ paths:
                   value:
                     message: Server attivo
                     status: ok
+
+  /api/config:
+    get:
+      summary: Configurazione client
+      description: Restituisce la configurazione necessaria al frontend per l'integrazione Google Maps.
+      tags:
+        - Mappa
+      responses:
+        '200':
+          description: Configurazione disponibile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientConfig'
+              examples:
+                success:
+                  value:
+                    googleMapsKey: AIzaSyD-example-key
+
+  /api/azienda/public:
+    get:
+      summary: Dataset aziende pubblico
+      description: Restituisce la lista pubblica delle aziende con i campi necessari alla visualizzazione in mappa.
+      tags:
+        - Mappa
+        - Azienda
+      responses:
+        '200':
+          description: Lista aziende pubbliche disponibile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AziendaPublicCollection'
+              examples:
+                success:
+                  value:
+                    items:
+                      - _id: 665f8fd8ad8f8c0012f9c123
+                        companyName: Azienda Agricola Rossi
+                        address: Via Roma 10, Milano
+                        categories:
+                          - latte
+                          - formaggio
+                        emailAzienda: info@azienda-rossi.it
+                        phoneNumber: "+39021234567"
+                        website: https://www.azienda-rossi.it
+                        geo:
+                          lat: 45.4642
+                          lng: 9.19
+                        location:
+                          type: Point
+                          coordinates:
+                            - 9.19
+                            - 45.4642
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
 
   /api/auth/signup:
     post:
@@ -387,7 +453,7 @@ paths:
 
   /api/azienda:
     post:
-      summary: Crea una nuova azienda
+      summary: Profilo azienda
       description: Permette a un allevatore autenticato di registrare una o più aziende associate al proprio account. L'accesso è riservato al solo ruolo allevatore; gli altri userType ricevono un errore di autorizzazione.
       tags:
         - Azienda
@@ -463,51 +529,9 @@ paths:
                   value:
                     message: "Errore interno del server"
   
-  
-  # /api/azienda/mine:
-  #   get:
-  #     summary: Elenca le aziende dell'allevatore autenticato
-  #     description: Restituisce tutte le aziende collegate all'id dell'allevatore presente nel token JWT. La rotta è accessibile solo al ruolo allevatore.
-  #     tags:
-  #       - Azienda
-  #     security:
-  #       - bearerAuth: []
-  #     responses:
-  #       '200':
-  #         description: Elenco aziende recuperato con successo
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: object
-  #               properties:
-  #                 items:
-  #                   type: array
-  #                   items:
-  #                     $ref: '#/components/schemas/AziendaSummary'
-  #       '401':
-  #         description: Token mancante, scaduto o non valido
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #             examples:
-  #               missingOrInvalidToken:
-  #                 value:
-  #                   message: "Token mancante o formato non valido: Accesso negato"
-  #       '403':
-  #         description: Permessi insufficienti per accedere all'area allevatore
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/ErrorResponse'
-  #             examples:
-  #               forbiddenRole:
-  #                 value:
-  #                   message: "Permessi insufficienti: Accesso negato"
-
   /api/azienda/{id}:
     delete:
-      summary: Elimina un'azienda
+      summary: Rimozione azienda
       description: Elimina l'azienda identificata dall'id specificato.
       tags:
         - Azienda
@@ -579,10 +603,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               
-
   /api/azienda/{aziendaId}/animali:
     post:
-      summary: Registra un nuovo animale per un'azienda
+      summary: Anagrafica animale aziendale
       description: Endpoint consigliato. Permette a un allevatore autenticato di registrare un animale nell'azienda indicata nel path.
       tags:
         - Animale
@@ -709,7 +732,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
-      summary: Visualizza gli animali di un'azienda
+      summary: Mandria aziendale
       description: Endpoint consigliato. Restituisce l'elenco paginato degli animali dell'azienda selezionata con supporto a filtri per colonna e ordinamento.
       tags:
         - Animale
@@ -901,12 +924,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
  
-
-  
-  
   /api/azienda/{aziendaId}/animali/{id}:
     patch:
-      summary: Modifica un animale
+      summary: Aggiornamento animale
       description: Modifica i dati dell'animale identificato dall'id specificato. L'aziendaId nel path viene usata solo per verificare che l'animale appartenga all'azienda di proprietà dell'utente autenticato. I campi matricola, aziendaId e _id non sono modificabili.
       tags:
         - Animale
@@ -1003,7 +1023,7 @@ paths:
                   value:
                     message: Animale non trovato
     delete:
-      summary: Elimina un animale
+      summary: Rimozione animale
       description: Elimina l'animale identificato dall'id specificato.
       tags:
         - Animale
@@ -1093,6 +1113,93 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    ClientConfig:
+      type: object
+      description: Configurazione client per servizi esterni.
+      required:
+        - googleMapsKey
+      properties:
+        googleMapsKey:
+          type: string
+          description: Chiave API Google Maps usata dal frontend.
+          example: AIzaSyD-example-key
+
+    GeoPoint:
+      type: object
+      description: Coordinate geografiche in formato semplificato.
+      properties:
+        lat:
+          type: number
+          format: double
+          example: 45.4642
+        lng:
+          type: number
+          format: double
+          example: 9.19
+
+    GeoLocation:
+      type: object
+      description: Coordinate geografiche in formato GeoJSON.
+      properties:
+        type:
+          type: string
+          example: Point
+        coordinates:
+          type: array
+          description: Coordinate GeoJSON in ordine [lng, lat].
+          minItems: 2
+          maxItems: 2
+          items:
+            type: number
+            format: double
+          example:
+            - 9.19
+            - 45.4642
+
+    AziendaPublicItem:
+      type: object
+      description: Dati pubblici di un'azienda per visualizzazione mappa.
+      properties:
+        _id:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        companyName:
+          type: string
+          example: Azienda Agricola Rossi
+        address:
+          type: string
+          example: Via Roma 10, Milano
+        categories:
+          type: array
+          items:
+            type: string
+          example:
+            - latte
+            - formaggio
+        emailAzienda:
+          type: string
+          format: email
+          example: info@azienda-rossi.it
+        phoneNumber:
+          type: string
+          example: "+39021234567"
+        website:
+          type: string
+          example: https://www.azienda-rossi.it
+        geo:
+          $ref: '#/components/schemas/GeoPoint'
+        location:
+          $ref: '#/components/schemas/GeoLocation'
+
+    AziendaPublicCollection:
+      type: object
+      description: Collezione di aziende pubbliche per la mappa.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AziendaPublicItem'
+
     HealthResponse:
       type: object
       description: Risposta di stato del server
