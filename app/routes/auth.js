@@ -103,7 +103,8 @@ router.post('/signup', async (req, res) => {
       surname,
       email: normalizedEmail,
       passwordHash: hashedPassword,
-      userType
+      userType,
+      acceptedTerms
     });
 
     // Salvo l'utente nel database
