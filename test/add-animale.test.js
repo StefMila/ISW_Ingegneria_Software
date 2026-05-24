@@ -30,7 +30,7 @@ describe('Add Animale - pagina e script', () => {
       .get('/add-animale.js')
       .expect(200);
 
-    expect(response.text).toContain('/api/azienda/${aziendaId}/animali');
+    expect(response.text).toContain('/api/aziende/${aziendaId}/animali');
     expect(response.text).toContain('La matricola è obbligatoria');
     expect(response.text).toContain('Il nome è obbligatorio');
     expect(response.text).toContain('Errore di connessione al server');
@@ -38,10 +38,10 @@ describe('Add Animale - pagina e script', () => {
 });
 
 describe('Add Animale - protezione endpoint API', () => {
-  test('POST /api/azienda/:aziendaId/animali senza token restituisce 401', async () => {
+  test('POST /api/aziende/:aziendaId/animali senza token restituisce 401', async () => {
     // Senza autenticazione non deve essere possibile registrare animali.
     await request(app)
-      .post('/api/azienda/665f8fd8ad8f8c0012f9c123/animali')
+      .post('/api/aziende/665f8fd8ad8f8c0012f9c123/animali')
       .send({
         matricola: 'ITA00001',
         name: 'Bruna',

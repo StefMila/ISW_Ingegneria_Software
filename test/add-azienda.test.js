@@ -27,12 +27,12 @@ describe('Add Azienda - pagina e script', () => {
     expect(response.text).toContain('getLocationBtn');
   });
 
-  test('Script add-azienda usa endpoint /api/azienda e messaggi di validazione principali', async () => {
+  test('Script add-azienda usa endpoint /api/aziende e messaggi di validazione principali', async () => {
     const response = await request(app)
       .get('/add-azienda.js')
       .expect(200);
 
-    expect(response.text).toContain("fetch('/api/azienda'");
+    expect(response.text).toContain("fetch('/api/aziende'");
     expect(response.text).toContain('Il nome dell\\\'azienda è obbligatorio');
     expect(response.text).toContain('La partita IVA è obbligatoria');
     expect(response.text).toContain('Errore di connessione al server');
@@ -40,10 +40,10 @@ describe('Add Azienda - pagina e script', () => {
 });
 
 describe('Add Azienda - protezione endpoint API', () => {
-  test('POST /api/azienda senza token restituisce 401', async () => {
+  test('POST /api/aziende senza token restituisce 401', async () => {
     // La creazione azienda deve sempre passare dal middleware di autenticazione.
     await request(app)
-      .post('/api/azienda')
+      .post('/api/aziende')
       .send({
         companyName: 'Azienda Test',
         vatNumber: 'IT12345678901',

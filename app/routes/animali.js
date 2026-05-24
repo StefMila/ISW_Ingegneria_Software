@@ -35,7 +35,7 @@ const assertAziendaOwnedByUser = async (aziendaId, userId) => {
     return { ok: true };
 };
 
-//handler per la registrazione di un nuovo animale --> risponde a POST su /api/azienda/{aziendaId}/animali
+// handler per la registrazione di un nuovo animale --> risponde a POST su /api/aziende/{aziendaId}/animali
 export const registerAnimale = async (req, res) => {
     try {
         const { matricola, name, species, dataNascita, sesso, razza, figliaDi, note } = req.body;
@@ -175,7 +175,7 @@ export const getAnimali = async (req, res) => {
         });
     }
 };
-// handler per eliminare un animale --> risponde a DELETE su /api/animali/azienda/:aziendaId/animali/:id
+// handler per eliminare un animale --> risponde a DELETE su /api/animali/aziende/:aziendaId/animali/:id
 export const deleteAnimale = async (req, res) => {
     try {
         const { id } = req.params;
@@ -220,7 +220,7 @@ export const deleteAnimale = async (req, res) => {
         });
     }
 }; 
-// handler per modificare un animale --> risponde a PATCH su /api/animali/azienda/:aziendaId/animali/:id
+// handler per modificare un animale --> risponde a PATCH su /api/animali/aziende/:aziendaId/animali/:id
 export const updateAnimale = async (req, res) => {
     try {
         const { id, aziendaId } = req.params;
@@ -282,18 +282,11 @@ export const updateAnimale = async (req, res) => {
 
 // Endpoint legacy: mantenuti per compatibilita' con frontend/consumer esistenti.
 router.post('/register', registerAnimale);
-router.get('/azienda/:aziendaId', getAnimali);
+router.get('/aziende/:aziendaId', getAnimali);
 
 // Endpoint consigliati in stile nested resource.
-router.post('/azienda/:aziendaId/animali', registerAnimale);
-router.get('/azienda/:aziendaId/animali', getAnimali);
-router.delete('/azienda/:aziendaId/animali/:id', deleteAnimale);
-router.patch('/azienda/:aziendaId/animali/:id', updateAnimale);
+router.post('/aziende/:aziendaId/animali', registerAnimale);
+router.get('/aziende/:aziendaId/animali', getAnimali);
+router.delete('/aziende/:aziendaId/animali/:id', deleteAnimale);
+router.patch('/aziende/:aziendaId/animali/:id', updateAnimale);
 export default router;
-
-
-
-
-
-
-        
