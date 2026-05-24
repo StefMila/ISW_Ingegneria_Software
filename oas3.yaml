@@ -17,6 +17,8 @@ tags:
     description: Endpoint per la registrazione e gestione aziende
   - name: Animale
     description: Endpoint per la registrazione e gestione animali
+  - name: Evento
+    description: Endpoint per la gestione eventi e sincronizzazione Google Calendar
   - name: Mappa
     description: Endpoint di supporto all'integrazione mappa (configurazione client e dataset pubblico aziende)
 
@@ -1103,8 +1105,354 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  
 
+  /api/eventi:
+    post:
+      summary: Crea evento
+      description: Crea un nuovo evento associato all'azienda attiva dell'allevatore autenticato.
+      tags:
+        - Evento
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreateRequest'
+            examples:
+              temporaneoPubblico:
+                summary: Evento temporaneo pubblico
+                value:
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  title: Mercato locale prodotti freschi
+                  type: vendita
+                  startAt: '2026-06-10T08:00:00.000Z'
+                  endAt: '2026-06-10T12:00:00.000Z'
+                  location: Via Roma 10, Milano
+                  description: Vendita aperta al pubblico
+                  reminderMinutes: 30
+                  visibility: public
+                  recurrenceType: weekly
+                  recurrenceInterval: 1
+                  recurrenceUntil: '2026-09-30'
+              singoloPrivato:
+                summary: Evento singolo privato
+                value:
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  title: Controllo sanitario interno
+                  type: controllo-sanitario
+                  startAt: '2026-06-03T09:00:00.000Z'
+                  endAt: '2026-06-03T10:00:00.000Z'
+                  location: Via Roma 10, Milano
+                  description: Visita veterinaria in stalla
+                  reminderMinutes: 10
+                  visibility: private
+                  recurrenceType: single
+                  recurrenceInterval: 1
+      responses:
+        '201':
+          description: Evento creato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  item:
+                    $ref: '#/components/schemas/EventItem'
+        '400':
+          description: Dati evento non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: Lista eventi azienda
+      description: Restituisce gli eventi dell'azienda selezionata.
+      tags:
+        - Evento
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: aziendaId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Lista eventi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+        '400':
+          description: Parametri non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/eventi/upcoming:
+    get:
+      summary: Prossimi eventi
+      description: Restituisce i prossimi eventi (non conclusi) dell'azienda selezionata.
+      tags:
+        - Evento
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: aziendaId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 3
+      responses:
+        '200':
+          description: Prossimi eventi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventItem'
+        '400':
+          description: Parametri non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/eventi/sincronizzazioni/google:
+    post:
+      summary: Crea sincronizzazione Google eventi aziendali
+      description: Sincronizza in batch gli eventi dell'azienda con Google Calendar. Endpoint REST noun-based.
+      tags:
+        - Evento
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventSyncAllRequest'
+      responses:
+        '200':
+          description: Sincronizzazione completata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  result:
+                    $ref: '#/components/schemas/EventSyncAllResult'
+        '400':
+          description: Richiesta non valida o Google Calendar non connesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/eventi/{id}/sincronizzazioni/google:
+    post:
+      summary: Crea sincronizzazione Google per un evento
+      description: Sincronizza un singolo evento su Google Calendar. Endpoint REST noun-based.
+      tags:
+        - Evento
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evento sincronizzato
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  item:
+                    $ref: '#/components/schemas/EventItem'
+        '400':
+          description: ID evento non valido o Google Calendar non connesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evento non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/eventi/{id}:
+    delete:
+      summary: Elimina evento
+      description: Elimina un evento dell'utente autenticato.
+      tags:
+        - Evento
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evento eliminato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: ID evento non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evento non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -1752,3 +2100,187 @@ components:
             $ref: '#/components/schemas/AnimaleListItem'
         pagination:
           $ref: '#/components/schemas/AnimaliPagination'
+
+    EventCreateRequest:
+      type: object
+      required:
+        - aziendaId
+        - title
+        - type
+        - startAt
+        - endAt
+        - location
+      properties:
+        aziendaId:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+          enum:
+            - controllo-sanitario
+            - vaccinazione
+            - parto-previsto
+            - consegna
+            - scadenza-documentale
+            - vendita
+            - altro
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+          description: Indirizzo testuale dell'evento
+          example: Via Roma 10, Milano
+        description:
+          type: string
+        reminderMinutes:
+          type: integer
+          minimum: 0
+          maximum: 10080
+          default: 0
+        visibility:
+          type: string
+          enum:
+            - private
+            - public
+          default: private
+        recurrenceType:
+          type: string
+          enum:
+            - single
+            - weekly
+            - monthly
+          default: single
+        recurrenceInterval:
+          type: integer
+          minimum: 1
+          maximum: 52
+          default: 1
+        recurrenceUntil:
+          type: string
+          format: date
+          nullable: true
+
+    EventItem:
+      type: object
+      properties:
+        id:
+          type: string
+        aziendaId:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        typeLabel:
+          type: string
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          example: '09:00'
+        endTime:
+          type: string
+          example: '10:30'
+        location:
+          type: string
+          example: Via Roma 10, Milano
+        description:
+          type: string
+        visibility:
+          type: string
+          enum:
+            - private
+            - public
+        visibilityLabel:
+          type: string
+        recurrenceType:
+          type: string
+          enum:
+            - single
+            - weekly
+            - monthly
+        recurrenceInterval:
+          type: integer
+        recurrenceUntil:
+          type: string
+          format: date-time
+          nullable: true
+        recurrenceLabel:
+          type: string
+        reminderMinutes:
+          type: integer
+        reminderLabel:
+          type: string
+        googleCalendarEventId:
+          type: string
+          nullable: true
+        googleSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EventListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventItem'
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            totalItems:
+              type: integer
+            totalPages:
+              type: integer
+
+    EventSyncAllRequest:
+      type: object
+      required:
+        - aziendaId
+      properties:
+        aziendaId:
+          type: string
+        onlyUnsynced:
+          type: boolean
+          default: true
+
+    EventSyncFailure:
+      type: object
+      properties:
+        eventId:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+
+    EventSyncAllResult:
+      type: object
+      properties:
+        total:
+          type: integer
+        synced:
+          type: integer
+        failed:
+          type: integer
+        failures:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventSyncFailure'
