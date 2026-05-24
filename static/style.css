@@ -1085,3 +1085,154 @@ input[type="checkbox"]:invalid {
 .cancel-edit-btn:hover {
   background: #fde8e8;
 }
+
+/* Eventi allevatore e impostazioni calendario */
+.events-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.events-form {
+  gap: 10px;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.events-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.events-form textarea {
+  width: 100%;
+  min-height: 110px;
+  border: 1px solid #b5c9a0;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 1rem;
+  font-family: Arial, sans-serif;
+  background: #f9fdf4;
+}
+
+.events-form textarea:focus {
+  outline: 2px solid var(--green-light);
+  border-color: var(--green-mid);
+}
+
+.events-form-actions {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.events-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.event-card {
+  background: #fcfff8;
+  border: 1px solid #d8ebbd;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(45, 90, 27, 0.08);
+}
+
+.event-card h3 {
+  margin: 0;
+}
+
+.event-card p {
+  margin: 8px 0;
+}
+
+.event-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.event-type-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  background: #eaf5d3;
+  color: #234b0a;
+  border: 1px solid #c3dea0;
+}
+
+.event-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.event-delete-btn {
+  background-color: #8a2f2f;
+}
+
+.event-delete-btn:hover {
+  background-color: #6a2121;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.status-chip-success {
+  background: #dff3d5;
+  color: #1f5512;
+  border: 1px solid #addd98;
+}
+
+.status-chip-warning {
+  background: #fff3d9;
+  color: #8a5d07;
+  border: 1px solid #efd08d;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.toggle-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--green-mid);
+}
+
+@media (max-width: 760px) {
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-card-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
