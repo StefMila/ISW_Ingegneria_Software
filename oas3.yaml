@@ -60,7 +60,7 @@ paths:
                   value:
                     googleMapsKey: AIzaSyD-example-key
 
-  /api/azienda/public:
+  /api/aziende/public:
     get:
       summary: Dataset aziende pubblico
       description: Restituisce la lista pubblica delle aziende con i campi necessari alla visualizzazione in mappa.
@@ -453,7 +453,7 @@ paths:
                   value:
                     message: Errore interno del server
 
-  /api/azienda:
+  /api/aziende:
     post:
       summary: Profilo azienda
       description: Permette a un allevatore autenticato di registrare una o più aziende associate al proprio account. L'accesso è riservato al solo ruolo allevatore; gli altri userType ricevono un errore di autorizzazione.
@@ -531,7 +531,7 @@ paths:
                   value:
                     message: "Errore interno del server"
   
-  /api/azienda/{id}:
+  /api/aziende/{id}:
     delete:
       summary: Rimozione azienda
       description: Elimina l'azienda identificata dall'id specificato.
@@ -605,7 +605,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               
-  /api/azienda/{aziendaId}/animali:
+  /api/aziende/{aziendaId}/animali:
     post:
       summary: Anagrafica animale aziendale
       description: Endpoint consigliato. Permette a un allevatore autenticato di registrare un animale nell'azienda indicata nel path.
@@ -926,7 +926,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
  
-  /api/azienda/{aziendaId}/animali/{id}:
+  /api/aziende/{aziendaId}/animali/{id}:
     patch:
       summary: Aggiornamento animale
       description: Modifica i dati dell'animale identificato dall'id specificato. L'aziendaId nel path viene usata solo per verificare che l'animale appartenga all'azienda di proprietà dell'utente autenticato. I campi matricola, aziendaId e _id non sono modificabili.
@@ -1106,14 +1106,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/eventi:
+  /api/aziende/{aziendaId}/eventi:
     post:
       summary: Crea evento
-      description: Crea un nuovo evento associato all'azienda attiva dell'allevatore autenticato.
+      description: Crea un nuovo evento associato all'azienda indicata nel path dell'allevatore autenticato.
       tags:
         - Evento
       security:
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1124,13 +1130,13 @@ paths:
               temporaneoPubblico:
                 summary: Evento temporaneo pubblico
                 value:
-                  aziendaId: 665f8fd8ad8f8c0012f9c123
                   title: Mercato locale prodotti freschi
                   type: vendita
                   startAt: '2026-06-10T08:00:00.000Z'
                   endAt: '2026-06-10T12:00:00.000Z'
                   location: Via Roma 10, Milano
                   description: Vendita aperta al pubblico
+                  link: https://muccapp.it/eventi/mercato-locale
                   reminderMinutes: 30
                   visibility: public
                   recurrenceType: weekly
@@ -1139,13 +1145,13 @@ paths:
               singoloPrivato:
                 summary: Evento singolo privato
                 value:
-                  aziendaId: 665f8fd8ad8f8c0012f9c123
                   title: Controllo sanitario interno
                   type: controllo-sanitario
                   startAt: '2026-06-03T09:00:00.000Z'
                   endAt: '2026-06-03T10:00:00.000Z'
                   location: Via Roma 10, Milano
                   description: Visita veterinaria in stalla
+                  link: https://muccapp.it/eventi/controllo-sanitario-interno
                   reminderMinutes: 10
                   visibility: private
                   recurrenceType: single
@@ -1188,13 +1194,13 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: Lista eventi azienda
-      description: Restituisce gli eventi dell'azienda selezionata.
+      description: Restituisce gli eventi dell'azienda selezionata nel path.
       tags:
         - Evento
       security:
         - bearerAuth: []
       parameters:
-        - in: query
+        - in: path
           name: aziendaId
           required: true
           schema:
@@ -1243,16 +1249,143 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/eventi/upcoming:
+  /api/eventi/pubblici:
+    get:
+      summary: Lista eventi pubblici
+      description: Restituisce gli eventi pubblici futuri visibili anche ai consumatori non autenticati e supporta filtri per azienda, citta e data.
+      tags:
+        - Evento
+      parameters:
+        - in: query
+          name: aziendaId
+          required: false
+          description: Filtra gli eventi pubblici di una specifica azienda
+          schema:
+            type: string
+        - in: query
+          name: city
+          required: false
+          description: Filtra gli eventi pubblici per citta dell'azienda
+          schema:
+            type: string
+        - in: query
+          name: date
+          required: false
+          description: Filtra gli eventi che iniziano nella data indicata
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Lista eventi pubblici
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+        '400':
+          description: Parametri filtro non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/aziende/{aziendaId}/eventi/pubblici:
+    get:
+      summary: Lista eventi pubblici di una azienda
+      description: Restituisce gli eventi pubblici futuri di una singola azienda, visibili anche ai consumatori non autenticati, con filtro opzionale per citta e data.
+      tags:
+        - Evento
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: city
+          required: false
+          description: Verifica che l'evento appartenga a un'azienda della citta indicata
+          schema:
+            type: string
+        - in: query
+          name: date
+          required: false
+          description: Filtra gli eventi che iniziano nella data indicata
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Lista eventi pubblici aziendali
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+        '400':
+          description: aziendaId non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/aziende/{aziendaId}/eventi/upcoming:
     get:
       summary: Prossimi eventi
-      description: Restituisce i prossimi eventi (non conclusi) dell'azienda selezionata.
+      description: Restituisce i prossimi eventi (non conclusi) dell'azienda selezionata nel path.
       tags:
         - Evento
       security:
         - bearerAuth: []
       parameters:
-        - in: query
+        - in: path
           name: aziendaId
           required: true
           schema:
@@ -1300,7 +1433,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/eventi/sincronizzazioni/google:
+  /api/aziende/{aziendaId}/eventi/sincronizzazioni/google:
     post:
       summary: Crea sincronizzazione Google eventi aziendali
       description: Sincronizza in batch gli eventi dell'azienda con Google Calendar. Endpoint REST noun-based.
@@ -1308,6 +1441,12 @@ paths:
         - Evento
       security:
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1351,7 +1490,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/eventi/{id}/sincronizzazioni/google:
+  /api/aziende/{aziendaId}/eventi/{id}/sincronizzazioni/google:
     post:
       summary: Crea sincronizzazione Google per un evento
       description: Sincronizza un singolo evento su Google Calendar. Endpoint REST noun-based.
@@ -1360,6 +1499,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          schema:
+            type: string
         - in: path
           name: id
           required: true
@@ -1408,7 +1552,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/eventi/{id}:
+  /api/aziende/{aziendaId}/eventi/{id}:
     delete:
       summary: Elimina evento
       description: Elimina un evento dell'utente autenticato.
@@ -1417,6 +1561,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - in: path
+          name: aziendaId
+          required: true
+          schema:
+            type: string
         - in: path
           name: id
           required: true
@@ -2104,7 +2253,6 @@ components:
     EventCreateRequest:
       type: object
       required:
-        - aziendaId
         - title
         - type
         - startAt
@@ -2113,6 +2261,7 @@ components:
       properties:
         aziendaId:
           type: string
+          description: Campo legacy opzionale supportato dagli alias top-level; non necessario sugli endpoint annidati sotto /api/aziende/{aziendaId}/eventi.
         title:
           type: string
         type:
@@ -2137,6 +2286,11 @@ components:
           example: Via Roma 10, Milano
         description:
           type: string
+        link:
+          type: string
+          format: uri
+          description: Link opzionale associato all'evento
+          example: https://muccapp.it/eventi/open-day
         reminderMinutes:
           type: integer
           minimum: 0
@@ -2192,6 +2346,9 @@ components:
           example: Via Roma 10, Milano
         description:
           type: string
+        link:
+          type: string
+          format: uri
         visibility:
           type: string
           enum:
@@ -2230,6 +2387,15 @@ components:
         updatedAt:
           type: string
           format: date-time
+        companyName:
+          type: string
+          description: Nome dell'azienda, valorizzato negli endpoint pubblici
+        city:
+          type: string
+          description: Citta dell'azienda, valorizzata negli endpoint pubblici
+        companyAddress:
+          type: string
+          description: Indirizzo dell'azienda, valorizzato negli endpoint pubblici
 
     EventListResponse:
       type: object
@@ -2252,11 +2418,10 @@ components:
 
     EventSyncAllRequest:
       type: object
-      required:
-        - aziendaId
       properties:
         aziendaId:
           type: string
+          description: Campo legacy opzionale supportato dagli alias top-level; non necessario sugli endpoint annidati sotto /api/aziende/{aziendaId}/eventi.
         onlyUnsynced:
           type: boolean
           default: true

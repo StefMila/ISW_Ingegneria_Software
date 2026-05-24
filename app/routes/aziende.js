@@ -3,7 +3,7 @@ import express from 'express';
 import azienda from '../models/azienda.js';
 import mongoose from 'mongoose';
 import { checkAuth, checkUserType } from './auth.js';
-import { registerAnimale, getAnimali, deleteAnimale, updateAnimale } from './animale.js';
+import { registerAnimale, getAnimali, deleteAnimale, updateAnimale } from './animali.js';
 
 const router = express.Router();
 // Funzione di normalizzazione per le categorie prodotto accettando sia array che stringa separata da virgole
@@ -139,7 +139,7 @@ const registerAzienda = async (req, res) => {
 };
 
 
-// Routes per la gestione delle aziende. Tutte le rotte puntano a /api/azienda --> alias
+// Routes per la gestione delle aziende. Tutte le rotte puntano a /api/aziende
 router.post('/create', checkAuth, checkUserType(['allevatore']), registerAzienda);
 router.post('/signup', checkAuth, checkUserType(['allevatore']), registerAzienda);
 router.post('/', checkAuth, checkUserType(['allevatore']), registerAzienda);

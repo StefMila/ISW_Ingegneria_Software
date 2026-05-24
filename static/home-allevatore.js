@@ -60,7 +60,7 @@ const loadUpcomingEvents = async () => {
   }
 
   try {
-    const response = await fetch(`/api/eventi/upcoming?aziendaId=${encodeURIComponent(aziendaId)}&limit=3`, {
+    const response = await fetch(`/api/aziende/${encodeURIComponent(aziendaId)}/eventi/upcoming?limit=3`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -89,7 +89,7 @@ const loadOwnedAziende = async () => {
   }
 // Carichiamo le aziende di proprietà dell'utente autenticato tramite l'API
   try {
-    const response = await fetch('/api/azienda/mine', {
+    const response = await fetch('/api/aziende/mine', {
       headers: {
         Authorization: `Bearer ${token}`
       }

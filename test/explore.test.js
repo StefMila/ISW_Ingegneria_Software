@@ -27,7 +27,7 @@ describe('US40 - Integrazione mappa', () => {
 
     // Verifica contrattuale: la pagina deve usare questi endpoint backend.
     expect(response.text).toContain("fetch('/api/config')");
-    expect(response.text).toContain("fetch('/api/azienda/public')");
+    expect(response.text).toContain("fetch('/api/aziende/public')");
   });
 
   test('Pagina esplora gestisce errori di caricamento aziende', async () => {
