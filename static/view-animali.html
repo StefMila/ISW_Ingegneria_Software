@@ -10,36 +10,18 @@
     protectRoute(['allevatore']);
   </script>
   <!-- Fine controllo accesso -->
+  <script src="/allevatore-header.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <main class="dashboard-container-wide">
-    <header class="dashboard-header">
-      <div class="nav-buttons">
-        <a href="/home-allevatore.html" class="nav-home-btn">← Home</a>
-        <div class="nav-dropdown">
-          <button class="nav-dropdown-toggle">La tua azienda ▾</button>
-          <ul class="nav-dropdown-menu">
-            <li><a href="/add-azienda.html">Aggiungi azienda</a></li>
-            <li><a href="/view-azienda.html">Elimina azienda</a></li>
-          </ul>
-        </div>
-        <div class="nav-dropdown">
-          <button class="nav-dropdown-toggle">La tua mandria ▾</button>
-          <ul class="nav-dropdown-menu">
-            <li><a href="/add-animale.html">Aggiungi animale</a></li>
-            <li><a href="/view-animali.html">Visualizza animali</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="header-right-actions">
-        <div class="nav-dropdown" id="aziendaSwitcherDropdown">
-          <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button">Azienda attiva: non selezionata ▾</button>
-          <ul class="nav-dropdown-menu azienda-switcher-menu" id="aziendaSwitcherMenu"></ul>
-        </div>
-        <button id="logoutButton">Logout</button>
-      </div>
-    </header>
+    <div id="allevatoreHeaderMount"></div>
+    <script>
+      window.renderAllevatoreHeader({
+        showHomeLink: true,
+        showEventMenu: false
+      });
+    </script>
 
     <section class="section">
       <h2>La tua mandria 🐄</h2>
