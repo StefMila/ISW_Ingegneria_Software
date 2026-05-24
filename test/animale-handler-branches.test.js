@@ -27,7 +27,7 @@ jest.unstable_mockModule('../app/models/azienda.js', () => ({
   default: MockAziendaModel
 }));
 
-const { registerAnimale } = await import('../app/routes/animale.js');
+const { registerAnimale } = await import('../app/routes/animali.js');
 
 // Utility minimale per simulare l'oggetto response di Express.
 const makeRes = () => {

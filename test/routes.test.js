@@ -50,15 +50,15 @@ describe('Routes - Auth', () => {
 });
 
 describe('Routes - Azienda e Animali (guard)', () => {
-  test('GET /api/azienda/mine senza token restituisce 401', async () => {
+  test('GET /api/aziende/mine senza token restituisce 401', async () => {
     await request(app)
-      .get('/api/azienda/mine')
+      .get('/api/aziende/mine')
       .expect(401);
   });
 
-  test('PATCH /api/azienda/:id/categories senza token restituisce 401', async () => {
+  test('PATCH /api/aziende/:id/categories senza token restituisce 401', async () => {
     await request(app)
-      .patch('/api/azienda/665f8fd8ad8f8c0012f9c123/categories')
+      .patch('/api/aziende/665f8fd8ad8f8c0012f9c123/categories')
       .send({ categories: ['latte'] })
       .expect(401);
   });
