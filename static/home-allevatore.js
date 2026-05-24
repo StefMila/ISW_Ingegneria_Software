@@ -6,6 +6,7 @@ const controlsEl = document.getElementById('aziendaSelectionControls');
 const selectorEl = document.getElementById('aziendaSelector');
 const saveButtonEl = document.getElementById('saveAziendaSelectionButton');
 const currentAziendaBadgeEl = document.getElementById('currentAziendaBadge');
+const upcomingEventsListEl = document.getElementById('upcomingEventsList');
 let canSwitchAzienda = false;
 // Funzione per salvare l'azienda selezionata nella localStorage
 const setSelectedAzienda = (azienda) => {
@@ -22,6 +23,60 @@ const renderStatus = (text, color = '#1f2937') => {
 const renderCurrentAziendaBadge = (name) => {
   if (!currentAziendaBadgeEl) return;
   currentAziendaBadgeEl.textContent = `Azienda attiva: ${name || 'non selezionata'}`;
+};
+
+const renderUpcomingEvents = (items) => {
+  if (!upcomingEventsListEl) return;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    upcomingEventsListEl.innerHTML = '<p class="status">Nessun evento in programma.</p>';
+    return;
+  }
+
+  upcomingEventsListEl.innerHTML = items.map((item) => {
+    const when = `${item.date} ${item.startTime}`;
+    return `
+      <article class="event-card">
+        <div class="event-card-top">
+          <h3>${item.title}</h3>
+          <span class="event-type-chip">${item.typeLabel || item.type || 'Evento'}</span>
+        </div>
+        <p><strong>Quando:</strong> ${when}</p>
+        <p><strong>Luogo:</strong> ${item.location || 'Non specificato'}</p>
+      </article>
+    `;
+  }).join('');
+};
+
+const loadUpcomingEvents = async () => {
+  if (!upcomingEventsListEl) return;
+
+  const token = localStorage.getItem('token');
+  const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
+
+  if (!token || !aziendaId) {
+    upcomingEventsListEl.innerHTML = '<p class="status">Seleziona un\'azienda per visualizzare i prossimi eventi.</p>';
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/eventi/upcoming?aziendaId=${encodeURIComponent(aziendaId)}&limit=3`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      upcomingEventsListEl.innerHTML = `<p class="status">${data.message || 'Errore nel caricamento eventi'}</p>`;
+      return;
+    }
+
+    renderUpcomingEvents(data.items || []);
+  } catch (error) {
+    console.error('Errore nel caricamento prossimi eventi:', error);
+    upcomingEventsListEl.innerHTML = '<p class="status">Errore di connessione durante il caricamento eventi.</p>';
+  }
 };
 // Funzione per caricare le aziende di proprietà dell'utente e gestire la logica di selezione
 const loadOwnedAziende = async () => {
@@ -63,6 +118,7 @@ const loadOwnedAziende = async () => {
       if (controlsEl) controlsEl.hidden = true;
       canSwitchAzienda = false;
       renderStatus(`Azienda attiva impostata automaticamente: ${items[0].companyName}`, 'green');
+      await loadUpcomingEvents();
       return;
     }
 
@@ -87,6 +143,7 @@ const loadOwnedAziende = async () => {
 
     const selectedForBadge = items.find((item) => item._id === selectorEl.value) || null;
     renderCurrentAziendaBadge(selectedForBadge ? selectedForBadge.companyName : 'non selezionata');
+    await loadUpcomingEvents();
 
     renderStatus('Hai più aziende: clicca sul badge "Azienda attiva" in alto per cambiarla.', '#1f2937');
 
@@ -101,6 +158,7 @@ const loadOwnedAziende = async () => {
         setSelectedAzienda(selected);
         renderCurrentAziendaBadge(selected.companyName);
         renderStatus(`Azienda attiva selezionata: ${selected.companyName}`, 'green');
+        loadUpcomingEvents();
       };
     }
   } catch (error) {
@@ -108,6 +166,10 @@ const loadOwnedAziende = async () => {
     renderStatus('Errore di connessione al server', 'red');
   }
 };
+
+window.addEventListener('aziendaChanged', () => {
+  loadUpcomingEvents();
+});
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadOwnedAziende);
