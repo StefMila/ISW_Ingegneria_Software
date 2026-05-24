@@ -3,7 +3,7 @@
 const signupForm = document.getElementById('signup-form');
 const signupMessage = document.getElementById('signupMessage');
 // Handler per la registrazione di un nuovo utente
-if (signupForm&& signupMessage) {
+if (signupForm && signupMessage) {
     signupForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 // Ottengo i valori di email, password e ruolo inseriti dall'utente
@@ -12,7 +12,7 @@ if (signupForm&& signupMessage) {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const userType = document.getElementById('userType').value;
-
+        const acceptedTerms = document.getElementById('acceptedTerms').checked; 
         signupMessage.textContent = 'Registrazione in corso...';
         signupMessage.style.color = 'black';
 // Validazione dei campi
@@ -42,6 +42,11 @@ if (signupForm&& signupMessage) {
             signupMessage.style.color = 'red';
             return;
         }
+        if (!acceptedTerms ) {
+            signupMessage.textContent = 'È necessario accettare Termini e Condizioni per proseguire.'; 
+            signupMessage.style.color = 'red';
+            return;
+        }
        // Effettuo la chiamata API per la registrazione
         try {
             const response = await fetch('/api/auth/signup', {
@@ -54,7 +59,8 @@ if (signupForm&& signupMessage) {
                     surname, 
                     email, 
                     password, 
-                    userType 
+                    userType,
+                    acceptedTerms
                 })
             });
             const data = await response.json();
