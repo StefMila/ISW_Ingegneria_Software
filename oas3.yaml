@@ -1109,7 +1109,7 @@ paths:
   /api/aziende/{aziendaId}/eventi:
     post:
       summary: Crea evento
-      description: Crea un nuovo evento associato all'azienda indicata nel path dell'allevatore autenticato.
+      description: Crea un nuovo evento associato all'azienda indicata nel path. L'operazione e' consentita solo a un allevatore autenticato proprietario dell'azienda. Il campo visibility determina se l'evento resta privato oppure viene pubblicato anche nel calendario pubblico dell'azienda; gli eventi privati restano visibili solo nell'area riservata dell'allevatore e nel calendario privato.
       tags:
         - Evento
       security:
@@ -1252,7 +1252,7 @@ paths:
   /api/eventi/pubblici:
     get:
       summary: Lista eventi pubblici
-      description: Restituisce gli eventi pubblici futuri visibili anche ai consumatori non autenticati e supporta filtri per azienda, citta e data.
+      description: Restituisce solo gli eventi futuri con visibility uguale a public. Questi eventi sono consultabili anche dai consumatori non autenticati; gli eventi privati non sono esposti da questo endpoint. Supporta filtri per azienda, citta e data.
       tags:
         - Evento
       parameters:
@@ -1316,7 +1316,7 @@ paths:
   /api/aziende/{aziendaId}/eventi/pubblici:
     get:
       summary: Lista eventi pubblici di una azienda
-      description: Restituisce gli eventi pubblici futuri di una singola azienda, visibili anche ai consumatori non autenticati, con filtro opzionale per citta e data.
+      description: Restituisce solo gli eventi futuri con visibility uguale a public della singola azienda indicata. Questi eventi sono consultabili anche dai consumatori non autenticati; gli eventi privati dell'azienda non sono esposti da questo endpoint. Supporta filtri opzionali per citta e data.
       tags:
         - Evento
       parameters:
@@ -1436,7 +1436,7 @@ paths:
   /api/aziende/{aziendaId}/eventi/sincronizzazioni/google:
     post:
       summary: Crea sincronizzazione Google eventi aziendali
-      description: Sincronizza in batch gli eventi dell'azienda con Google Calendar. Endpoint REST noun-based.
+      description: Sincronizza in batch gli eventi dell'azienda con Google Calendar. Gli eventi con visibility uguale a public vengono sincronizzati sul calendario pubblico dell'azienda, mentre quelli con visibility uguale a private vengono sincronizzati sul calendario privato. Endpoint REST noun-based.
       tags:
         - Evento
       security:
@@ -1493,7 +1493,7 @@ paths:
   /api/aziende/{aziendaId}/eventi/{id}/sincronizzazioni/google:
     post:
       summary: Crea sincronizzazione Google per un evento
-      description: Sincronizza un singolo evento su Google Calendar. Endpoint REST noun-based.
+      description: Sincronizza un singolo evento su Google Calendar. Se l'evento ha visibility uguale a public viene inviato al calendario pubblico dell'azienda; in caso contrario viene inviato al calendario privato. Endpoint REST noun-based.
       tags:
         - Evento
       security:
@@ -2298,6 +2298,7 @@ components:
           default: 0
         visibility:
           type: string
+          description: Definisce se l'evento e' pubblico o privato. Il valore public rende l'evento visibile negli endpoint pubblici consultabili anche dal consumatore e instrada la sincronizzazione verso il calendario pubblico Google dell'azienda; il valore private lo mantiene nell'area riservata dell'allevatore e nel calendario privato.
           enum:
             - private
             - public
@@ -2351,6 +2352,7 @@ components:
           format: uri
         visibility:
           type: string
+          description: Visibilita' applicata all'evento. Solo gli eventi con valore public compaiono negli endpoint pubblici consultabili dal consumatore.
           enum:
             - private
             - public
