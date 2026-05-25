@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aggiungi Punto Vendita - MuccApp</title>
+  <!-- Controllo accesso alla pagina, solo gli utenti con ruolo "allevatore" possono accedervi -->
+  <script src="/auth-control.js"></script> 
+  <script>
+    protectRoute(['allevatore']);
+  </script>
+    <script src="/menu-allevatore.js"></script>
+  <!-- Fine controllo accesso -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <main class="dashboard-container">
+        <div id="allevatoreHeaderMount"></div>
+        <script>
+            window.renderAllevatoreHeader({
+                showHomeLink: true,
+                showEventMenu: false,
+                titleText: 'Aggiungi Punto Vendita 🛒'
+            });
+        </script>
+        <section id="section-punto-vendita" class="section">
+            <form id="add-punto-vendita-form" class="form">
+                <label for="nomePunto">Nome Punto Vendita:</label>
+                <input type="text" id="nomePunto" name="nomePunto" placeholder="Inserisci il nome del punto vendita" required>
+
+                <label for="indirizzo">Indirizzo (opzionale):</label>
+                <!-- Campo indirizzo con autocompletamento Google Places -->
+                <input type="text" id="indirizzo" name="indirizzo" placeholder="Inizia a digitare l'indirizzo..." autocomplete="off">
+                <!-- Pulsante per usare la posizione attuale del dispositivo -->
+                <button type="button" id="getLocationBtn">Usa la mia posizione attuale</button>
+                <!-- Campi nascosti per latitudine e longitudine -->
+                <input type="hidden" id="lat" name="lat">
+                <input type="hidden" id="lng" name="lng">
+
+                <label for="emailPunto">Email:</label>
+                <input type="email" id="emailPunto" name="emailPunto" placeholder="Inserisci l'email del punto vendita" >
+
+                <label for="phoneNumber">Telefono:</label>
+                <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="Inserisci il numero di telefono del punto vendita">
+
+                <label for="website">Sito Web:</label>
+                <input type="url" id="website" name="website" placeholder="Inserisci il sito web del punto vendita">
+
+                <label for="description">Descrizione:</label>
+                <textarea id="description" name="description" placeholder="Inserisci una breve descrizione del punto vendita"></textarea>
+
+                <label for="categories">Categorie prodotto (array):</label>
+                <input type="text" id="categories" name="categories" placeholder="Es. latte, formaggi, yogurt">
+
+                
+                <button type="submit">Salva Punto Vendita</button>
+            </form>
+            <p id="addPuntoVenditaMessage" class="status"></p>
+        </section>
+
+  </main>
+    <script src="/azienda-switcher.js"></script>
+    <script src="/add-punto-vendita.js"></script>
+    <script src="/logout.js"></script>
+</body>
+</html>

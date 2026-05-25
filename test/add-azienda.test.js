@@ -22,7 +22,6 @@ describe('Add Azienda - pagina e script', () => {
       .get('/add-azienda.html')
       .expect(200);
 
-    expect(response.text).toContain("fetch('/api/config')");
     expect(response.text).toContain('<script src="/add-azienda.js"></script>');
     expect(response.text).toContain('getLocationBtn');
   });
@@ -32,6 +31,7 @@ describe('Add Azienda - pagina e script', () => {
       .get('/add-azienda.js')
       .expect(200);
 
+    expect(response.text).toContain("fetch('/api/config')");
     expect(response.text).toContain("fetch('/api/aziende'");
     expect(response.text).toContain('Il nome dell\\\'azienda è obbligatorio');
     expect(response.text).toContain('La partita IVA è obbligatoria');

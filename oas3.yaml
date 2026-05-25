@@ -17,6 +17,8 @@ tags:
     description: Endpoint per la registrazione e gestione aziende
   - name: Animale
     description: Endpoint per la registrazione e gestione animali
+  - name: Punto vendita
+    description: Endpoint per la gestione dei punti vendita associati a un allevatore e per l'esposizione del dataset pubblico attivo
   - name: Evento
     description: Endpoint per la gestione eventi e sincronizzazione Google Calendar
   - name: Mappa
@@ -105,6 +107,518 @@ paths:
                 serverError:
                   value:
                     message: Errore interno del server
+
+  /api/punti-vendita/public:
+    get:
+      summary: Dataset punti vendita pubblico
+      description: Restituisce la lista pubblica dei punti vendita attivi. Questo endpoint è pensato per la visualizzazione pubblica e ritorna solo i punti vendita con `isActive=true`, includendo i dati utili alla mappa e alla scheda informativa, senza esporre campi sensibili o informazioni di gestione.
+      tags:
+        - Mappa
+        - Punto vendita
+      responses:
+        '200':
+          description: Lista punti vendita pubblici disponibile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PuntoVenditaPublicCollection'
+              examples:
+                success:
+                  value:
+                    items:
+                      - _id: 665f9fd8ad8f8c0012f9d900
+                        isActive: true
+                        nomePunto: Spaccio Aziendale Rossi
+                        indirizzo: Via Roma 12, Milano
+                        formattedAddress: Via Roma 12, 20121 Milano MI, Italia
+                        city: Milano
+                        province: MI
+                        geo:
+                          lat: 45.4642
+                          lng: 9.19
+                        emailPunto: spaccio@azienda-rossi.it
+                        phoneNumber: "+39021234567"
+                        website: https://www.azienda-rossi.it/spaccio
+                        description: Vendita diretta di latte, formaggi e yogurt prodotti in azienda.
+                        categories:
+                          - latte
+                          - formaggi
+                          - yogurt
+                        placeId: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+                        createdAt: 2026-05-01T12:00:00.000Z
+                        updatedAt: 2026-05-10T12:00:00.000Z
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
+  /api/punti-vendita:
+    post:
+      summary: Crea punto vendita
+      description: Crea un nuovo punto vendita associato all'allevatore autenticato. Il punto vendita viene creato attivo di default (`isActive=true`) a meno che il client non invii esplicitamente `isActive=false`. Il campo `indirizzo` è la stringa testuale usata per la ricerca, mentre `geo` contiene le coordinate geografiche obbligatorie.
+      tags:
+        - Punto vendita
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Dati necessari per la creazione di un punto vendita
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePuntoVenditaRequest'
+            examples:
+              spaccioAziendale:
+                summary: Spaccio aziendale attivo
+                value:
+                  nomePunto: Spaccio Aziendale Rossi
+                  indirizzo: Via Roma 12, Milano
+                  geo:
+                    lat: 45.4642
+                    lng: 9.19
+                  emailPunto: spaccio@azienda-rossi.it
+                  phoneNumber: "+39021234567"
+                  website: https://www.azienda-rossi.it/spaccio
+                  description: Vendita diretta di latte, formaggi e yogurt prodotti in azienda.
+                  categories:
+                    - latte
+                    - formaggi
+                    - yogurt
+                  formattedAddress: Via Roma 12, 20121 Milano MI, Italia
+                  city: Milano
+                  province: MI
+                  placeId: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+                  isActive: true
+              puntoTemporaneamenteChiuso:
+                summary: Punto vendita creato ma non attivo
+                value:
+                  nomePunto: Mercatino stagionale
+                  indirizzo: Piazza Centrale 5, Bergamo
+                  geo:
+                    lat: 45.6983
+                    lng: 9.6773
+                  categories:
+                    - formaggi
+                    - salumi
+                  isActive: false
+      responses:
+        '201':
+          description: Punto vendita creato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PuntoVenditaResponse'
+              examples:
+                success:
+                  value:
+                    message: Punto vendita creato con successo
+                    puntoVendita:
+                      _id: 665f9fd8ad8f8c0012f9d900
+                      ownerUserId: 665f8d90ad8f8c0012f9b456
+                      isActive: true
+                      nomePunto: Spaccio Aziendale Rossi
+                      indirizzo: Via Roma 12, Milano
+                      geo:
+                        lat: 45.4642
+                        lng: 9.19
+                      emailPunto: spaccio@azienda-rossi.it
+                      phoneNumber: "+39021234567"
+                      website: https://www.azienda-rossi.it/spaccio
+                      description: Vendita diretta di latte, formaggi e yogurt prodotti in azienda.
+                      categories:
+                        - latte
+                        - formaggi
+                        - yogurt
+                      formattedAddress: Via Roma 12, 20121 Milano MI, Italia
+                      city: Milano
+                      province: MI
+                      placeId: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+                      createdAt: 2026-05-01T12:00:00.000Z
+                      updatedAt: 2026-05-01T12:00:00.000Z
+        '400':
+          description: Dati non validi o coordinate mancanti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    message: Nome punto e indirizzo sono obbligatori
+                invalidGeo:
+                  value:
+                    message: Coordinate geografiche non valide
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
+  /api/punti-vendita/mine:
+    get:
+      summary: Elenco punti vendita dell'allevatore autenticato
+      description: Restituisce tutti i punti vendita associati all'utente autenticato, includendo anche quelli non attivi. L'endpoint è usato dalla vista di gestione per mostrare lo stato, filtrare per nome, indirizzo o categoria e abilitare la modifica inline e l'eliminazione.
+      tags:
+        - Punto vendita
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista punti vendita dell'utente disponibile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PuntoVenditaListResponse'
+              examples:
+                success:
+                  value:
+                    items:
+                      - _id: 665f9fd8ad8f8c0012f9d900
+                        ownerUserId: 665f8d90ad8f8c0012f9b456
+                        isActive: true
+                        nomePunto: Spaccio Aziendale Rossi
+                        indirizzo: Via Roma 12, Milano
+                        geo:
+                          lat: 45.4642
+                          lng: 9.19
+                        emailPunto: spaccio@azienda-rossi.it
+                        phoneNumber: "+39021234567"
+                        website: https://www.azienda-rossi.it/spaccio
+                        description: Vendita diretta di latte, formaggi e yogurt prodotti in azienda.
+                        categories:
+                          - latte
+                          - formaggi
+                          - yogurt
+                        formattedAddress: Via Roma 12, 20121 Milano MI, Italia
+                        city: Milano
+                        province: MI
+                        placeId: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+                        createdAt: 2026-05-01T12:00:00.000Z
+                        updatedAt: 2026-05-10T12:00:00.000Z
+                      - _id: 665f9fd8ad8f8c0012f9d901
+                        ownerUserId: 665f8d90ad8f8c0012f9b456
+                        isActive: false
+                        nomePunto: Mercatino stagionale
+                        indirizzo: Piazza Centrale 5, Bergamo
+                        geo:
+                          lat: 45.6983
+                          lng: 9.6773
+                        categories:
+                          - formaggi
+                          - salumi
+                        city: Bergamo
+                        province: BG
+                        createdAt: 2026-04-12T08:00:00.000Z
+                        updatedAt: 2026-04-20T08:00:00.000Z
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
+  /api/punti-vendita/{id}:
+    get:
+      summary: Dettaglio punto vendita
+      description: "Restituisce il dettaglio di un singolo punto vendita dell'utente autenticato. L'endpoint è protetto da controllo di proprietà: se il punto vendita non appartiene all'utente, la richiesta viene respinta."
+      tags:
+        - Punto vendita
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID del punto vendita da recuperare
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Punto vendita trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PuntoVenditaDetailResponse'
+              examples:
+                success:
+                  value:
+                    item:
+                      _id: 665f9fd8ad8f8c0012f9d900
+                      ownerUserId: 665f8d90ad8f8c0012f9b456
+                      isActive: true
+                      nomePunto: Spaccio Aziendale Rossi
+                      indirizzo: Via Roma 12, Milano
+                      geo:
+                        lat: 45.4642
+                        lng: 9.19
+                      emailPunto: spaccio@azienda-rossi.it
+                      phoneNumber: "+39021234567"
+                      website: https://www.azienda-rossi.it/spaccio
+                      description: Vendita diretta di latte, formaggi e yogurt prodotti in azienda.
+                      categories:
+                        - latte
+                        - formaggi
+                        - yogurt
+                      formattedAddress: Via Roma 12, 20121 Milano MI, Italia
+                      city: Milano
+                      province: MI
+                      placeId: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+                      createdAt: 2026-05-01T12:00:00.000Z
+                      updatedAt: 2026-05-10T12:00:00.000Z
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID del punto vendita non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti o punto vendita non di proprietà dell'utente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenOwner:
+                  value:
+                    message: Non sei il proprietario di questo punto vendita
+        '404':
+          description: Punto vendita non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Punto vendita non trovato
+
+    patch:
+      summary: Aggiorna punto vendita
+      description: Aggiorna i dati di un punto vendita dell'allevatore autenticato. Tutti i campi sono opzionali, ma almeno uno deve essere presente per ottenere un aggiornamento utile. Il campo `isActive` consente di attivare o disattivare rapidamente la visibilità del punto vendita.
+      tags:
+        - Punto vendita
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID del punto vendita da modificare
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Dati da aggiornare del punto vendita. Tutti i campi sono opzionali, ma almeno uno deve essere presente.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePuntoVenditaRequest'
+            examples:
+              updateNameAndStatus:
+                summary: Cambio nome e disattivazione
+                value:
+                  nomePunto: Spaccio Rossi Centro
+                  isActive: false
+              updateAddress:
+                summary: Aggiornamento indirizzo e categorie
+                value:
+                  indirizzo: Via Garibaldi 18, Milano
+                  city: Milano
+                  province: MI
+                  categories:
+                    - latte
+                    - yogurt
+      responses:
+        '200':
+          description: Punto vendita aggiornato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PuntoVenditaResponse'
+              examples:
+                success:
+                  value:
+                    message: Punto vendita aggiornato con successo
+                    puntoVendita:
+                      _id: 665f9fd8ad8f8c0012f9d900
+                      ownerUserId: 665f8d90ad8f8c0012f9b456
+                      isActive: false
+                      nomePunto: Spaccio Rossi Centro
+                      indirizzo: Via Garibaldi 18, Milano
+                      geo:
+                        lat: 45.4642
+                        lng: 9.19
+                      categories:
+                        - latte
+                        - yogurt
+                      city: Milano
+                      province: MI
+        '400':
+          description: ID non valido, dati non validi o coordinate non valide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID del punto vendita non valido
+                invalidGeo:
+                  value:
+                    message: Coordinate geografiche non valide
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti o punto vendita non di proprietà dell'utente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenOwner:
+                  value:
+                    message: Non sei il proprietario di questo punto vendita
+        '404':
+          description: Punto vendita non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Punto vendita non trovato
+
+    delete:
+      summary: Elimina punto vendita
+      description: Elimina definitivamente un punto vendita appartenente all'allevatore autenticato. L'operazione è irreversibile e rimuove il record dalla gestione dell'utente.
+      tags:
+        - Punto vendita
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID del punto vendita da eliminare
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Punto vendita eliminato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Punto vendita eliminato con successo
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID del punto vendita non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti o punto vendita non di proprietà dell'utente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenOwner:
+                  value:
+                    message: Non sei il proprietario di questo punto vendita
+        '404':
+          description: Punto vendita non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Punto vendita non trovato
 
   /api/auth/signup:
     post:
@@ -1696,6 +2210,296 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AziendaPublicItem'
+
+    PuntoVenditaPublicItem:
+      type: object
+      description: Dati pubblici di un punto vendita attivo esposti agli utenti e alla mappa.
+      properties:
+        _id:
+          type: string
+          example: 665f9fd8ad8f8c0012f9d900
+        isActive:
+          type: boolean
+          description: Indica se il punto vendita è attualmente attivo e quindi visibile nel dataset pubblico.
+          example: true
+        nomePunto:
+          type: string
+          example: Spaccio Aziendale Rossi
+        indirizzo:
+          type: string
+          example: Via Roma 12, Milano
+        formattedAddress:
+          type: string
+          example: Via Roma 12, 20121 Milano MI, Italia
+        city:
+          type: string
+          example: Milano
+        province:
+          type: string
+          example: MI
+        geo:
+          $ref: '#/components/schemas/GeoPoint'
+        emailPunto:
+          type: string
+          format: email
+          example: spaccio@azienda-rossi.it
+        phoneNumber:
+          type: string
+          example: "+39021234567"
+        website:
+          type: string
+          format: uri
+          example: https://www.azienda-rossi.it/spaccio
+        description:
+          type: string
+          example: Vendita diretta di latte, formaggi e yogurt prodotti in azienda.
+        categories:
+          type: array
+          items:
+            type: string
+          example:
+            - latte
+            - formaggi
+            - yogurt
+        placeId:
+          type: string
+          example: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-05-01T12:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-05-10T12:00:00.000Z
+
+    PuntoVenditaItem:
+      type: object
+      description: Rappresentazione completa di un punto vendita associato all'utente autenticato.
+      properties:
+        _id:
+          type: string
+          example: 665f9fd8ad8f8c0012f9d900
+        ownerUserId:
+          type: string
+          example: 665f8d90ad8f8c0012f9b456
+        isActive:
+          type: boolean
+          example: true
+        nomePunto:
+          type: string
+          example: Spaccio Aziendale Rossi
+        indirizzo:
+          type: string
+          example: Via Roma 12, Milano
+        geo:
+          $ref: '#/components/schemas/GeoPoint'
+        emailPunto:
+          type: string
+          format: email
+          example: spaccio@azienda-rossi.it
+        phoneNumber:
+          type: string
+          example: "+39021234567"
+        website:
+          type: string
+          format: uri
+          example: https://www.azienda-rossi.it/spaccio
+        description:
+          type: string
+          example: Vendita diretta di latte, formaggi e yogurt prodotti in azienda.
+        categories:
+          type: array
+          items:
+            type: string
+          example:
+            - latte
+            - formaggi
+            - yogurt
+        formattedAddress:
+          type: string
+          example: Via Roma 12, 20121 Milano MI, Italia
+        placeId:
+          type: string
+          example: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+        city:
+          type: string
+          example: Milano
+        province:
+          type: string
+          example: MI
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-05-01T12:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-05-10T12:00:00.000Z
+
+    PuntoVenditaPublicCollection:
+      type: object
+      description: Collezione dei punti vendita pubblici attivi.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PuntoVenditaPublicItem'
+
+    PuntoVenditaListResponse:
+      type: object
+      description: Risposta dell'elenco dei punti vendita dell'utente autenticato.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PuntoVenditaItem'
+
+    PuntoVenditaDetailResponse:
+      type: object
+      description: Risposta che contiene il dettaglio di un punto vendita.
+      properties:
+        item:
+          $ref: '#/components/schemas/PuntoVenditaItem'
+
+    PuntoVenditaResponse:
+      type: object
+      description: Risposta usata da creazione e modifica di un punto vendita.
+      properties:
+        message:
+          type: string
+          example: Punto vendita creato con successo
+        puntoVendita:
+          $ref: '#/components/schemas/PuntoVenditaItem'
+
+    CreatePuntoVenditaRequest:
+      type: object
+      description: Corpo della richiesta per la creazione di un punto vendita. I campi obbligatori sono nomePunto, indirizzo e geo; gli altri campi migliorano la scheda e la ricerca, ma restano opzionali.
+      required:
+        - nomePunto
+        - indirizzo
+        - geo
+      properties:
+        nomePunto:
+          type: string
+          description: Nome commerciale del punto vendita.
+          minLength: 1
+          example: Spaccio Aziendale Rossi
+        indirizzo:
+          type: string
+          description: Indirizzo testuale usato per la ricerca e la visualizzazione.
+          minLength: 1
+          example: Via Roma 12, Milano
+        geo:
+          $ref: '#/components/schemas/GeoPoint'
+        emailPunto:
+          type: string
+          format: email
+          description: Email di contatto del punto vendita.
+          example: spaccio@azienda-rossi.it
+        phoneNumber:
+          type: string
+          description: Numero di telefono del punto vendita.
+          example: "+39021234567"
+        website:
+          type: string
+          format: uri
+          description: Sito web del punto vendita.
+          example: https://www.azienda-rossi.it/spaccio
+        description:
+          type: string
+          description: Descrizione sintetica del punto vendita e dei prodotti offerti.
+          example: Vendita diretta di latte, formaggi e yogurt prodotti in azienda.
+        categories:
+          type: array
+          description: Elenco categorie prodotto associate al punto vendita. Le categorie vengono normalizzate in minuscolo e deduplicate.
+          items:
+            type: string
+          example:
+            - latte
+            - formaggi
+            - yogurt
+        formattedAddress:
+          type: string
+          description: Indirizzo formattato restituito dal geocoder, utile per la visualizzazione.
+          example: Via Roma 12, 20121 Milano MI, Italia
+        placeId:
+          type: string
+          description: Identificativo del luogo restituito da Google Places.
+          example: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+        city:
+          type: string
+          description: Città associata al punto vendita.
+          example: Milano
+        province:
+          type: string
+          description: Provincia o sigla provincia associata al punto vendita.
+          example: MI
+        isActive:
+          type: boolean
+          description: Indica se il punto vendita è attivo e visibile nel dataset pubblico.
+          example: true
+
+    UpdatePuntoVenditaRequest:
+      type: object
+      description: Corpo della richiesta per l'aggiornamento di un punto vendita. Tutti i campi sono opzionali; almeno uno deve essere presente. Il flag isActive consente di nascondere o rendere visibile il punto vendita nel dataset pubblico.
+      properties:
+        nomePunto:
+          type: string
+          description: Nome commerciale del punto vendita.
+          example: Spaccio Rossi Centro
+        indirizzo:
+          type: string
+          description: Indirizzo testuale usato per la ricerca e la visualizzazione.
+          example: Via Garibaldi 18, Milano
+        geo:
+          $ref: '#/components/schemas/GeoPoint'
+        emailPunto:
+          type: string
+          format: email
+          description: Email di contatto del punto vendita.
+          example: spaccio@azienda-rossi.it
+        phoneNumber:
+          type: string
+          description: Numero di telefono del punto vendita.
+          example: "+39021234567"
+        website:
+          type: string
+          format: uri
+          description: Sito web del punto vendita.
+          example: https://www.azienda-rossi.it/spaccio
+        description:
+          type: string
+          description: Descrizione sintetica del punto vendita e dei prodotti offerti.
+          example: Vendita diretta e ritiro ordini.
+        categories:
+          type: array
+          description: Elenco categorie prodotto associate al punto vendita.
+          items:
+            type: string
+          example:
+            - latte
+            - yogurt
+        formattedAddress:
+          type: string
+          description: Indirizzo formattato restituito dal geocoder, utile per la visualizzazione.
+          example: Via Garibaldi 18, 20121 Milano MI, Italia
+        placeId:
+          type: string
+          description: Identificativo del luogo restituito da Google Places.
+          example: ChIJg64JgkVKhkcR6Vn4LQ2U8JY
+        city:
+          type: string
+          description: Città associata al punto vendita.
+          example: Milano
+        province:
+          type: string
+          description: Provincia o sigla provincia associata al punto vendita.
+          example: MI
+        isActive:
+          type: boolean
+          description: Consente di attivare o disattivare il punto vendita.
+          example: false
 
     HealthResponse:
       type: object

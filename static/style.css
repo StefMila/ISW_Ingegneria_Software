@@ -878,6 +878,7 @@ input[type="checkbox"]:invalid {
 
 .animali-table thead tr.header-labels th[data-sort] {
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -1021,6 +1022,50 @@ input[type="checkbox"]:invalid {
 
 .delete-animal-btn:active {
   transform: scale(0.97);
+}
+
+.punto-vendita-active-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.punto-vendita-active-toggle input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--green-mid);
+  cursor: pointer;
+}
+
+.punto-vendita-active-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.punto-vendita-active-badge.is-active {
+  color: #2d6a0f;
+  background: #edf9e6;
+  border-color: #bfe5a7;
+}
+
+.punto-vendita-active-badge.is-inactive {
+  color: #8a2d2d;
+  background: #fdecec;
+  border-color: #f3b0b0;
+}
+
+.animali-table tbody tr.inactive-row td {
+  opacity: 0.68;
 }
 
 .animali-table tbody tr.empty-row td {

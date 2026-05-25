@@ -9,6 +9,7 @@ import aziendeRoutes from './routes/aziende.js';
 import animaliRoutes from './routes/animali.js';
 import { publicEventiRoutes, aziendeEventiRoutes } from './routes/eventi.js';
 import googleCalendarRoutes from './routes/google-calendar.js';
+import puntiVenditaRoutes from './routes/puntiVendita.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -24,6 +25,7 @@ app.use(express.static(path.join(projectRoot, 'static')));
 app.use('/api/auth', authRoutes);
 app.use('/api/aziende', aziendeRoutes);
 app.use('/api/animali', animaliRoutes);
+app.use('/api/punti-vendita', puntiVenditaRoutes);
 app.use('/api/aziende/:aziendaId/eventi', publicEventiRoutes);
 app.use('/api/aziende/:aziendaId/eventi', aziendeEventiRoutes);
 app.use('/api/eventi', publicEventiRoutes);

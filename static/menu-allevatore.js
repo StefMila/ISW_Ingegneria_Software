@@ -41,6 +41,13 @@
             <li><a href="/view-animali.html">Visualizza animali</a></li>
           </ul>
         </div>
+        <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">Prodotti \u25be</button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/add-punto-vendita.html">Aggiungi Punto Vendita</a></li>
+            <li><a href="/view-punti-vendita.html">Visualizza Punti Vendita</a></li>
+          </ul>
+        </div>
         ${eventMenu}
         ${documentsButton}
       </div>
