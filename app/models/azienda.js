@@ -74,6 +74,7 @@ const aziendaSchema = new Schema({
         trim: true,
         index: true
     },
+    // Campi per facilitare ricerche e filtri
     city: {
         type: String,
         required: false,
@@ -84,11 +85,6 @@ const aziendaSchema = new Schema({
         type: String,
         required: false,
         trim: true,
-    },
-    postalCode: {
-        type: String,
-        required: false,
-        trim: true
     },
     country: {
         type: String,
