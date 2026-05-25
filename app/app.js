@@ -5,8 +5,10 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 
 import authRoutes from './routes/auth.js';
-import aziendaRoutes from './routes/azienda.js';
-import AnimaleRoutes from './routes/animale.js';
+import aziendeRoutes from './routes/aziende.js';
+import animaliRoutes from './routes/animali.js';
+import { publicEventiRoutes, aziendeEventiRoutes } from './routes/eventi.js';
+import googleCalendarRoutes from './routes/google-calendar.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -20,8 +22,12 @@ app.use(express.static(path.join(projectRoot, 'static')));
 
 // Routing API
 app.use('/api/auth', authRoutes);
-app.use('/api/azienda', aziendaRoutes);
-app.use('/api/animali', AnimaleRoutes);
+app.use('/api/aziende', aziendeRoutes);
+app.use('/api/animali', animaliRoutes);
+app.use('/api/aziende/:aziendaId/eventi', publicEventiRoutes);
+app.use('/api/aziende/:aziendaId/eventi', aziendeEventiRoutes);
+app.use('/api/eventi', publicEventiRoutes);
+app.use('/api/google-calendar', googleCalendarRoutes);
 
 // Swagger
 app.get('/api-docs/spec.json', (req, res) => res.json(swaggerDocument));

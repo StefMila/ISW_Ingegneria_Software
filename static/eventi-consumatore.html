@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Eventi Pubblici - MuccApp</title>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body class="home-consumatore-page">
+	<div id="menu-root"></div>
+
+	<main class="consumer-content consumer-events-page">
+		<section class="section">
+			<div class="consumer-events-header">
+				<div>
+					<h1>Eventi pubblici</h1>
+					<p>Scopri gli eventi pubblici delle aziende e filtra per azienda, citta o data.</p>
+				</div>
+				<span id="publicEventsCount" class="status-chip status-chip-warning">Caricamento...</span>
+			</div>
+
+			<form id="publicEventsFiltersForm" class="consumer-events-filters">
+				<label>
+					Azienda
+					<select id="companyFilter" name="aziendaId">
+						<option value="">Tutte le aziende</option>
+					</select>
+				</label>
+
+				<label>
+					Citta
+					<input id="cityFilter" name="city" type="text" placeholder="Es. Milano">
+				</label>
+
+				<label>
+					Data
+					<input id="dateFilter" name="date" type="date">
+				</label>
+
+				<div class="consumer-events-filter-actions">
+					<button type="submit">Applica filtri</button>
+					<button type="button" id="resetPublicEventsFilters" class="secondary-action">Reset</button>
+				</div>
+			</form>
+
+			<p id="publicEventsStatus" class="status">Caricamento eventi pubblici...</p>
+		</section>
+
+		<section class="section">
+			<div id="publicEventsList" class="events-list"></div>
+		</section>
+	</main>
+
+	<script src="/eventi-consumatore.js"></script>
+</body>
+</html>

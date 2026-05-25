@@ -9,40 +9,21 @@
   <script>
     protectRoute(['allevatore']);
   </script>
+    <script src="/menu-allevatore.js"></script>
   <!-- Fine controllo accesso -->
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <!-- Struttura simile a add-animale.html, con form per inserire i dati dell'azienda agricola -->
     <main class="dashboard-container">
-        <header class="dashboard-header">
-            <div class="nav-buttons">
-                <a href="/home-allevatore.html" class="nav-home-btn">← Home</a>
-                <div class="nav-dropdown">
-                    <button class="nav-dropdown-toggle">La tua azienda ▾</button>
-                    <ul class="nav-dropdown-menu">
-                        <li><a href="/add-azienda.html">Aggiungi azienda</a></li>
-                        <li><a href="/view-azienda.html">Elimina azienda</a></li>
-                    </ul>
-                </div>
-                <div class="nav-dropdown">
-                    <button class="nav-dropdown-toggle">La tua mandria ▾</button>
-                    <ul class="nav-dropdown-menu">
-                        <li><a href="/add-animale.html">Aggiungi animale</a></li>
-                        <li><a href="/view-animali.html">Visualizza animali</a></li>
-                    </ul>
-                </div>
-            </div>
-            <h1 class="dashboard-title-light dashboard-title-centered">Aggiungi Azienda 🚜</h1>
-            <div class="header-right-actions">
-                <div class="nav-dropdown" id="aziendaSwitcherDropdown">
-                  <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button" type="button">Azienda attiva: non selezionata ▾</button>
-                  <ul class="nav-dropdown-menu azienda-switcher-menu" id="aziendaSwitcherMenu"></ul>
-                </div>
-                <button id="logoutButton">Logout</button>
-            </div>
-            
-        </header>
+        <div id="allevatoreHeaderMount"></div>
+        <script>
+            window.renderAllevatoreHeader({
+                showHomeLink: true,
+                showEventMenu: false,
+                titleText: 'Aggiungi Azienda 🚜'
+            });
+        </script>
         <section id="section-azienda" class="section">
             <form id="add-azienda-form" class="form">
                 <label for="nomeAzienda">Nome Azienda:</label>
@@ -131,12 +112,27 @@
                         getLocationBtn.disabled = true;
                         getLocationBtn.textContent = 'Rilevamento posizione...';
                         navigator.geolocation.getCurrentPosition(function(position) {
-                            latInput.value = position.coords.latitude;
-                            lngInput.value = position.coords.longitude;
-                            // Opzionale: puoi usare le API di Google Maps Geocoding per convertire lat/lng in indirizzo
-                            input.value = `Lat: ${position.coords.latitude}, Lng: ${position.coords.longitude}`;
-                            getLocationBtn.textContent = 'Usa la mia posizione attuale';
-                            getLocationBtn.disabled = false;
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            latInput.value = lat;
+                            lngInput.value = lng;
+
+                            // Mostra subito un valore temporaneo, poi prova a risolvere l'indirizzo testuale.
+                            input.value = `Lat: ${lat}, Lng: ${lng}`;
+
+                            if (window.google && google.maps && google.maps.Geocoder) {
+                                const geocoder = new google.maps.Geocoder();
+                                geocoder.geocode({ location: { lat, lng } }, function(results, status) {
+                                    if (status === 'OK' && results && results.length > 0) {
+                                        input.value = results[0].formatted_address;
+                                    }
+                                    getLocationBtn.textContent = 'Usa la mia posizione attuale';
+                                    getLocationBtn.disabled = false;
+                                });
+                            } else {
+                                getLocationBtn.textContent = 'Usa la mia posizione attuale';
+                                getLocationBtn.disabled = false;
+                            }
                         }, function(error) {
                             alert('Impossibile ottenere la posizione: ' + error.message);
                             getLocationBtn.textContent = 'Usa la mia posizione attuale';

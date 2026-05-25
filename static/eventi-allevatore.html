@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Eventi Allevatore - MuccApp</title>
+	<script src="/auth-control.js"></script>
+	<script>
+		protectRoute(['allevatore']);
+	</script>
+	<script src="/eventi-maps-loader.js"></script>
+	<script>
+		window.loadEventLocationMaps();
+	</script>
+	<script src="/menu-allevatore.js"></script>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+	<main class="dashboard-container-wide">
+		<div id="allevatoreHeaderMount"></div>
+		<script>
+			window.renderAllevatoreHeader({
+				showHomeLink: true,
+				showEventMenu: true
+			});
+		</script>
+		<!-- Sezione gestione eventi -->
+		<section class="section">
+			<div class="events-section-header">
+				<h2>I tuoi eventi</h2>
+				<div id="calendarConnectionStatus" class="status-chip status-chip-warning">Google Calendar non connesso</div>
+			</div>
+			<p style="text-align: right;">
+				<a id="googleSettingsLink" class="button-link" href="/impostazioni-calendario.html">Impostazioni Google Calendar</a>
+			</p>
+			<p class="subtitle">Inserisci promemoria e appuntamenti della tua azienda. Puoi anche esportarli su Google Calendar.</p>
+
+			<form id="eventoForm" class="form events-form">
+				<div class="events-grid">
+					<div>
+						<label for="eventTitle">Titolo evento</label>
+						<input type="text" id="eventTitle" name="eventTitle" placeholder="Es. Visita veterinaria" required>
+					</div>
+					<div>
+						<label for="eventType">Tipo</label>
+						<select id="eventType" name="eventType" required>
+							<option value="">Seleziona...</option>
+							<option value="controllo-sanitario">Controllo sanitario</option>
+							<option value="vaccinazione">Vaccinazione</option>
+							<option value="parto-previsto">Parto previsto</option>
+							<option value="consegna">Consegna / logistica</option>
+							<option value="scadenza-documentale">Scadenza documentale</option>
+							<option value="vendita">Vendita</option>
+							<option value="altro">Altro</option>
+						</select>
+					</div>
+					<div>
+						<label for="eventDate">Data</label>
+						<input type="date" id="eventDate" name="eventDate" required>
+					</div>
+					<div>
+						<label for="eventStartTime">Ora inizio</label>
+						<input type="time" id="eventStartTime" name="eventStartTime" required>
+					</div>
+					<div>
+						<label for="eventEndTime">Ora fine</label>
+						<input type="time" id="eventEndTime" name="eventEndTime" required>
+					</div>
+					<div>
+						<label for="eventReminder">Promemoria</label>
+						<select id="eventReminder" name="eventReminder">
+							<option value="0">Nessuno</option>
+							<option value="10">10 minuti prima</option>
+							<option value="30">30 minuti prima</option>
+							<option value="60">1 ora prima</option>
+							<option value="1440">1 giorno prima</option>
+						</select>
+					</div>
+					<div>
+						<label for="eventVisibility">Visibilità</label>
+						<select id="eventVisibility" name="eventVisibility">
+							<option value="private" selected>Privato (calendario MuccApp privato)</option>
+							<option value="public">Pubblico (calendario MuccApp pubblico)</option>
+						</select>
+					</div>
+					<div>
+						<label for="eventRecurrenceType">Ricorrenza</label>
+						<select id="eventRecurrenceType" name="eventRecurrenceType">
+							<option value="single" selected>Evento singolo</option>
+							<option value="weekly">Ricorrente settimanale</option>
+							<option value="monthly">Ricorrente mensile</option>
+						</select>
+					</div>
+					<div id="recurrenceIntervalWrapper" style="display:none;">
+						<label for="eventRecurrenceInterval">Ogni quante settimane/mesi</label>
+						<input type="number" id="eventRecurrenceInterval" name="eventRecurrenceInterval" min="1" max="52" value="1">
+					</div>
+					<div id="recurrenceUntilWrapper" style="display:none;">
+						<label for="eventRecurrenceUntil">Data fine ricorrenza (opzionale)</label>
+						<input type="date" id="eventRecurrenceUntil" name="eventRecurrenceUntil">
+					</div>
+				</div>
+
+				<label for="eventLocation">Luogo</label>
+				<input type="text" id="eventLocation" name="eventLocation" placeholder="Es. Via Roma 10, Milano" required>
+
+				<label for="eventDescription">Descrizione</label>
+				<textarea id="eventDescription" name="eventDescription" rows="4" placeholder="Dettagli utili per l'evento"></textarea>
+
+				<label for="eventLink">Link esterno</label>
+				<input type="url" id="eventLink" name="eventLink" placeholder="https://esempio.it/evento">
+
+				<div class="events-form-actions">
+					<button type="submit">Salva evento</button>
+				</div>
+			</form>
+
+			<p id="eventFormMessage" class="status"></p>
+		</section>
+
+		<section class="section">
+			<h2>Eventi programmati</h2>
+			<div class="events-form-actions">
+				<p id="syncSummary" class="status">Stato sincronizzazione: in caricamento...</p>
+				<button type="button" id="syncAllButton">Sincronizza tutto su Google Calendar</button>
+			</div>
+			<div id="eventsList" class="events-list"></div>
+		</section>
+	</main>
+
+	<script src="/azienda-switcher.js"></script>
+	<script src="/eventi-allevatore.js"></script>
+	<script src="/logout.js"></script>
+</body>
+</html>

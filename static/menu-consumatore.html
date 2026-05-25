@@ -1,0 +1,42 @@
+  <!-- Toggle nascosto: il click sull'hamburger apre/chiude la sidebar -->
+  <input type="checkbox" id="menu-toggle" class="menu-checkbox" aria-label="Apri o chiudi menu laterale">
+
+  <!-- Pulsanti fissi in alto a sinistra -->
+  <div class="top-left-actions">
+    <label for="menu-toggle" class="menu-icon" aria-controls="consumer-sidebar" aria-label="Apri o chiudi menu">&#9776;</label>
+    <!-- Icona home sempre visibile -->
+    <a href="/home-consumatore.html" class="home-icon" aria-label="Torna alla home">&#8962;</a>
+  </div>
+
+  <aside id="consumer-sidebar" class="sidebar" aria-label="Menu consumatore">
+    <nav>
+      <ul class="sidebar-menu">
+        <!-- SEZIONE PRODOTTI (Con sottomenu) -->
+        <li class="dropdown">
+          <a href="/prodotti.html">Prodotti</a>
+          <ul class="submenu">
+            <li><a href="/scansionaProdotto.html">Scansiona nuovo prodotto</a></li>
+            <li><a href="/prodottiScansionati.html">I tuoi prodotti</a></li>
+            <li><a href="/statistiche.html">Statistiche</a></li>
+          </ul>
+        </li>
+
+        <!-- 2. SEZIONE DOVE COMPRARE -->
+         <li class="dropdown">
+            <a href="/doveComprare.html">Dove comprare i prodotti</a>
+            <ul class="submenu">
+              <li><a href="/esplora.html">Cerca su mappa</a></li>
+              <li><a href="/eventi-consumatore.html">Eventi</a></li>
+            </ul>
+          </li>
+        <!-- 3. ALTRE VOCI DI SERVIZIO -->
+        <li><a href="/recensioni.html">Recensioni</a></li>
+        <li><a href="/preferiti.html">Preferiti</a></li>
+        <li><a href="/profilo-consumatore.html">Il mio Profilo</a></li>
+        <li><a href="/logout.html">Logout</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Overlay cliccabile per chiudere il menu -->
+  <label for="menu-toggle" class="sidebar-overlay" aria-hidden="true"></label>

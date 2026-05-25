@@ -60,7 +60,7 @@ if (addAnimaleForm) {
         }
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`/api/azienda/${aziendaId}/animali`, {
+            const response = await fetch(`/api/aziende/${aziendaId}/animali`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

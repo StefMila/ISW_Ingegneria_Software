@@ -9,40 +9,22 @@
   <script>
     protectRoute(['allevatore']);
   </script>
+  <!-- Inserimento menu header --> 
+    <script src="/menu-allevatore.js"></script>
   <!-- Fine controllo accesso -->
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <!-- Struttura simile a add-azienda.html, con form per inserire i dati dell'animale -->
     <main class="dashboard-container">
-        <header class="dashboard-header">
-            <div class="nav-buttons">
-                <a href="/home-allevatore.html" class="nav-home-btn">← Home</a>
-                <div class="nav-dropdown">
-                    <button class="nav-dropdown-toggle">La tua azienda ▾</button>
-                    <ul class="nav-dropdown-menu">
-                        <li><a href="/add-azienda.html">Aggiungi azienda</a></li>
-                        <li><a href="/view-azienda.html">Elimina azienda</a></li>
-                    </ul>
-                </div>
-                <div class="nav-dropdown">
-                    <button class="nav-dropdown-toggle">La tua mandria ▾</button>
-                    <ul class="nav-dropdown-menu">
-                        <li><a href="/add-animale.html">Aggiungi animale</a></li>
-                        <li><a href="/view-animali.html">Visualizza animali</a></li>
-                    </ul>
-                </div>
-            </div>
-            <h1 class="dashboard-title-light dashboard-title-centered">Aggiungi Animale 🐄</h1>
-            <div class="header-right-actions">
-                <div class="nav-dropdown" id="aziendaSwitcherDropdown">
-                  <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button" type="button">Azienda attiva: non selezionata ▾</button>
-                  <ul class="nav-dropdown-menu azienda-switcher-menu" id="aziendaSwitcherMenu"></ul>
-                </div>
-                <button id="logoutButton">Logout</button>
-            </div>
-            
-        </header>
+        <div id="allevatoreHeaderMount"></div>
+        <script>
+            window.renderAllevatoreHeader({
+                showHomeLink: true,
+                showEventMenu: false,
+                titleText: 'Aggiungi Animale 🐄'
+            });
+        </script>
         <section id="section-animale" class="section">
             <form id="add-animale-form" class="form">
                 <label for="matricola">Matricola:</label>
