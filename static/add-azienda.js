@@ -51,7 +51,7 @@ if (aziendaForm) {
         try {
             // Ottengo il token JWT dalla localStorage per l'autenticazione
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/azienda', {
+            const response = await fetch('/api/aziende', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

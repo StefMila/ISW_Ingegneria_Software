@@ -12,6 +12,7 @@ describe('Eventi Allevatore - pagina e script', () => {
     expect(response.text).toContain('id="eventoForm"');
     expect(response.text).toContain('id="eventVisibility"');
     expect(response.text).toContain('id="eventRecurrenceType"');
+    expect(response.text).toContain('id="eventLink"');
     expect(response.text).toContain('id="syncAllButton"');
     expect(response.text).toContain('/impostazioni-calendario.html');
   });
@@ -31,9 +32,19 @@ describe('Eventi Allevatore - pagina e script', () => {
       .expect(200);
 
     // Confermiamo i nuovi endpoint REST senza verbi nel path.
-    expect(response.text).toContain('/api/eventi/sincronizzazioni/google');
+    expect(response.text).toContain('/api/aziende/');
     expect(response.text).toContain('/sincronizzazioni/google');
+    expect(response.text).toContain("formData.get('eventLink')");
     expect(response.text).toContain('maps:event-location-ready');
+  });
+
+  test('Script eventi-consumatore mostra il link evento quando disponibile', async () => {
+    const response = await request(app)
+      .get('/eventi-consumatore.js')
+      .expect(200);
+
+    expect(response.text).toContain('Apri link evento');
+    expect(response.text).toContain('item.link');
   });
 
   test('Loader maps eventi richiede /api/config e inizializza Places API', async () => {

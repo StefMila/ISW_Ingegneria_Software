@@ -15,6 +15,7 @@ let isGoogleConnected = false;
 
 const getToken = () => localStorage.getItem('token') || '';
 const getAziendaId = () => localStorage.getItem('selectedAziendaId') || '';
+const getAziendaEventsBasePath = (aziendaId) => `/api/aziende/${encodeURIComponent(aziendaId)}/eventi`;
 
 const setMessage = (text, color = '#1f2937') => {
 	if (!eventFormMessage) return;
@@ -114,7 +115,8 @@ const loadCalendarConnectionStatus = async () => {
 };
 // Funzione per sincronizzare un singolo evento su Google Calendar, chiamando l'API dedicata e gestendo eventuali errori.
 const syncEventToGoogle = async (eventId) => {
-	const { response, data } = await apiFetch(`/api/eventi/${eventId}/sincronizzazioni/google`, {
+	const aziendaId = getAziendaId();
+	const { response, data } = await apiFetch(`${getAziendaEventsBasePath(aziendaId)}/${eventId}/sincronizzazioni/google`, {
 		method: 'POST'
 	});
 
@@ -126,9 +128,9 @@ const syncEventToGoogle = async (eventId) => {
 };
 // Funzione per sincronizzare tutti gli eventi non ancora sincronizzati su Google Calendar, con gestione dell'esito e aggiornamento dello stato.
 const syncAllEventsToGoogle = async (aziendaId) => {
-	const { response, data } = await apiFetch('/api/eventi/sincronizzazioni/google', {
+	const { response, data } = await apiFetch(`${getAziendaEventsBasePath(aziendaId)}/sincronizzazioni/google`, {
 		method: 'POST',
-		body: JSON.stringify({ aziendaId, onlyUnsynced: true })
+		body: JSON.stringify({ onlyUnsynced: true })
 	});
 
 	if (!response.ok) {
@@ -162,7 +164,7 @@ const loadEvents = async () => {
 	}
 
 	eventsList.innerHTML = '<p class="status">Caricamento eventi...</p>';
-	const { response, data } = await apiFetch(`/api/eventi?aziendaId=${encodeURIComponent(aziendaId)}&limit=100`);
+	const { response, data } = await apiFetch(`${getAziendaEventsBasePath(aziendaId)}?limit=100`);
 
 	if (!response.ok) {
 		eventsList.innerHTML = `<p class="status">${data.message || 'Errore nel caricamento eventi'}</p>`;
@@ -181,6 +183,9 @@ const loadEvents = async () => {
 		const statusSync = event.googleSyncedAt ? 'Sincronizzato' : 'Non sincronizzato';
 		const visibilityLabel = event.visibilityLabel || (event.visibility === 'public' ? 'Pubblico' : 'Privato');
 		const recurrenceLabel = event.recurrenceLabel || 'Evento singolo';
+		const eventLinkHtml = event.link
+			? `<p><strong>Link:</strong> <a href="${event.link}" target="_blank" rel="noopener noreferrer">Apri link evento</a></p>`
+			: '';
 		return `
 			<article class="event-card" data-event-id="${event.id}">
 				<div class="event-card-top">
@@ -191,6 +196,7 @@ const loadEvents = async () => {
 				<p><strong>Visibilita:</strong> ${visibilityLabel}</p>
 				<p><strong>Ricorrenza:</strong> ${recurrenceLabel}</p>
 				<p><strong>Luogo:</strong> ${event.location || 'Non specificato'}</p>
+				${eventLinkHtml}
 				<p><strong>Promemoria:</strong> ${event.reminderLabel || 'Nessuno'}</p>
 				<p><strong>Google:</strong> ${statusSync}</p>
 				<p>${event.description || 'Nessuna descrizione inserita.'}</p>
@@ -206,7 +212,8 @@ const loadEvents = async () => {
 };
 // funzione per eliminare un evento con l'api dedicata.
 const handleDeleteEvent = async (eventId) => {
-	const { response, data } = await apiFetch(`/api/eventi/${eventId}`, {
+	const aziendaId = getAziendaId();
+	const { response, data } = await apiFetch(`${getAziendaEventsBasePath(aziendaId)}/${eventId}`, {
 		method: 'DELETE'
 	});
 
@@ -227,6 +234,7 @@ if (eventoForm) {
 		const endTime = String(formData.get('eventEndTime') || '').trim();
 		const location = String(formData.get('eventLocation') || '').trim();
 		const description = String(formData.get('eventDescription') || '').trim();
+		const link = String(formData.get('eventLink') || '').trim();
 		const reminderMinutes = Number(formData.get('eventReminder') || 0);
 		const visibility = formData.get('eventVisibility') === 'public' ? 'public' : 'private';
 		const recurrenceType = String(formData.get('eventRecurrenceType') || 'single');
@@ -247,6 +255,18 @@ if (eventoForm) {
 		if (!location || !looksLikeAddress(location)) {
 			setMessage('Inserisci un indirizzo valido nel luogo (es. Via Roma 10, Milano).', 'red');
 			return;
+		}
+
+		if (link) {
+			try {
+				const parsedLink = new URL(link);
+				if (parsedLink.protocol !== 'http:' && parsedLink.protocol !== 'https:') {
+					throw new Error('protocollo non supportato');
+				}
+			} catch {
+				setMessage('Inserisci un link valido che inizi con http:// o https://.', 'red');
+				return;
+			}
 		}
 
 		const startAt = new Date(`${date}T${startTime}`);
@@ -271,16 +291,16 @@ if (eventoForm) {
 			}
 		}
 
-		const { response, data } = await apiFetch('/api/eventi', {
+		const { response, data } = await apiFetch(getAziendaEventsBasePath(aziendaId), {
 			method: 'POST',
 			body: JSON.stringify({
-				aziendaId,
 				title,
 				type,
 				startAt: startAt.toISOString(),
 				endAt: endAt.toISOString(),
 				location,
 				description,
+				link,
 				reminderMinutes,
 				visibility,
 				recurrenceType,
