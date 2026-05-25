@@ -9,7 +9,7 @@ describe('US40 - Integrazione mappa', () => {
       .get('/esplora.html')
       .expect(200);
 
-    expect(response.text).toContain('<gmp-map');
+    expect(response.text).toContain('id="myMap"');
   });
 
   test('GET /api/config restituisce configurazione client', async () => {
