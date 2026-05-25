@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../app/app.js';
-
+//test di guardia 401 senza token.
 // Suite trasversale sui router backend: qui controlliamo validazioni base
 // e comportamenti di sicurezza indipendenti dal database.
 describe('Routes - Auth', () => {
@@ -70,6 +70,26 @@ describe('Routes - Azienda e Animali (guard)', () => {
   });
 });
 
+describe('Routes - Punti Vendita', () => {
+    test('POST /api/punti-vendita senza token restituisce 401', async () => {
+      await request(app)
+        .post('/api/punti-vendita')
+        .send({
+          nomePunto: 'Punto Test',
+          indirizzo: 'Via Test 123',
+          lat: 45.46,
+          lng: 9.19
+        })
+        .expect(401);
+    });
+
+    test('GET /api/punti-vendita/mine senza token restituisce 401', async () => {
+      await request(app)
+        .get('/api/punti-vendita/mine')
+        .expect(401);
+    });
+});
+
 describe('Routes - Google Calendar', () => {
   test('GET /api/google-calendar/oauth/callback senza code/state fa redirect errore', async () => {
     const response = await request(app)
@@ -98,4 +118,7 @@ describe('Routes - Google Calendar', () => {
       .send({ aziendaId: '665f8fd8ad8f8c0012f9c123' })
       .expect(401);
   });
+
+  
+
 });
