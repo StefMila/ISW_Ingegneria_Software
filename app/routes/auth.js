@@ -48,7 +48,7 @@ export const checkUserType = (allowedTypes) => (req, res, next) => {
 // Route per la registrazione di un nuovo utente --> risponde a POST su /api/auth/signup
 router.post('/signup', async (req, res) => { 
   try {
-    const { name, surname, email, password, userType } = req.body;
+    const { name, surname, email, password, userType, acceptedTerms } = req.body;
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     // Controllo che email e password siano presenti
     if (!name || !surname || !normalizedEmail || !password || !userType) {
@@ -59,7 +59,7 @@ router.post('/signup', async (req, res) => {
     // Controllo che il ruolo corrisponda a uno di quelli accettati (definiti in config/userTypes.js)
     if (!(userType in userTypes)) {
         return res.status(400).json({
-            message: `ruolo non valido.`
+            message: `Ruolo non valido.`
         });
     }
     // Controllo che il formato dell'email sia valido (es. contenga @ e dominio)
@@ -74,6 +74,13 @@ router.post('/signup', async (req, res) => {
     if (password.length < 8) {
         return res.status(400).json({
             message: 'La password deve essere lunga almeno 8 caratteri.'
+        });
+    }
+
+    // Controllo che il campo "Ho visionato e accetto i Termini e Condizioni" sia spuntato (Normativa GDPR)
+    if (acceptedTerms !== true && acceptedTerms !== 'true') {
+        return res.status(400).json({
+            message: 'È necessario accettare i Termini e Condizioni per proseguire.'
         });
     }
 
@@ -96,7 +103,8 @@ router.post('/signup', async (req, res) => {
       surname,
       email: normalizedEmail,
       passwordHash: hashedPassword,
-      userType
+      userType,
+      acceptedTerms
     });
 
     // Salvo l'utente nel database
