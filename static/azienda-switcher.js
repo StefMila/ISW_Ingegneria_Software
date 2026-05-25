@@ -2,7 +2,7 @@
  * azienda-switcher.js
  * Script condiviso: gestisce il dropdown "Azienda attiva" in ogni pagina.
  * - Mostra subito il nome salvato in localStorage
- * - Recupera le aziende dell'utente via /api/azienda/mine
+ * - Recupera le aziende dell'utente via /api/aziende/mine
  * - Se l'utente ha più aziende, abilita il menu a discesa per cambiare al volo
  * - Emette l'evento personalizzato `aziendaChanged` sul window così le pagine
  *   possono reagire (es. view-animali.js ricarica la lista)
@@ -29,7 +29,7 @@
     updateBadge(localStorage.getItem(SELECTED_AZIENDA_NAME_KEY));
 
     try {
-      const res  = await fetch('/api/azienda/mine', { headers: { Authorization: `Bearer ${token}` } });
+      const res  = await fetch('/api/aziende/mine', { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !Array.isArray(data.items) || data.items.length === 0) return;
 
