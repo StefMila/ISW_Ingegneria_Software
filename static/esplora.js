@@ -13,13 +13,12 @@ let mappaComponent;
 let markerAttivi = [];
 let eventMarkerAttivi = [];
 let eventiPubbliciSettimana = [];
-let ultimeAziendeVisualizzate = [];
 const geocodeCache = new Map();
 let aziendeConEventiIds = new Set();
 let elencoCollapsed = false;
 let aroundMeEnabled = false;
 let aroundMeCoords = null;
-const eventiDebugCounter = document.getElementById('eventiDebugCounter');
+let mapInstanceGlobal = null;
 
 const CATEGORY_FILTER_TERMS = {
 	latte: ['latte'],
@@ -36,6 +35,82 @@ function normalizeEntityId(value) {
 		if (value.id) return String(value.id);
 	}
 	return String(value);
+}
+
+function parseCoordinate(value) {
+	if (value === null || value === undefined || value === '') {
+		return null;
+	}
+
+	const n = Number(value);
+	return Number.isFinite(n) ? n : null;
+}
+
+function hasUsableCoordinates(lat, lng) {
+	if (lat === null || lng === null) {
+		return false;
+	}
+
+	// Coordinate 0,0 sono spesso placeholder e centrano la mappa in oceano.
+	if (Math.abs(lat) < 0.000001 && Math.abs(lng) < 0.000001) {
+		return false;
+	}
+
+	return true;
+}
+
+function getMapInstance() {
+	return mapInstanceGlobal || mappaComponent?.innerMap || null;
+}
+
+function setMapView(lat, lng, zoom) {
+	const parsedLat = parseCoordinate(lat);
+	const parsedLng = parseCoordinate(lng);
+	if (!hasUsableCoordinates(parsedLat, parsedLng)) {
+		return;
+	}
+
+	const map = getMapInstance();
+	if (map) {
+		map.setCenter({ lat: parsedLat, lng: parsedLng });
+		if (zoom !== undefined && zoom !== null) {
+			map.setZoom(Number(zoom));
+		}
+		return;
+	}
+
+	if (mappaComponent && typeof mappaComponent.setAttribute === 'function') {
+		mappaComponent.setAttribute('center', `${parsedLat},${parsedLng}`);
+		if (zoom !== undefined && zoom !== null) {
+			mappaComponent.setAttribute('zoom', String(zoom));
+		}
+	}
+}
+
+function filterAziendeInCurrentViewport(aziende, enabled = false) {
+	if (!enabled) {
+		return aziende;
+	}
+
+	const map = getMapInstance();
+	if (!map || typeof map.getBounds !== 'function') {
+		return aziende;
+	}
+
+	const bounds = map.getBounds();
+	if (!bounds || !(window.google && google.maps && google.maps.LatLng)) {
+		return aziende;
+	}
+
+	return aziende.filter((az) => {
+		const lat = parseCoordinate(az?.lat);
+		const lng = parseCoordinate(az?.lng);
+		if (!hasUsableCoordinates(lat, lng)) {
+			return false;
+		}
+
+		return bounds.contains(new google.maps.LatLng(lat, lng));
+	});
 }
 
 function loadConsumerMenu() {
@@ -144,7 +219,7 @@ function hasEventData(azienda) {
 }
 
 function applyActiveFilters(aziende) {
-	const selectedFilters = Object.keys(activeFilters).filter((key) => activeFilters[key]);
+	const selectedFilters = Object.keys(activeFilters).filter((key) => activeFilters[key] && key !== 'eventi');
 	if (!selectedFilters.length) {
 		return aziende;
 	}
@@ -152,10 +227,6 @@ function applyActiveFilters(aziende) {
 	return aziende.filter((azienda) => {
 		const blob = getAziendaSearchBlob(azienda);
 		return selectedFilters.some((filterKey) => {
-			if (filterKey === 'eventi') {
-				return hasEventData(azienda);
-			}
-
 			const terms = CATEGORY_FILTER_TERMS[filterKey] || [filterKey];
 			return terms.some((term) => blob.includes(term));
 		});
@@ -189,7 +260,16 @@ function initQuickFilters() {
 	if (resetButton) {
 		resetButton.addEventListener('click', () => {
 			clearActiveFilters();
-			filtraAziende();
+			activeFilters.eventi = true;
+			aroundMeEnabled = false;
+			aroundMeCoords = null;
+			updateAroundMeButtonState();
+			const input = document.getElementById('searchInput');
+			if (input) {
+				input.value = '';
+			}
+			updateFilterButtonStates();
+			filtraAziende({ preserveMapView: true });
 		});
 	}
 
@@ -201,7 +281,7 @@ function initQuickFilters() {
 			}
 			activeFilters[filterKey] = !activeFilters[filterKey];
 			updateFilterButtonStates();
-			filtraAziende();
+			filtraAziende({ preserveMapView: true });
 		});
 	});
 
@@ -349,9 +429,9 @@ async function enrichEventsWithCoordinates(eventi) {
 	const enriched = [];
 
 	for (const evento of eventi) {
-		const lat = Number(evento?.lat);
-		const lng = Number(evento?.lng);
-		if (Number.isFinite(lat) && Number.isFinite(lng)) {
+		const lat = parseCoordinate(evento?.lat);
+		const lng = parseCoordinate(evento?.lng);
+		if (hasUsableCoordinates(lat, lng)) {
 			enriched.push({ ...evento, lat, lng });
 			continue;
 		}
@@ -389,7 +469,9 @@ function mostraDettagliEvento(evento, clickEvent, markerElement) {
 		? startDate.toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
 		: 'Giorno non disponibile';
 
-	const mapsUrl = (Number.isFinite(Number(evento.lat)) && Number.isFinite(Number(evento.lng)))
+	const eventLat = parseCoordinate(evento.lat);
+	const eventLng = parseCoordinate(evento.lng);
+	const mapsUrl = hasUsableCoordinates(eventLat, eventLng)
 		? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${evento.lat},${evento.lng}`)}`
 		: '';
 
@@ -426,21 +508,11 @@ function clearEventMarkers() {
 	eventMarkerAttivi = [];
 }
 
-function updateEventDebugCounter({
-	totaleFuturi = 0,
-	conCoordinate = 0,
-	visualizzati = 0,
-	filtroEventiAttivo = false
-} = {}) {
-	if (!eventiDebugCounter) return;
-	eventiDebugCounter.textContent = `Eventi futuri(7g): ${totaleFuturi} | con coordinate: ${conCoordinate} | marker visibili: ${visualizzati} | toggle eventi: ${filtroEventiAttivo ? 'ON' : 'OFF'}`;
-}
-
 function mostraEventiSettimanaSuMappa(aziendeVisibili) {
 	if (!mappaComponent) return;
 
 	clearEventMarkers();
-	const mapInstance = mappaComponent?.innerMap || null;
+	const mapInstance = getMapInstance();
 
 	const visibleAziendaIds = new Set((aziendeVisibili || []).map((azienda) => normalizeEntityId(azienda.id)).filter(Boolean));
 	const aziendaCoordsById = new Map((databaseAziende || []).map((azienda) => [
@@ -450,21 +522,24 @@ function mostraEventiSettimanaSuMappa(aziendeVisibili) {
 
 	const eventiConCoordinate = eventiPubbliciSettimana
 		.map((evento) => {
-			const directLat = Number(evento.lat);
-			const directLng = Number(evento.lng);
-			if (Number.isFinite(directLat) && Number.isFinite(directLng)) {
+			const directLat = parseCoordinate(evento.lat);
+			const directLng = parseCoordinate(evento.lng);
+			if (hasUsableCoordinates(directLat, directLng)) {
 				return { ...evento, lat: directLat, lng: directLng };
 			}
 
 			const eventAziendaId = normalizeEntityId(evento.aziendaId);
 			const aziendaCoords = aziendaCoordsById.get(eventAziendaId);
 			if (aziendaCoords && Number.isFinite(aziendaCoords.lat) && Number.isFinite(aziendaCoords.lng)) {
+				if (!hasUsableCoordinates(aziendaCoords.lat, aziendaCoords.lng)) {
+					return { ...evento, lat: null, lng: null };
+				}
 				return { ...evento, lat: aziendaCoords.lat, lng: aziendaCoords.lng };
 			}
 
 			return { ...evento, lat: null, lng: null };
 		})
-		.filter((evento) => Number.isFinite(Number(evento.lat)) && Number.isFinite(Number(evento.lng)));
+		.filter((evento) => hasUsableCoordinates(parseCoordinate(evento.lat), parseCoordinate(evento.lng)));
 
 	let eventiDaMostrare = activeFilters.eventi ? [...eventiConCoordinate] : eventiConCoordinate.filter((evento) => {
 		if (visibleAziendaIds.size === 0) {
@@ -483,15 +558,20 @@ function mostraEventiSettimanaSuMappa(aziendeVisibili) {
 		eventiDaMostrare = eventiConCoordinate;
 	}
 
-	let markerRenderizzati = 0;
 	eventiDaMostrare.forEach((evento) => {
 		if (!mapInstance || !(window.google && google.maps && google.maps.Marker)) {
 			return;
 		}
 
+		const lat = parseCoordinate(evento.lat);
+		const lng = parseCoordinate(evento.lng);
+			if (!hasUsableCoordinates(lat, lng)) {
+			return;
+		}
+
 		const marker = new google.maps.Marker({
 			map: mapInstance,
-			position: { lat: Number(evento.lat), lng: Number(evento.lng) },
+			position: { lat, lng },
 			title: `${evento.title || 'Evento'} (${evento.companyName || 'Azienda'})`,
 			zIndex: 2000
 		});
@@ -501,14 +581,6 @@ function mostraEventiSettimanaSuMappa(aziendeVisibili) {
 		});
 
 		eventMarkerAttivi.push(marker);
-		markerRenderizzati += 1;
-	});
-
-	updateEventDebugCounter({
-		totaleFuturi: eventiPubbliciSettimana.length,
-		conCoordinate: eventiConCoordinate.length,
-		visualizzati: markerRenderizzati,
-		filtroEventiAttivo: Boolean(activeFilters.eventi)
 	});
 
 	return eventiDaMostrare;
@@ -522,7 +594,6 @@ async function loadEventiPubbliciSettimana() {
 		if (!response.ok) {
 			eventiPubbliciSettimana = [];
 			console.warn(data.message || 'Eventi pubblici non disponibili al momento.');
-			updateEventDebugCounter({ totaleFuturi: 0, conCoordinate: 0, visualizzati: 0, filtroEventiAttivo: Boolean(activeFilters.eventi) });
 			return;
 		}
 
@@ -539,12 +610,21 @@ async function loadEventiPubbliciSettimana() {
 		console.error('Errore caricamento eventi pubblici della settimana:', error);
 		eventiPubbliciSettimana = [];
 		aziendeConEventiIds = new Set();
-		updateEventDebugCounter({ totaleFuturi: 0, conCoordinate: 0, visualizzati: 0, filtroEventiAttivo: Boolean(activeFilters.eventi) });
 	}
 }
 
 function initApp() {
 	mappaComponent = document.getElementById('myMap');
+	if (window.google && google.maps && mappaComponent) {
+		mapInstanceGlobal = new google.maps.Map(mappaComponent, {
+			center: { lat: 41.8719, lng: 12.5674 },
+			zoom: 6,
+			mapTypeId: 'roadmap',
+			mapTypeControl: true,
+			streetViewControl: true,
+			fullscreenControl: true
+		});
+	}
 
 	if (window.google && google.maps && google.maps.places) {
 		const input = document.getElementById('searchInput');
@@ -596,36 +676,58 @@ function initApp() {
 		});
 }
 
-function mostraAziendeSuMappa(aziende) {
-	ultimeAziendeVisualizzate = Array.isArray(aziende) ? aziende : [];
-	markerAttivi.forEach((m) => m.remove());
+function mostraAziendeSuMappa(aziende, options = {}) {
+	const { preserveMapView = false } = options;
+	const aziendeDaVisualizzare = Array.isArray(aziende) ? aziende : [];
+	markerAttivi.forEach((marker) => {
+		if (marker && typeof marker.setMap === 'function') {
+			marker.setMap(null);
+			return;
+		}
+		if (marker && typeof marker.remove === 'function') {
+			marker.remove();
+		}
+	});
 	markerAttivi = [];
+	const mapInstance = getMapInstance();
 
-	if (!activeFilters.eventi) {
-		aziende.forEach((azienda) => {
-			const marker = document.createElement('gmp-advanced-marker');
-			marker.setAttribute('position', `${azienda.lat},${azienda.lng}`);
-			marker.setAttribute('title', azienda.nome + (azienda.categoria ? ` (${azienda.categoria})` : '') + (azienda.indirizzo ? ` - ${azienda.indirizzo}` : ''));
-			marker.setAttribute('category', azienda.categoria || '');
-			marker.addEventListener('click', (event) => {
-				mostraDettagliAzienda(azienda, event, marker);
+	if (mapInstance && window.google && google.maps && google.maps.Marker) {
+		aziendeDaVisualizzare.forEach((azienda) => {
+			const marker = new google.maps.Marker({
+				map: mapInstance,
+				position: { lat: Number(azienda.lat), lng: Number(azienda.lng) },
+				title: azienda.nome + (azienda.categoria ? ` (${azienda.categoria})` : '') + (azienda.indirizzo ? ` - ${azienda.indirizzo}` : ''),
+				zIndex: 1000
 			});
-			mappaComponent.appendChild(marker);
+
+			marker.addListener('click', (event) => {
+				mostraDettagliAzienda(azienda, event, null);
+			});
+
 			markerAttivi.push(marker);
 		});
 	}
 
-	const eventiVisibili = mostraEventiSettimanaSuMappa(ultimeAziendeVisualizzate) || [];
-	if (eventiVisibili.length > 0 && window.google && google.maps) {
-		const mapInstance = mappaComponent?.innerMap;
+	const eventiVisibili = activeFilters.eventi
+		? (mostraEventiSettimanaSuMappa(aziendeDaVisualizzare) || [])
+		: [];
+
+	if (!activeFilters.eventi) {
+		clearEventMarkers();
+	}
+	if (!preserveMapView && eventiVisibili.length > 0 && window.google && google.maps) {
 		if (mapInstance && google.maps.LatLngBounds) {
-			if (eventiVisibili.length === 1) {
-				const primoEvento = eventiVisibili[0];
+			const eventiConCoordinateUtili = eventiVisibili.filter((evento) =>
+				hasUsableCoordinates(parseCoordinate(evento?.lat), parseCoordinate(evento?.lng))
+			);
+
+			if (eventiConCoordinateUtili.length === 1) {
+				const primoEvento = eventiConCoordinateUtili[0];
 				mapInstance.setCenter({ lat: Number(primoEvento.lat), lng: Number(primoEvento.lng) });
 				mapInstance.setZoom(12);
-			} else {
+			} else if (eventiConCoordinateUtili.length > 1) {
 				const bounds = new google.maps.LatLngBounds();
-				eventiVisibili.forEach((evento) => {
+				eventiConCoordinateUtili.forEach((evento) => {
 					bounds.extend({ lat: Number(evento.lat), lng: Number(evento.lng) });
 				});
 				mapInstance.fitBounds(bounds, 80);
@@ -633,17 +735,16 @@ function mostraAziendeSuMappa(aziende) {
 		}
 	}
 
-		if (!aziende.length && activeFilters.eventi) {
+		if (!preserveMapView && !aziendeDaVisualizzare.length && activeFilters.eventi) {
 			const primoEventoConCoordinate = eventiPubbliciSettimana.find((evento) =>
-				Number.isFinite(Number(evento?.lat)) && Number.isFinite(Number(evento?.lng))
+				hasUsableCoordinates(parseCoordinate(evento?.lat), parseCoordinate(evento?.lng))
 			);
 			if (primoEventoConCoordinate) {
-				mappaComponent.setAttribute('center', `${primoEventoConCoordinate.lat},${primoEventoConCoordinate.lng}`);
-				mappaComponent.setAttribute('zoom', '10');
+				setMapView(primoEventoConCoordinate.lat, primoEventoConCoordinate.lng, 10);
 			}
 		}
 
-	mostraElencoAziende(aziende);
+	mostraElencoAziende(aziendeDaVisualizzare);
 }
 
 function mostraElencoAziende(aziende) {
@@ -677,39 +778,43 @@ function distanzaKm(lat1, lng1, lat2, lng2) {
 	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function setMapCenterAndZoomForResults(risultati, fallbackZoom = '12') {
+function setMapCenterAndZoomForResults(risultati, fallbackZoom = '12', options = {}) {
+	const { preserveMapView = false } = options;
+	if (preserveMapView) {
+		return;
+	}
+
 	if (risultati.length > 0) {
 		const primo = risultati[0];
-		mappaComponent.setAttribute('center', `${primo.lat},${primo.lng}`);
-		mappaComponent.setAttribute('zoom', '10');
+		setMapView(primo.lat, primo.lng, 10);
 		return;
 	}
 
 	if (aroundMeEnabled && aroundMeCoords) {
-		mappaComponent.setAttribute('center', `${aroundMeCoords.lat},${aroundMeCoords.lng}`);
-		mappaComponent.setAttribute('zoom', fallbackZoom);
+		setMapView(aroundMeCoords.lat, aroundMeCoords.lng, fallbackZoom);
 	}
 }
 
-function filtraAziende() {
+function filtraAziende(options = {}) {
+	const { preserveMapView = false } = options;
 	const input = document.getElementById('searchInput');
 	const testoCercato = input.value.trim();
 	const testoNorm = testoCercato.toLowerCase();
 	const aziendeFiltratePerToggle = applyActiveFilters(databaseAziende);
 
 	if (!testoCercato) {
-		const risultati = applyAroundMeFilter(aziendeFiltratePerToggle);
-		mostraAziendeSuMappa(risultati);
-		if (risultati.length > 0) {
+		const risultati = filterAziendeInCurrentViewport(
+			applyAroundMeFilter(aziendeFiltratePerToggle),
+			preserveMapView
+		);
+		mostraAziendeSuMappa(risultati, { preserveMapView });
+		if (!preserveMapView && risultati.length > 0) {
 			const primo = risultati[0];
-			mappaComponent.setAttribute('center', `${primo.lat},${primo.lng}`);
-			mappaComponent.setAttribute('zoom', '10');
-		} else if (aroundMeEnabled && aroundMeCoords) {
-			mappaComponent.setAttribute('center', `${aroundMeCoords.lat},${aroundMeCoords.lng}`);
-			mappaComponent.setAttribute('zoom', '12');
-		} else {
-			mappaComponent.setAttribute('center', '41.8719,12.5674');
-			mappaComponent.setAttribute('zoom', '6');
+			setMapView(primo.lat, primo.lng, 10);
+		} else if (!preserveMapView && aroundMeEnabled && aroundMeCoords) {
+			setMapView(aroundMeCoords.lat, aroundMeCoords.lng, 12);
+		} else if (!preserveMapView) {
+			setMapView(41.8719, 12.5674, 6);
 		}
 		return;
 	}
@@ -728,9 +833,12 @@ function filtraAziende() {
 	});
 
 	if (risultatiTestuali.length > 0) {
-		const risultati = applyAroundMeFilter(risultatiTestuali);
-		mostraAziendeSuMappa(risultati);
-		setMapCenterAndZoomForResults(risultati);
+		const risultati = filterAziendeInCurrentViewport(
+			applyAroundMeFilter(risultatiTestuali),
+			preserveMapView
+		);
+		mostraAziendeSuMappa(risultati, { preserveMapView });
+		setMapCenterAndZoomForResults(risultati, '12', { preserveMapView });
 		return;
 	}
 
@@ -740,14 +848,15 @@ function filtraAziende() {
 			const lng = coords.lng;
 			const raggioKm = getRaggioKm();
 			const risultatiByAddress = aziendeFiltratePerToggle.filter((az) => distanzaKm(lat, lng, az.lat, az.lng) <= raggioKm);
-			const risultati = applyAroundMeFilter(risultatiByAddress);
-			mostraAziendeSuMappa(risultati);
-			if (risultati.length > 0) {
-				mappaComponent.setAttribute('center', `${lat},${lng}`);
-				mappaComponent.setAttribute('zoom', '12');
-			} else if (aroundMeEnabled && aroundMeCoords) {
-				mappaComponent.setAttribute('center', `${aroundMeCoords.lat},${aroundMeCoords.lng}`);
-				mappaComponent.setAttribute('zoom', '12');
+			const risultati = filterAziendeInCurrentViewport(
+				applyAroundMeFilter(risultatiByAddress),
+				preserveMapView
+			);
+			mostraAziendeSuMappa(risultati, { preserveMapView });
+			if (!preserveMapView && risultati.length > 0) {
+				setMapView(lat, lng, 12);
+			} else if (!preserveMapView && aroundMeEnabled && aroundMeCoords) {
+				setMapView(aroundMeCoords.lat, aroundMeCoords.lng, 12);
 			}
 			return;
 		}
