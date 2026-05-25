@@ -50,6 +50,11 @@ const eventoSchema = new Schema({
     required: false,
     trim: true
   },
+  link: {
+    type: String,
+    required: false,
+    trim: true
+  },
   reminderMinutes: {
     type: Number,
     required: false,

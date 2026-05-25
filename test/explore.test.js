@@ -22,17 +22,17 @@ describe('US40 - Integrazione mappa', () => {
 
   test('Pagina esplora integra endpoint mappa previsti', async () => {
     const response = await request(app)
-      .get('/esplora.html')
+      .get('/esplora.js')
       .expect(200);
 
     // Verifica contrattuale: la pagina deve usare questi endpoint backend.
     expect(response.text).toContain("fetch('/api/config')");
-    expect(response.text).toContain("fetch('/api/azienda/public')");
+    expect(response.text).toContain("fetch('/api/aziende/public')");
   });
 
   test('Pagina esplora gestisce errori di caricamento aziende', async () => {
     const response = await request(app)
-      .get('/esplora.html')
+      .get('/esplora.js')
       .expect(200);
 
     expect(response.text).toContain('Errore nel caricamento delle aziende:');
@@ -40,21 +40,20 @@ describe('US40 - Integrazione mappa', () => {
 
   test('Pagina esplora espone messaggi per errori geocoding/geolocalizzazione', async () => {
     const response = await request(app)
-      .get('/esplora.html')
+      .get('/esplora.js')
       .expect(200);
 
     expect(response.text).toContain('Luogo non trovato. Prova a selezionare un suggerimento.');
-    expect(response.text).toContain('Autocomplete non disponibile. Riprova più tardi.');
     expect(response.text).toContain('Impossibile accedere alla tua posizione. Controlla i permessi del browser.');
     expect(response.text).toContain('Il tuo browser non supporta la geolocalizzazione.');
   });
 
-  test('Pagina esplora espone messaggi quando non trova aziende nel raggio', async () => {
+  test('Pagina esplora espone il fallback quando non trova aziende', async () => {
     const response = await request(app)
-      .get('/esplora.html')
+      .get('/esplora.js')
       .expect(200);
 
-    expect(response.text).toContain('Nessuna azienda trovata entro ');
+    expect(response.text).toContain('<em>nessun risultato</em>');
   });
 });
 

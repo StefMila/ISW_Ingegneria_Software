@@ -14,9 +14,9 @@
 </head>
 <body class="home-consumatore-page">
   <div id="menu-root"></div>
-  <!-- script per caricare dinamicamente il menu laterale da menu.html, in modo da poterlo condividere tra più pagine senza duplicare il codice -->
+  <!-- script per caricare dinamicamente il menu laterale da menu-consumatore.html, in modo da poterlo condividere tra più pagine senza duplicare il codice -->
    <script>
-    fetch('/menu.html')
+    fetch('/menu-consumatore.html')
       .then(res => res.text())
       .then(html => {
         document.getElementById('menu-root').innerHTML = html;

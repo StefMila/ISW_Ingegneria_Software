@@ -48,7 +48,7 @@ const deleteAnimaleById = async (animaleId) => {
   if (!confirmed) return;
 
   try {
-    const response = await fetch(`/api/azienda/${aziendaId}/animali/${animaleId}`, {
+    const response = await fetch(`/api/aziende/${aziendaId}/animali/${animaleId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -97,7 +97,7 @@ const fetchAnimali = async () => {
   params.set('sortOrder', currentSort.order);
 
   try {
-    const response = await fetch(`/api/azienda/${aziendaId}/animali?${params.toString()}`, {
+    const response = await fetch(`/api/aziende/${aziendaId}/animali?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 // Gestione della risposta del server
@@ -299,7 +299,7 @@ const saveInlineEdit = async (tr, animaleId) => {
   });
 // Invia la richiesta di aggiornamento al server e gestisce la risposta, mostrando messaggi di successo o errore e aggiornando la tabella
   try {
-    const response = await fetch(`/api/azienda/${aziendaId}/animali/${animaleId}`, {
+    const response = await fetch(`/api/aziende/${aziendaId}/animali/${animaleId}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
