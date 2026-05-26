@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 
 import { checkAuth, checkUserType } from './auth.js';
+import { assertAziendaOwnedByUser } from './aziende.js';
 import Evento from '../models/evento.js';
 import Azienda from '../models/azienda.js';
 import {
@@ -94,23 +95,6 @@ const looksLikeAddress = (value) => {
   const hasComma = /,/.test(normalized);
 
   return hasLetters && (hasStreetCue || (hasNumber && hasComma));
-};
-// lista di eventi pubblici
-const assertAziendaOwnedByUser = async (aziendaId, userId) => {
-  if (!isValidObjectId(aziendaId)) {
-    return { ok: false, status: 400, message: 'aziendaId non valido' };
-  }
-
-  const existingAzienda = await Azienda.findById(aziendaId).select('_id ownerUserId');
-  if (!existingAzienda) {
-    return { ok: false, status: 404, message: 'Azienda non trovata' };
-  }
-
-  if (String(existingAzienda.ownerUserId) !== String(userId)) {
-    return { ok: false, status: 403, message: 'Non hai i permessi per questa azienda' };
-  }
-
-  return { ok: true };
 };
 // verifica che l'azienda esista 
 const assertAziendaExists = async (aziendaId) => {

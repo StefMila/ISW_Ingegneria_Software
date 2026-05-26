@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import { checkAuth, checkUserType } from './auth.js';
+import { assertAziendaOwnedByUser } from './aziende.js';
 import Azienda from '../models/azienda.js';
 import Animale from '../models/animale.js';
 import Mungitura from '../models/munigitura.js';
@@ -10,23 +11,6 @@ router.use(checkAuth);
 router.use(checkUserType(['allevatore']));
 // helper per validare ObjectId di MongoDB
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
-// helper per verificare che l'azienda appartenga all'utente autenticato
-const assertAziendaOwnedByUser = async (aziendaId, userId) => {
-    if (!isValidObjectId(aziendaId)) {
-        return { ok: false, status: 400, message: 'aziendaId non valido' };
-    }
-
-    const existingAzienda = await Azienda.findById(aziendaId).select('_id ownerUserId');
-    if (!existingAzienda) {
-        return { ok: false, status: 404, message: 'Azienda non trovata' };
-    }
-
-    if (String(existingAzienda.ownerUserId) !== String(userId)) {
-        return { ok: false, status: 403, message: 'Non hai i permessi per questa azienda' };
-    }
-
-    return { ok: true };
-};
 // router per gestire le mungiture degli animali, con operazioni CRUD e filtri di ricerca
 export const createMungitura = async (req, res) => {
     try {
