@@ -294,4 +294,140 @@ describe('US8 - Login utente', () => {
                 expect(res.body.message).toBe('Password non valida');
             });
     });
+    test( 'POST /api/auth/login - errore: Errore interno del server', async () => {
+        jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
+        const response = await request(app)
+            .post('/api/auth/login')
+            .send({
+                email: 'testuser@muccapp.it',
+                password: 'Password123!'
+            })
+            .expect(500)
+            .expect(res => {
+                expect(res.body.message).toBe('Errore interno del server');
+            });
+    });
+});
+
+describe( 'US10 - Reset password', () => {
+
+    beforeAll(() => {
+        process.env.JWT_SECRET = 'chiave_segreta_per_test'; 
+    });
+
+    beforeEach(() => {
+        jest.spyOn(User, 'findOne').mockResolvedValue({
+            _id: 'mocked_id',
+            email: 'testuser@muccapp.it',
+            save: jest.fn().mockResolvedValue({
+                _id: 'mocked_id',
+                password: 'hashedNewPassword',
+                updatedAt: new Date()
+            })
+        });
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+        jest.restoreAllMocks();
+    });
+
+    // /api/auth/forgot-password
+    test( 'POST /api/auth/forgot-password verifica l\'email e genera un token di reset', async () => {
+        const response = await request(app)
+            .post('/api/auth/forgot-password')
+            .send({ email: 'testuser@muccapp.it' })
+            .expect(200)
+            .expect(res => {
+                expect(res.body.message).toBe('Email inserita correttamente, riceverai istruzioni per reimpostare la password');
+                expect(res.body.token).toBeDefined();
+            });
+    });
+    test( 'POST /api/auth/forgot-password - errore: Email mancante', async () => {
+        const response = await request(app)
+            .post('/api/auth/forgot-password')
+            .send({})
+            .expect(400)
+            .expect(res => {
+                expect(res.body.message).toBe('Email è obbligatoria');
+            });
+    });
+    test( 'POST /api/auth/forgot-password - errore: Utente non trovato', async () => {
+        jest.spyOn(User, 'findOne').mockResolvedValue(null);
+        const response = await request(app)
+            .post('/api/auth/forgot-password')
+            .send({ email: 'testuser@muccapp.it' })
+            .expect(404)
+            .expect(res => {
+                expect(res.body.message).toBe('Utente non trovato');
+            });
+    });
+    test( 'POST /api/auth/forgot-password - errore: Errore interno del server', async () => {
+        jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
+        const response = await request(app)
+            .post('/api/auth/forgot-password')
+            .send({ email: 'testuser@muccapp.it' })
+            .expect(500)
+            .expect(res => {
+                expect(res.body.message).toBe('Errore interno del server');
+            });
+    });
+    // /api/auth/reset-password
+    test( 'POST /api/auth/reset-password reimposta la password', async () => {
+        jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedNewPassword');
+        const response = await request(app)
+            .post('/api/auth/reset-password')
+            .send({ email: 'testuser@muccapp.it', newPassword: 'newPassword123!' })
+            .expect(200)
+            .expect(res => {
+                expect(res.body.message).toBe('Password aggiornata con successo');
+            });
+    });
+    test( 'POST /api/auth/reset-password - errore: Email mancante', async () => {
+        const response = await request(app)
+            .post('/api/auth/reset-password')
+            .send({ newPassword: 'newPassword123!' })
+            .expect(400)
+            .expect(res => {
+                expect(res.body.message).toBe('Email e newPassword sono obbligatori');
+            });
+    });
+    test( 'POST /api/auth/reset-password - errore: newPassword mancante', async () => {
+        const response = await request(app)
+            .post('/api/auth/reset-password')
+            .send({ email: 'testuser@muccapp.it' })
+            .expect(400)
+            .expect(res => {
+                expect(res.body.message).toBe('Email e newPassword sono obbligatori');
+            });
+    });
+    test( 'POST /api/auth/reset-password - errore: Utente non trovato', async () => {
+        jest.spyOn(User, 'findOne').mockResolvedValue(null);
+        const response = await request(app)
+            .post('/api/auth/reset-password')
+            .send({ email: 'testuser@muccapp.it', newPassword: 'newPassword123!' })
+            .expect(404)
+            .expect(res => {
+                expect(res.body.message).toBe('Utente non trovato');
+            });
+    });
+    test( 'POST /api/auth/reset-password - errore: newPassword non soddisfa i criteri', async () => {
+        const response = await request(app)
+            .post('/api/auth/reset-password')
+            .send({ email: 'testuser@muccapp.it', newPassword: 'pw' })
+            .expect(400)
+            .expect(res => {
+                expect(res.body.message).toBe('La nuova password deve essere lunga almeno 8 caratteri.');
+            });
+    });
+    test( 'POST /api/auth/reset-password - errore: Errore interno del server', async () => {
+        jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
+        const response = await request(app)
+            .post('/api/auth/reset-password')
+            .send({ email: 'testuser@muccapp.it', newPassword: 'newPassword123!' })
+            .expect(500)
+            .expect(res => {
+                expect(res.body.message).toBe('Errore interno del server');
+            });
+    });
 });
