@@ -381,6 +381,26 @@ button:disabled {
   cursor: pointer;
 }
 
+.template-top-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 14px;
+}
+
+.template-bottom-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.template-divider {
+  border: none;
+  border-top: 1px solid #b5c9a0;
+  margin: 14px 0;
+}
+
 #loginForm > div {
   margin-bottom: 8px;
 }
@@ -546,7 +566,8 @@ input[type="checkbox"]:invalid {
   background-color: var(--green-mid);
   border: 2px solid var(--green-light);
   color: white;
-  padding: 8px 16px;
+  padding: 8px 10px;
+  min-width: 110px;
   font-size: 0.9rem;
   border-radius: 8px;
   text-decoration: none;
@@ -565,9 +586,17 @@ input[type="checkbox"]:invalid {
   background-color: transparent;
   border: 2px solid var(--green-light);
   color: white;
-  padding: 8px 16px;
+  padding: 8px 10px;
+  min-width: 110px;
   font-size: 0.9rem;
   border-radius: 8px;
+  white-space: nowrap;
+}
+
+.dashboard-header .nav-dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 /* Stato hover per bottoni header */
 .dashboard-header button:hover {
@@ -790,7 +819,7 @@ input[type="checkbox"]:invalid {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  min-width: 180px;
+  min-width: 240px;
   background: var(--card-bg);
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.18);
@@ -807,6 +836,7 @@ input[type="checkbox"]:invalid {
   color: var(--text-dark);
   text-decoration: none;
   font-size: 0.95rem;
+  white-space: nowrap;
   transition: background 0.15s;
 }
 /* Stato hover per voci dropdown */
@@ -840,6 +870,11 @@ input[type="checkbox"]:invalid {
   .dashboard-header .header-right-actions {
     justify-content: flex-start;
     margin-left: 0;
+  }
+
+  .nav-home-btn,
+  .dashboard-header button {
+    min-width: 0;
   }
 
   .dashboard-header .dashboard-title-centered {

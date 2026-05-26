@@ -2,26 +2,10 @@
 // per le pagine dell'allevatore, con opzioni per mostrare o nascondere 
 // determinate voci di menu.
 (function () {
-  // Costruisce solo la porzione navigazione: alcune pagine hanno voci in piu/meno.
-  const buildNavMenu = ({ showHomeLink, showEventMenu, showDocumentsButton }) => {
+  // Costruisce la porzione navigazione con menu completo sempre visibile.
+  const buildNavMenu = ({ showHomeLink }) => {
     const homeLink = showHomeLink
       ? '<a href="/home-allevatore.html" class="nav-home-btn">\u2190 Home</a>'
-      : '';
-// Il menu eventi è opzionale perché non tutte le pagine dell'allevatore devono esporre i link agli eventi e al calendario.
-    const eventMenu = showEventMenu
-      ? `
-        <div class="nav-dropdown">
-          <button class="nav-dropdown-toggle">Eventi e calendario \u25be</button>
-          <ul class="nav-dropdown-menu">
-            <li><a href="/eventi-allevatore.html">Gestisci eventi</a></li>
-            <li><a href="/impostazioni-calendario.html">Google Calendar</a></li>
-          </ul>
-        </div>
-      `
-      : '';
-// Pulsante documenti.
-    const documentsButton = showDocumentsButton
-      ? '<button onclick="document.getElementById(\'section-documenti\')?.scrollIntoView({behavior:\'smooth\'})">I tuoi documenti</button>'
       : '';
 
     return `
@@ -42,14 +26,32 @@
           </ul>
         </div>
         <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">Eventi e calendario \u25be</button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/eventi-allevatore.html">Gestisci eventi</a></li>
+            <li><a href="/impostazioni-calendario.html">Google Calendar</a></li>
+          </ul>
+        </div>
+        <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">Lavorazioni \u25be</button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/add-lavorazione.html">Aggiungi lavorazione</a></li>
+            <li><a href="/view-lavorazioni.html">Visualizza lavorazioni</a></li>
+          </ul>
+        </div>
+        <div class="nav-dropdown">
           <button class="nav-dropdown-toggle">Prodotti \u25be</button>
           <ul class="nav-dropdown-menu">
             <li><a href="/add-punto-vendita.html">Aggiungi Punto Vendita</a></li>
             <li><a href="/view-punti-vendita.html">Visualizza Punti Vendita</a></li>
           </ul>
         </div>
-        ${eventMenu}
-        ${documentsButton}
+        <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">I tuoi documenti \u25be</button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/documenti.html">Visualizza documenti</a></li>
+          </ul>
+        </div>
       </div>
     `;
   };
@@ -58,9 +60,7 @@
     const {
       mountId = 'allevatoreHeaderMount',
       titleText = '',
-      showHomeLink = true,
-      showEventMenu = false,
-      showDocumentsButton = false
+      showHomeLink = true
     } = options;
 
     const mount = document.getElementById(mountId);
@@ -74,7 +74,7 @@
     // Render centralizzato: in questo modo il markup fisso non e duplicato su ogni vista.
     mount.innerHTML = `
       <header class="dashboard-header">
-        ${buildNavMenu({ showHomeLink, showEventMenu, showDocumentsButton })}
+        ${buildNavMenu({ showHomeLink })}
         ${title}
         <div class="header-right-actions">
           <div class="nav-dropdown" id="aziendaSwitcherDropdown">

@@ -21,6 +21,10 @@ tags:
     description: Endpoint per la gestione dei punti vendita associati a un allevatore e per l'esposizione del dataset pubblico attivo
   - name: Evento
     description: Endpoint per la gestione eventi e sincronizzazione Google Calendar
+  - name: Lavorazione
+    description: Endpoint per la creazione, modifica e consultazione delle lavorazioni (incluse template)
+  - name: Lotto prodotto
+    description: Endpoint per la creazione, modifica e consultazione dei lotti prodotto
   - name: Mappa
     description: Endpoint di supporto all'integrazione mappa (configurazione client e dataset pubblico aziende)
 
@@ -2117,6 +2121,694 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/lavorazioni:
+    post:
+      summary: Crea lavorazione
+      description: Crea una nuova lavorazione o un template di lavorazione per l'azienda indicata. Se `isTemplate=true`, la risposta usa il messaggio dedicato al template.
+      tags:
+        - Lavorazione
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLavorazioneRequest'
+            examples:
+              templateYogurt:
+                summary: Creazione template lavorazione
+                value:
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  tipoLavorazione: yogurt
+                  nomeTemplate: Template Yogurt Bianco
+                  isTemplate: true
+                  status: in_corso
+                  notes: Template standard per yogurt bianco
+                  inputs:
+                    - type: latte
+                      name: Latte crudo
+                      quantity: 100
+                      unit: L
+                  fasi:
+                    - name: Ricevimento
+                      completed: false
+                    - name: Confezionamento
+                      completed: false
+                  outputName: Vasetti di yogurt
+                  outputUnit: vasetti
+              lavorazioneOperativa:
+                summary: Creazione lavorazione operativa
+                value:
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  tipoLavorazione: formaggio
+                  isTemplate: false
+                  status: in_corso
+                  startedAt: 2026-05-26T07:45:00.000Z
+                  inputs:
+                    - type: latte
+                      name: Latte crudo
+                      quantity: 350
+                      unit: L
+                  fasi:
+                    - name: Coagulazione
+                      completed: true
+                    - name: Stagionatura
+                      completed: false
+                  outputName: Formaggi freschi
+                  outputQuantity: 40
+                  outputUnit: pezzi
+      responses:
+        '201':
+          description: Lavorazione creata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LavorazioneResponse'
+              examples:
+                templateCreated:
+                  value:
+                    message: Template lavorazione creato con successo
+                    lavorazione:
+                      _id: 665fa8d8ad8f8c0012f9d111
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      tipoLavorazione: yogurt
+                      nomeTemplate: Template Yogurt Bianco
+                      isTemplate: true
+                      status: in_corso
+                      inputs:
+                        - type: latte
+                          name: Latte crudo
+                          quantity: 100
+                          unit: L
+                      fasi:
+                        - name: Ricevimento
+                          completed: false
+                        - name: Confezionamento
+                          completed: false
+                      outputName: Vasetti di yogurt
+                      outputUnit: vasetti
+                lavorazioneCreated:
+                  value:
+                    message: Lavorazione creata con successo
+                    lavorazione:
+                      _id: 665fa8d8ad8f8c0012f9d112
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      tipoLavorazione: formaggio
+                      isTemplate: false
+                      status: in_corso
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingRequired:
+                  value:
+                    message: aziendaId e tipoLavorazione sono obbligatori
+                invalidTemplateFlag:
+                  value:
+                    message: isTemplate deve essere true o false
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Elenco lavorazioni azienda
+      description: Restituisce le lavorazioni dell'azienda filtrabili per tipo, stato e flag template. Se `isTemplate` non viene passato, i template sono esclusi di default.
+      tags:
+        - Lavorazione
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: aziendaId
+          required: true
+          schema:
+            type: string
+          description: ID azienda di cui recuperare le lavorazioni.
+        - in: query
+          name: tipoLavorazione
+          required: false
+          schema:
+            type: string
+            enum:
+              - primo-sale
+              - formaggio
+              - yogurt
+              - altro
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum:
+              - in_corso
+              - completata
+              - annullata
+        - in: query
+          name: isTemplate
+          required: false
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+          description: Filtra esplicitamente template/non-template. Se omesso, i template vengono esclusi.
+      responses:
+        '200':
+          description: Lista lavorazioni trovata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LavorazioneItem'
+              examples:
+                listaTemplate:
+                  value:
+                    - _id: 665fa8d8ad8f8c0012f9d111
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      tipoLavorazione: yogurt
+                      nomeTemplate: Template Yogurt Bianco
+                      isTemplate: true
+                      status: in_corso
+                    - _id: 665fa8d8ad8f8c0012f9d113
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      tipoLavorazione: formaggio
+                      nomeTemplate: Template Caciotta
+                      isTemplate: true
+                      status: in_corso
+        '400':
+          description: Query non valida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingAziendaId:
+                  value:
+                    message: aziendaId è obbligatorio
+                invalidTemplateFlag:
+                  value:
+                    message: isTemplate deve essere true o false
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/lavorazioni/{id}:
+    patch:
+      summary: Aggiorna lavorazione
+      description: Aggiorna i campi della lavorazione esistente. I campi non passati non vengono modificati.
+      tags:
+        - Lavorazione
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLavorazioneRequest'
+            examples:
+              updateTemplate:
+                value:
+                  nomeTemplate: Template Yogurt Bianco Premium
+                  outputName: Vasetti di yogurt intero
+                  isTemplate: true
+      responses:
+        '200':
+          description: Lavorazione aggiornata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LavorazioneResponse'
+              examples:
+                success:
+                  value:
+                    message: Lavorazione aggiornata con successo
+                    lavorazione:
+                      _id: 665fa8d8ad8f8c0012f9d111
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      tipoLavorazione: yogurt
+                      nomeTemplate: Template Yogurt Bianco Premium
+                      isTemplate: true
+                      outputName: Vasetti di yogurt intero
+        '400':
+          description: ID o dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID lavorazione non valido
+                invalidTemplateFlag:
+                  value:
+                    message: isTemplate deve essere true o false
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Lavorazione non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Elimina lavorazione
+      description: Elimina una lavorazione esistente dell'azienda dell'utente autenticato.
+      tags:
+        - Lavorazione
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lavorazione eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Lavorazione eliminata con successo
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID lavorazione non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Lavorazione non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Lavorazione non trovata
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/lotti-prodotto:
+    post:
+      summary: Crea lotto prodotto
+      description: Crea un nuovo lotto prodotto associato a una lavorazione non-template.
+      tags:
+        - Lotto prodotto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLottoProdottoRequest'
+            examples:
+              createLotto:
+                value:
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  lavorazioneId: 665fa8d8ad8f8c0012f9d112
+                  nomeProdotto: Caciotta Fresca
+                  quantity: 40
+                  unit: pezzi
+                  qrCodeValue: CACIOTTA-20260526-001
+      responses:
+        '201':
+          description: Lotto prodotto creato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LottoProdottoResponse'
+              examples:
+                success:
+                  value:
+                    message: Lotto prodotto creato con successo
+                    lottoProdotto:
+                      _id: 665fb8d8ad8f8c0012f9d210
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      lavorazioneId: 665fa8d8ad8f8c0012f9d112
+                      nomeProdotto: Caciotta Fresca
+                      quantity: 40
+                      unit: pezzi
+                      lotNumber: LOT-CACIOTTA-20260526-001
+                      qrCodeValue: CACIOTTA-20260526-001
+        '400':
+          description: Dati non validi o lavorazione template non ammessa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingRequired:
+                  value:
+                    message: aziendaId, lavorazioneId, nomeProdotto, quantity, unit e qrCodeValue sono obbligatori
+                templateBlocked:
+                  value:
+                    message: La lavorazione selezionata è un template e non può essere usata per creare un lotto prodotto
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Risorsa non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: lotNumber o qrCodeValue duplicati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Elenco lotti prodotto azienda
+      description: Restituisce i lotti prodotto dell'azienda filtrabili per lavorazione e numero lotto.
+      tags:
+        - Lotto prodotto
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: aziendaId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: lavorazioneId
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: lotNumber
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista lotti prodotto trovata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LottoProdottoItem'
+              examples:
+                success:
+                  value:
+                    - _id: 665fb8d8ad8f8c0012f9d210
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      lavorazioneId: 665fa8d8ad8f8c0012f9d112
+                      nomeProdotto: Caciotta Fresca
+                      quantity: 40
+                      unit: pezzi
+                      lotNumber: LOT-CACIOTTA-20260526-001
+                      qrCodeValue: CACIOTTA-20260526-001
+        '400':
+          description: Query non valida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingAziendaId:
+                  value:
+                    message: aziendaId è obbligatorio
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/lotti-prodotto/{id}:
+    patch:
+      summary: Aggiorna lotto prodotto
+      description: Aggiorna i campi del lotto prodotto esistente. Se viene passato `lavorazioneId`, la lavorazione deve appartenere alla stessa azienda e non essere un template.
+      tags:
+        - Lotto prodotto
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLottoProdottoRequest'
+            examples:
+              updateQuantity:
+                value:
+                  quantity: 38
+                  unit: pezzi
+      responses:
+        '200':
+          description: Lotto prodotto aggiornato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LottoProdottoResponse'
+              examples:
+                success:
+                  value:
+                    message: Lotto prodotto aggiornato con successo
+                    lottoProdotto:
+                      _id: 665fb8d8ad8f8c0012f9d210
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      lavorazioneId: 665fa8d8ad8f8c0012f9d112
+                      nomeProdotto: Caciotta Fresca
+                      quantity: 38
+                      unit: pezzi
+                      lotNumber: LOT-CACIOTTA-20260526-001
+                      qrCodeValue: CACIOTTA-20260526-001
+        '400':
+          description: ID o dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID lotto prodotto non valido
+                templateBlocked:
+                  value:
+                    message: La lavorazione selezionata è un template e non può essere usata per creare un lotto prodotto
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Risorsa non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: lotNumber o qrCodeValue duplicati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Elimina lotto prodotto
+      description: Elimina un lotto prodotto esistente dell'azienda dell'utente autenticato.
+      tags:
+        - Lotto prodotto
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lotto prodotto eliminato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Lotto prodotto eliminato con successo
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID lotto prodotto non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Lotto prodotto non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Lotto prodotto non trovato
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2500,6 +3192,361 @@ components:
           type: boolean
           description: Consente di attivare o disattivare il punto vendita.
           example: false
+
+    LavorazioneInputItem:
+      type: object
+      description: Input usato in una lavorazione.
+      required:
+        - type
+        - name
+        - quantity
+        - unit
+      properties:
+        type:
+          type: string
+          example: latte
+        name:
+          type: string
+          example: Latte crudo
+        quantity:
+          type: number
+          minimum: 0
+          example: 100
+        unit:
+          type: string
+          example: L
+        mungituraIds:
+          type: array
+          items:
+            type: string
+          example:
+            - 665f8fd8ad8f8c0012f9e001
+
+    LavorazioneFaseItem:
+      type: object
+      description: Fase di lavorazione con stato di completamento.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          enum:
+            - Ricevimento
+            - Centrifugazione
+            - Omogeneizzazione
+            - Trattamento termico
+            - Inoculo
+            - Coagulazione
+            - Rottura cagliata
+            - Formatura
+            - Salatura
+            - Stagionatura
+            - Concentrazione
+            - Zangolatura
+            - Confezionamento
+          example: Confezionamento
+        completed:
+          type: boolean
+          default: false
+          example: false
+
+    LavorazioneItem:
+      type: object
+      description: Rappresentazione completa di una lavorazione o template.
+      properties:
+        _id:
+          type: string
+          example: 665fa8d8ad8f8c0012f9d111
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        tipoLavorazione:
+          type: string
+          enum:
+            - primo-sale
+            - formaggio
+            - yogurt
+            - altro
+          example: yogurt
+        nomeTemplate:
+          type: string
+          nullable: true
+          example: Template Yogurt Bianco
+        isTemplate:
+          type: boolean
+          default: false
+          example: true
+        startedAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T07:45:00.000Z
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2026-05-26T12:00:00.000Z
+        status:
+          type: string
+          enum:
+            - in_corso
+            - completata
+            - annullata
+          example: in_corso
+        notes:
+          type: string
+          nullable: true
+          example: Batch mattutino
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/LavorazioneInputItem'
+        fasi:
+          type: array
+          items:
+            $ref: '#/components/schemas/LavorazioneFaseItem'
+        outputName:
+          type: string
+          nullable: true
+          example: Vasetti di yogurt
+        outputQuantity:
+          type: number
+          nullable: true
+          minimum: 0
+          example: 120
+        outputUnit:
+          type: string
+          nullable: true
+          example: vasetti
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T08:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T08:30:00.000Z
+
+    CreateLavorazioneRequest:
+      type: object
+      description: Corpo richiesta per creare una nuova lavorazione o template.
+      required:
+        - aziendaId
+        - tipoLavorazione
+      properties:
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        tipoLavorazione:
+          type: string
+          enum:
+            - primo-sale
+            - formaggio
+            - yogurt
+            - altro
+          example: yogurt
+        nomeTemplate:
+          type: string
+          description: Nome leggibile del template, utile quando isTemplate=true.
+          example: Template Yogurt Bianco
+        isTemplate:
+          oneOf:
+            - type: boolean
+            - type: string
+              enum:
+                - 'true'
+                - 'false'
+          description: Flag booleano o stringa boolean-like.
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - in_corso
+            - completata
+            - annullata
+        notes:
+          type: string
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/LavorazioneInputItem'
+        fasi:
+          type: array
+          items:
+            $ref: '#/components/schemas/LavorazioneFaseItem'
+        outputName:
+          type: string
+        outputQuantity:
+          type: number
+          minimum: 0
+        outputUnit:
+          type: string
+
+    UpdateLavorazioneRequest:
+      type: object
+      description: Corpo richiesta per aggiornare una lavorazione esistente.
+      properties:
+        tipoLavorazione:
+          type: string
+          enum:
+            - primo-sale
+            - formaggio
+            - yogurt
+            - altro
+        nomeTemplate:
+          type: string
+        isTemplate:
+          oneOf:
+            - type: boolean
+            - type: string
+              enum:
+                - 'true'
+                - 'false'
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - in_corso
+            - completata
+            - annullata
+        notes:
+          type: string
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/LavorazioneInputItem'
+        fasi:
+          type: array
+          items:
+            $ref: '#/components/schemas/LavorazioneFaseItem'
+        outputName:
+          type: string
+        outputQuantity:
+          type: number
+          minimum: 0
+        outputUnit:
+          type: string
+
+    LavorazioneResponse:
+      type: object
+      description: Risposta di creazione o aggiornamento lavorazione.
+      properties:
+        message:
+          type: string
+          example: Lavorazione creata con successo
+        lavorazione:
+          $ref: '#/components/schemas/LavorazioneItem'
+
+    LottoProdottoItem:
+      type: object
+      description: Rappresentazione completa di un lotto prodotto.
+      properties:
+        _id:
+          type: string
+          example: 665fb8d8ad8f8c0012f9d210
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        lavorazioneId:
+          type: string
+          example: 665fa8d8ad8f8c0012f9d112
+        nomeProdotto:
+          type: string
+          example: Caciotta Fresca
+        quantity:
+          type: number
+          minimum: 0
+          example: 40
+        unit:
+          type: string
+          example: pezzi
+        lotNumber:
+          type: string
+          nullable: true
+          example: LOT-CACIOTTA-20260526-001
+        qrCodeValue:
+          type: string
+          example: CACIOTTA-20260526-001
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T09:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T09:00:00.000Z
+
+    CreateLottoProdottoRequest:
+      type: object
+      description: Corpo richiesta per creare un lotto prodotto.
+      required:
+        - aziendaId
+        - lavorazioneId
+        - nomeProdotto
+        - quantity
+        - unit
+        - qrCodeValue
+      properties:
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        lavorazioneId:
+          type: string
+          example: 665fa8d8ad8f8c0012f9d112
+        nomeProdotto:
+          type: string
+          example: Caciotta Fresca
+        quantity:
+          type: number
+          minimum: 0
+          example: 40
+        unit:
+          type: string
+          example: pezzi
+        lotNumber:
+          type: string
+          description: Facoltativo; se omesso il server lo genera automaticamente.
+          example: LOT-CACIOTTA-20260526-001
+        qrCodeValue:
+          type: string
+          example: CACIOTTA-20260526-001
+
+    UpdateLottoProdottoRequest:
+      type: object
+      description: Corpo richiesta per aggiornare un lotto prodotto.
+      properties:
+        lavorazioneId:
+          type: string
+        nomeProdotto:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+        lotNumber:
+          type: string
+        qrCodeValue:
+          type: string
+
+    LottoProdottoResponse:
+      type: object
+      description: Risposta di creazione o aggiornamento lotto prodotto.
+      properties:
+        message:
+          type: string
+          example: Lotto prodotto creato con successo
+        lottoProdotto:
+          $ref: '#/components/schemas/LottoProdottoItem'
 
     HealthResponse:
       type: object

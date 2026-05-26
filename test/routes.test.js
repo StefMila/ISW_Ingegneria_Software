@@ -100,7 +100,5 @@ describe('Routes - Google Calendar', () => {
       .send({ aziendaId: '665f8fd8ad8f8c0012f9c123' })
       .expect(401);
   });
-
-  
-
 });
+
