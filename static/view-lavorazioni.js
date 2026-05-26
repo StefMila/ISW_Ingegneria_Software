@@ -114,7 +114,7 @@ const getPhasesHtml = (item) => {
 
     return `<ol style="margin:8px 0 0 18px;">${rows}</ol>`;
 };
-
+// funzione di ripristino riga dopo modifica inline.
 const ensureDetailsOverlay = () => {
     if (detailsOverlay) {
         return detailsOverlay;
@@ -163,7 +163,7 @@ const ensureDetailsOverlay = () => {
 
     return detailsOverlay;
 };
-
+// apre la finestra di dettaglio al click sulla riga, con focus trap e chiusura con ESC o click fuori.
 const openDetails = (item) => {
     if (!item) {
         return;
@@ -199,6 +199,9 @@ const rowHtml = (item) => `
     <td>
         <button class="edit-animal-btn" data-id="${escapeAttr(item._id)}" title="Modifica lavorazione" aria-label="Modifica lavorazione">
             <span class="edit-animal-icon" aria-hidden="true">✎</span>
+        </button>
+        <button class="delete-animal-btn" data-id="${escapeAttr(item._id)}" title="Elimina lavorazione" aria-label="Elimina lavorazione">
+            <span class="delete-animal-icon" aria-hidden="true">🗑</span>
         </button>
     </td>
 `;
@@ -318,7 +321,37 @@ const restoreRow = (tr, item) => {
     tr.classList.remove('editing');
     tr.innerHTML = rowHtml(item);
 };
-
+// funzione di eliminazione con conferma.
+const deleteLavorazioneById = async (lavorazioneId) => {
+    const token = localStorage.getItem('token');
+    if (!lavorazioneId || !token) {
+        renderStatus('Dati mancanti per eliminare la lavorazione.', 'red');
+        return;
+    }
+    const confirmed = window.confirm('Sei sicuro di voler eliminare questa lavorazione? Questa azione non può essere annullata.');
+    if (!confirmed) {
+        return;
+    }
+    try {
+        const response = await fetch(`/api/lavorazioni/${lavorazioneId}`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            renderStatus(data.message || 'Errore durante l\'eliminazione della lavorazione.', 'red');
+            return;
+        }
+        renderStatus(data.message || 'Lavorazione eliminata con successo.', 'green');
+        await fetchLavorazioni();
+    } catch (error) {
+        console.error('Errore durante l\'eliminazione della lavorazione:', error);
+        renderStatus('Errore di connessione durante l\'eliminazione.', 'red');
+    }
+};
+// funzione di modifica inline.
 const openInlineEdit = (tr, item) => {
     if (!tr || !item || tr.classList.contains('editing')) {
         return;
@@ -335,7 +368,7 @@ const openInlineEdit = (tr, item) => {
         </td>
     `;
 };
-
+// funzione di salvataggio modifica inline.
 const saveInlineEdit = async (tr, lavorazioneId) => {
     const token = localStorage.getItem('token');
 
@@ -403,6 +436,12 @@ if (lavorazioniTableBody) {
             if (tr && item) {
                 openInlineEdit(tr, item);
             }
+            return;
+        }
+
+        const deleteButton = event.target.closest('.delete-animal-btn');
+        if (deleteButton) {
+            await deleteLavorazioneById(deleteButton.dataset.id);
             return;
         }
 
