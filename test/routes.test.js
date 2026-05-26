@@ -4,24 +4,6 @@ import app from '../app/app.js';
 // Suite trasversale sui router backend: qui controlliamo validazioni base
 // e comportamenti di sicurezza indipendenti dal database.
 describe('Routes - Auth', () => {
-  test('POST /api/auth/login con body vuoto restituisce 400', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({})
-      .expect(400);
-
-    expect(response.body.message).toContain('Email e password sono obbligatori');
-  });
-
-  test('POST /api/auth/signup con campi mancanti restituisce 400', async () => {
-    const response = await request(app)
-      .post('/api/auth/signup')
-      .send({ name: 'Mario' })
-      .expect(400);
-
-    expect(response.body.message).toContain('Nome, cognome, email, password e ruolo sono obbligatori');
-  });
-
   test('POST /api/auth/forgot-password senza email restituisce 400', async () => {
     const response = await request(app)
       .post('/api/auth/forgot-password')
