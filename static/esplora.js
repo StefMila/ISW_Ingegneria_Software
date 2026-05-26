@@ -334,10 +334,12 @@ function mostraDettagliAzienda(azienda, clickEvent, markerElement) {
 	const box = document.getElementById('dettaglioAzienda');
 	const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(azienda.lat + ',' + azienda.lng)}`;
 	const categoriaInfo = azienda.categoria || (Array.isArray(azienda.categorie) && azienda.categorie.length ? azienda.categorie.join(', ') : '');
+	const entityTypeLabel = azienda.entityType === 'puntoVendita' ? 'Punto vendita' : 'Azienda';
 	box.innerHTML =
 		`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">` +
 			`<div>` +
 				`<h3 style="margin:0 0 8px 0;">${azienda.nome}</h3>` +
+				`<div><b>Tipo:</b> ${entityTypeLabel}</div>` +
 				(categoriaInfo ? `<div><b>Categoria:</b> ${categoriaInfo}</div>` : '') +
 				(azienda.indirizzo ? `<div><b>Indirizzo:</b> ${azienda.indirizzo}</div>` : '') +
 				(azienda.citta ? `<div><b>Citta:</b> ${azienda.citta}</div>` : '') +
@@ -644,12 +646,14 @@ function initApp() {
 
 	Promise.all([
 		fetch('/api/aziende/public').then((res) => res.json()),
+		fetch('/api/punti-vendita/public').then((res) => res.json()),
 		loadEventiPubbliciSettimana()
 	])
-		.then(([data]) => {
-			databaseAziende = (data.items || [])
+		.then(([aziendeData, puntiVenditaData]) => {
+			const aziendePubbliche = (aziendeData.items || [])
 				.map((az) => ({
 					id: az._id,
+					entityType: 'azienda',
 					categorie: Array.isArray(az.productCategories)
 						? az.productCategories
 						: (az.productCategories ? az.productCategories.split(',').map((c) => c.trim()) : []),
@@ -666,13 +670,31 @@ function initApp() {
 				.map((az) => ({
 					...az,
 					categoria: az.categoria || (az.categorie.length ? az.categorie[0] : '')
-				}))
-				.filter((az) => az.lat && az.lng);
+				}));
+
+			const puntiVenditaPubblici = (puntiVenditaData.items || [])
+				.map((pv) => ({
+					id: pv._id,
+					entityType: 'puntoVendita',
+					categorie: Array.isArray(pv.categories) ? pv.categories : [],
+					nome: pv.nomePunto,
+					categoria: Array.isArray(pv.categories) && pv.categories.length > 0 ? pv.categories[0] : '',
+					indirizzo: pv.formattedAddress || pv.indirizzo,
+					lat: pv.geo?.lat,
+					lng: pv.geo?.lng,
+					citta: pv.city || '',
+					email: pv.emailPunto || '',
+					telefono: pv.phoneNumber || '',
+					sito: pv.website || ''
+				}));
+
+			databaseAziende = [...aziendePubbliche, ...puntiVenditaPubblici]
+				.filter((item) => hasUsableCoordinates(parseCoordinate(item.lat), parseCoordinate(item.lng)));
 
 			mostraAziendeSuMappa(databaseAziende);
 		})
 		.catch((err) => {
-			alert(`Errore nel caricamento delle aziende: ${err}`);
+			alert(`Errore nel caricamento di aziende e punti vendita: ${err}`);
 		});
 }
 
@@ -754,9 +776,9 @@ function mostraElencoAziende(aziende) {
 		return;
 	}
 
-	elenco.innerHTML = '<b>Aziende trovate:</b><ul style="padding-left:18px;">' + aziende
+	elenco.innerHTML = '<b>Risultati trovati:</b><ul style="padding-left:18px;">' + aziende
 		.map((az) =>
-			`<li><b>${az.nome}</b><br>` +
+			`<li><b>${az.nome}</b> ${az.entityType === 'puntoVendita' ? '(Punto vendita)' : '(Azienda)'}<br>` +
 			(az.categoria ? `<b>Categoria:</b> ${az.categoria}<br>` : '') +
 			(az.indirizzo ? `${az.indirizzo}<br>` : '') +
 			(az.citta ? `${az.citta}<br>` : '') +

@@ -28,14 +28,15 @@ describe('US40 - Integrazione mappa', () => {
     // Verifica contrattuale: la pagina deve usare questi endpoint backend.
     expect(response.text).toContain("fetch('/api/config')");
     expect(response.text).toContain("fetch('/api/aziende/public')");
+    expect(response.text).toContain("fetch('/api/punti-vendita/public')");
   });
 
-  test('Pagina esplora gestisce errori di caricamento aziende', async () => {
+  test('Pagina esplora gestisce errori di caricamento aziende e punti vendita', async () => {
     const response = await request(app)
       .get('/esplora.js')
       .expect(200);
 
-    expect(response.text).toContain('Errore nel caricamento delle aziende:');
+    expect(response.text).toContain('Errore nel caricamento di aziende e punti vendita:');
   });
 
   test('Pagina esplora espone messaggi per errori geocoding/geolocalizzazione', async () => {
