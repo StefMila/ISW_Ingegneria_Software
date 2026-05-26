@@ -977,6 +977,68 @@ input[type="checkbox"]:invalid {
   text-align: center;
 }
 
+/* Tabelle mungiture: le azioni vanno in colonna per restare leggibili su celle strette. */
+.mungiture-table tbody td:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  justify-content: center;
+  min-width: 120px;
+}
+
+.mungiture-table tbody td:last-child button {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.15;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+}
+
+.mungiture-table .delete-mungitura-btn {
+  border: 1px solid #c13c3c;
+  border-radius: 8px;
+  background: #fff;
+  color: #b42318;
+}
+
+.mungiture-table .delete-mungitura-btn:hover {
+  background: #fde8e8;
+}
+
+.primary-mungitura-action {
+  min-width: 220px;
+  padding: 14px 22px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(15, 39, 4, 0.15);
+}
+
+.terminate-scale-btn,
+.terminate-manual-btn {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.15;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  border-radius: 8px;
+}
+
+.terminate-scale-btn {
+  border: 1px solid var(--green-mid);
+  background: #eef8e6;
+  color: var(--green-dark);
+}
+
+.terminate-manual-btn {
+  border: 1px solid #9a6700;
+  background: #fff5d7;
+  color: #7a4e00;
+}
+
 /* Azioni sulla riga animale: modifica ed elimina affiancati */
 .animali-table tbody td:last-child {
   display: flex;

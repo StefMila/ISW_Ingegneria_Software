@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avvia Mungitura - MuccApp</title>
+  <script src="/auth-control.js"></script>
+  <script>
+    protectRoute(['allevatore']);
+  </script>
+  <script src="/menu-allevatore.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-container">
+    <div id="allevatoreHeaderMount"></div>
+    <script>
+      renderAllevatoreHeader({
+        showHomeLink: true
+      });
+    </script>
+
+    <section class="section">
+      <h2>Avvia mungitura</h2>
+      <p class="subtitle">Seleziona una mucca e avvia la mungitura. Il semi-lavorato viene generato automaticamente.</p>
+
+      <form id="avviaMungituraForm" class="form">
+        <label for="animaleId">Mucca:</label>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <select id="animaleId" name="animaleId" required style="flex:1;min-width:220px;">
+            <option value="">Caricamento animali...</option>
+          </select>
+          <button type="button" id="scanAnimaleIdBtn">Scansiona ID</button>
+        </div>
+
+        <div id="scanPanel" style="display:none;border:1px solid #d1d5db;border-radius:10px;padding:10px;margin-top:10px;background:#f8fafc;">
+          <p class="subtitle" style="margin-top:0;">Inquadra QR/Barcode dell'ID mucca</p>
+          <video id="scanVideo" autoplay playsinline muted style="width:100%;max-width:360px;border-radius:8px;background:#111827;"></video>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button type="button" id="stopScanBtn">Chiudi scanner</button>
+          </div>
+          <p id="scanStatus" class="status" style="margin:.5rem 0 0 0;"></p>
+        </div>
+
+        <label for="notes">Note (opzionale):</label>
+        <textarea id="notes" name="notes" placeholder="Anomalie o dettagli dell'operazione"></textarea>
+
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button type="submit" class="primary-mungitura-action">Avvia mungitura</button>
+        </div>
+      </form>
+
+      <p id="statusMsg" class="status"></p>
+
+      <div class="table-wrapper" style="margin-top:24px;">
+        <table class="animali-table mungiture-table" id="mungitureTable">
+          <thead>
+            <tr>
+              <th>Data avvio</th>
+              <th>Mucca</th>
+              <th>Semi-lavorato</th>
+              <th>Litri</th>
+              <th>Stato</th>
+              <th>Note</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="mungitureTableBody">
+            <tr>
+              <td colspan="7" class="status">Caricamento mungiture...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/mungiture-avvio-lista.js"></script>
+  <script src="/avvia-mungitura.js"></script>
+  <script src="/logout.js"></script>
+  <script src="/azienda-switcher.js"></script>
+</body>
+</html>

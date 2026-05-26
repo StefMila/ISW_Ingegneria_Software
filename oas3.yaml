@@ -23,6 +23,8 @@ tags:
     description: Endpoint per la gestione eventi e sincronizzazione Google Calendar
   - name: Lavorazione
     description: Endpoint per la creazione, modifica e consultazione delle lavorazioni (incluse template)
+  - name: Mungitura
+    description: Endpoint per avvio, chiusura, consultazione ed eliminazione delle mungiture
   - name: Lotto prodotto
     description: Endpoint per la creazione, modifica e consultazione dei lotti prodotto
   - name: Mappa
@@ -2809,6 +2811,377 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/mungiture:
+    post:
+      summary: Avvia mungitura
+      description: Avvia una nuova mungitura per un animale appartenente all'azienda autenticata. In avvio sono ammessi solo aziendaId, animaleId e notes; startedAt e semiLavoratoId sono generati dal server.
+      tags:
+        - Mungitura
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMungituraRequest'
+            examples:
+              avvio:
+                value:
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  animaleId: 665f8fd8ad8f8c0012f9c456
+                  notes: Mungitura del mattino
+      responses:
+        '201':
+          description: Mungitura avviata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MungituraResponse'
+              examples:
+                success:
+                  value:
+                    message: Mungitura avviata con successo
+                    mungitura:
+                      _id: 665fc8d8ad8f8c0012f9d310
+                      semiLavoratoId: SL-665fc8d8ad8f8c0012f9d310
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      animaleId: 665f8fd8ad8f8c0012f9c456
+                      startedAt: 2026-05-26T07:45:00.000Z
+                      status: in_corso
+                      notes: Mungitura del mattino
+        '400':
+          description: Dati non validi o campi non ammessi in avvio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingRequired:
+                  value:
+                    message: aziendaId e animaleId sono obbligatori
+                invalidStartPayload:
+                  value:
+                    message: In avvio mungitura sono consentiti solo aziendaId, animaleId e note
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Azienda o animale non trovati
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                animalNotFound:
+                  value:
+                    message: Animale non trovato nell'azienda
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Elenco mungiture
+      description: Restituisce le mungiture dell'azienda autenticata con filtri opzionali per animale e stato.
+      tags:
+        - Mungitura
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: aziendaId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: animaleId
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum:
+              - in_corso
+              - completata
+              - annullata
+      responses:
+        '200':
+          description: Lista mungiture trovata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MungituraItem'
+              examples:
+                success:
+                  value:
+                    - _id: 665fc8d8ad8f8c0012f9d310
+                      semiLavoratoId: SL-665fc8d8ad8f8c0012f9d310
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      animaleId: 665f8fd8ad8f8c0012f9c456
+                      startedAt: 2026-05-26T07:45:00.000Z
+                      status: in_corso
+        '400':
+          description: Query non valida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingAziendaId:
+                  value:
+                    message: aziendaId è obbligatorio
+                invalidAnimalId:
+                  value:
+                    message: ID animale non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/mungiture/{id}:
+    patch:
+      summary: Aggiorna mungitura
+      description: Aggiorna una mungitura esistente. In chiusura sono ammessi endedAt, status, quantity, unit e notes; quantity è obbligatoria quando la mungitura viene completata.
+      tags:
+        - Mungitura
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMungituraRequest'
+            examples:
+              chiusuraManuale:
+                value:
+                  endedAt: 2026-05-26T08:15:00.000Z
+                  status: completata
+                  quantity: 18.5
+                  unit: litri
+                  notes: Chiusura manuale
+      responses:
+        '200':
+          description: Mungitura aggiornata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MungituraResponse'
+              examples:
+                success:
+                  value:
+                    message: Mungitura aggiornata con successo
+                    mungitura:
+                      _id: 665fc8d8ad8f8c0012f9d310
+                      semiLavoratoId: SL-665fc8d8ad8f8c0012f9d310
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      animaleId: 665f8fd8ad8f8c0012f9c456
+                      startedAt: 2026-05-26T07:45:00.000Z
+                      endedAt: 2026-05-26T08:15:00.000Z
+                      status: completata
+                      quantity: 18.5
+                      unit: litri
+                      notes: Chiusura manuale
+        '400':
+          description: ID o dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID mungitura non valido
+                invalidUnit:
+                  value:
+                    message: Per la mungitura l'unità consentita è solo litri
+                missingQuantity:
+                  value:
+                    message: quantity (litri) è obbligatoria per completare la mungitura
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Mungitura non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Elimina mungitura
+      description: Elimina una mungitura esistente dell'azienda dell'utente autenticato.
+      tags:
+        - Mungitura
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Mungitura eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Mungitura eliminata con successo
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID mungitura non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Mungitura non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/mungiture/{id}/iot-litri:
+    get:
+      summary: Lettura litri IoT
+      description: Simula la lettura dei litri da bilancia IoT per una mungitura esistente.
+      tags:
+        - Mungitura
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lettura IoT disponibile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MungituraIotReadingResponse'
+              examples:
+                success:
+                  value:
+                    source: iot
+                    quantity: 18.42
+                    unit: litri
+                    measuredAt: 2026-05-26T08:10:00.000Z
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID mungitura non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Mungitura non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -3547,6 +3920,133 @@ components:
           example: Lotto prodotto creato con successo
         lottoProdotto:
           $ref: '#/components/schemas/LottoProdottoItem'
+
+    MungituraItem:
+      type: object
+      description: Rappresentazione di una mungitura registrata.
+      properties:
+        _id:
+          type: string
+          example: 665fc8d8ad8f8c0012f9d310
+        semiLavoratoId:
+          type: string
+          example: SL-665fc8d8ad8f8c0012f9d310
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        animaleId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c456
+        startedAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T07:45:00.000Z
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2026-05-26T08:15:00.000Z
+        quantity:
+          type: number
+          nullable: true
+          minimum: 0
+          example: 18.5
+        unit:
+          type: string
+          nullable: true
+          example: litri
+        status:
+          type: string
+          enum:
+            - in_corso
+            - completata
+            - annullata
+          example: in_corso
+        notes:
+          type: string
+          nullable: true
+          example: Mungitura del mattino
+        createdAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T07:45:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T08:15:00.000Z
+
+    CreateMungituraRequest:
+      type: object
+      description: Corpo della richiesta per avviare una mungitura.
+      required:
+        - aziendaId
+        - animaleId
+      properties:
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        animaleId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c456
+        notes:
+          type: string
+          description: Note opzionali sull'avvio della mungitura.
+          example: Mungitura del mattino
+
+    UpdateMungituraRequest:
+      type: object
+      description: Corpo della richiesta per aggiornare o completare una mungitura.
+      properties:
+        endedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - in_corso
+            - completata
+            - annullata
+        quantity:
+          type: number
+          minimum: 0
+          example: 18.5
+        unit:
+          type: string
+          enum:
+            - litri
+          example: litri
+        notes:
+          type: string
+          example: Chiusura manuale
+
+    MungituraResponse:
+      type: object
+      description: Risposta di creazione o aggiornamento mungitura.
+      properties:
+        message:
+          type: string
+          example: Mungitura avviata con successo
+        mungitura:
+          $ref: '#/components/schemas/MungituraItem'
+
+    MungituraIotReadingResponse:
+      type: object
+      description: Risposta della lettura simulata IoT per i litri di latte.
+      properties:
+        source:
+          type: string
+          example: iot
+        quantity:
+          type: number
+          minimum: 0
+          example: 18.42
+        unit:
+          type: string
+          example: litri
+        measuredAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T08:10:00.000Z
 
     HealthResponse:
       type: object

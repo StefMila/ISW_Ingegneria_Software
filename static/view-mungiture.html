@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizza Mungiture - MuccApp</title>
+  <script src="/auth-control.js"></script>
+  <script>
+    protectRoute(['allevatore']);
+  </script>
+  <script src="/menu-allevatore.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-container-wide">
+    <div id="allevatoreHeaderMount"></div>
+    <script>
+      renderAllevatoreHeader({
+        showHomeLink: true
+      });
+    </script>
+
+    <section class="section">
+      <h2>Le tue mungiture</h2>
+      <p id="statusMsg" class="status"></p>
+
+      <div class="table-wrapper">
+        <table class="animali-table mungiture-table" id="mungitureTable">
+          <thead>
+            <tr>
+              <th>Data avvio</th>
+              <th>Mucca</th>
+              <th>Semi-lavorato</th>
+              <th>Litri</th>
+              <th>Stato</th>
+              <th>Note</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="mungitureTableBody">
+            <tr>
+              <td colspan="7" class="status">Caricamento mungiture...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/view-mungiture.js"></script>
+  <script src="/logout.js"></script>
+  <script src="/azienda-switcher.js"></script>
+</body>
+</html>
