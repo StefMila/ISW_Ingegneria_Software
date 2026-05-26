@@ -1,0 +1,445 @@
+const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
+const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
+// Elementi DOM
+const statusMsg = document.getElementById('statusMsg');
+const lavorazioniTableBody = document.getElementById('lavorazioniTableBody');
+const currentAziendaBadge = document.getElementById('currentAziendaBadge');
+// Elementi filtro
+const filterNomeLavorazione = document.getElementById('filterNomeLavorazione');
+const filterInputLavorazione = document.getElementById('filterInputLavorazione');
+const filterOutputLavorazione = document.getElementById('filterOutputLavorazione');
+
+let allLavorazioni = [];
+const rowDataMap = new Map();
+let detailsOverlay = null;
+
+const renderStatus = (text, color = '#1f2937') => {
+    if (!statusMsg) {
+        return;
+    }
+
+    statusMsg.textContent = text;
+    statusMsg.style.color = color;
+};
+
+const normalizeText = (value) => String(value || '').trim().toLowerCase();
+
+const escapeHtml = (value) => String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const escapeAttr = (value) => escapeHtml(value);
+
+const getNomeLavorazione = (item) => item.nomeTemplate || item.tipoLavorazione || '—';
+
+const getInputSummary = (item) => {
+    if (!Array.isArray(item.inputs) || item.inputs.length === 0) {
+        return '—';
+    }
+
+    return item.inputs
+        .map((input) => input?.name || input?.type)
+        .filter(Boolean)
+        .join(', ') || '—';
+};
+
+const getOutputSummary = (item) => item.outputName || '—';
+// riquadro di dettaglio con tutte le fasi e note
+const formatDateTime = (value) => {
+    if (!value) {
+        return '';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return new Intl.DateTimeFormat('it-IT', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+    }).format(date);
+};
+
+const getPhaseName = (phase, index) => {
+    if (typeof phase === 'string') {
+        return phase;
+    }
+    if (phase && typeof phase === 'object') {
+        return phase.nome || phase.name || phase.tipo || phase.fase || `Fase ${index + 1}`;
+    }
+    return `Fase ${index + 1}`;
+};
+
+const getPhaseDetails = (phase) => {
+    if (!phase || typeof phase !== 'object') {
+        return '';
+    }
+
+    const details = [];
+    const dataInizio = formatDateTime(phase.dataInizio || phase.inizio || phase.startAt);
+    const dataFine = formatDateTime(phase.dataFine || phase.fine || phase.endAt);
+
+    if (dataInizio) {
+        details.push(`inizio: ${dataInizio}`);
+    }
+    if (dataFine) {
+        details.push(`fine: ${dataFine}`);
+    }
+    if (phase.note) {
+        details.push(`note: ${phase.note}`);
+    }
+
+    return details.join(' | ');
+};
+
+const getPhasesHtml = (item) => {
+    if (!Array.isArray(item.fasi) || item.fasi.length === 0) {
+        return '<p class="status" style="margin:0">Nessuna fase presente.</p>';
+    }
+
+    const rows = item.fasi.map((phase, index) => {
+        const phaseName = escapeHtml(getPhaseName(phase, index));
+        const phaseDetails = escapeHtml(getPhaseDetails(phase));
+        return `
+            <li style="margin-bottom:8px;">
+                <strong>${phaseName}</strong>
+                ${phaseDetails ? `<div style="opacity:.85;font-size:.92em;">${phaseDetails}</div>` : ''}
+            </li>
+        `;
+    }).join('');
+
+    return `<ol style="margin:8px 0 0 18px;">${rows}</ol>`;
+};
+
+const ensureDetailsOverlay = () => {
+    if (detailsOverlay) {
+        return detailsOverlay;
+    }
+
+    detailsOverlay = document.createElement('div');
+    detailsOverlay.id = 'lavorazioneDetailsOverlay';
+    detailsOverlay.style.position = 'fixed';
+    detailsOverlay.style.inset = '0';
+    detailsOverlay.style.background = 'rgba(17,24,39,.45)';
+    detailsOverlay.style.display = 'none';
+    detailsOverlay.style.alignItems = 'center';
+    detailsOverlay.style.justifyContent = 'center';
+    detailsOverlay.style.padding = '20px';
+    detailsOverlay.style.zIndex = '9999';
+    detailsOverlay.innerHTML = `
+        <div role="dialog" aria-modal="true" aria-labelledby="lavorazioneDetailsTitle" style="width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 14px 42px rgba(0,0,0,.2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                <h3 id="lavorazioneDetailsTitle" style="margin:0;color:#111827;">Dettaglio lavorazione</h3>
+                <button type="button" id="closeLavorazioneDetails" style="border:0;background:#15803d;color:#ffffff;font-size:18px;cursor:pointer;line-height:1;width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 4px 12px rgba(2, 94, 40, 0.35);" title="Chiudi dettaglio" aria-label="Chiudi dettaglio">✕</button>
+            </div>
+            <div id="lavorazioneDetailsBody" style="margin-top:12px;"></div>
+        </div>
+    `;
+
+    detailsOverlay.addEventListener('click', (event) => {
+        if (event.target === detailsOverlay) {
+            detailsOverlay.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && detailsOverlay && detailsOverlay.style.display !== 'none') {
+            detailsOverlay.style.display = 'none';
+        }
+    });
+
+    document.body.appendChild(detailsOverlay);
+
+    const closeButton = detailsOverlay.querySelector('#closeLavorazioneDetails');
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            detailsOverlay.style.display = 'none';
+        });
+    }
+
+    return detailsOverlay;
+};
+
+const openDetails = (item) => {
+    if (!item) {
+        return;
+    }
+
+    const overlay = ensureDetailsOverlay();
+    const body = overlay.querySelector('#lavorazioneDetailsBody');
+
+    if (!body) {
+        return;
+    }
+
+    body.innerHTML = `
+        <div style="display:grid;gap:10px;">
+            <p style="margin:0;"><strong>Nome:</strong> ${escapeHtml(getNomeLavorazione(item))}</p>
+            <p style="margin:0;"><strong>Input:</strong> ${escapeHtml(getInputSummary(item))}</p>
+            <p style="margin:0;"><strong>Output:</strong> ${escapeHtml(getOutputSummary(item))}</p>
+            <div>
+                <strong>Fasi:</strong>
+                ${getPhasesHtml(item)}
+            </div>
+            ${item.note ? `<p style="margin:0;"><strong>Note:</strong> ${escapeHtml(item.note)}</p>` : ''}
+        </div>
+    `;
+
+    overlay.style.display = 'flex';
+};
+// tasto di modifica inline. 
+const rowHtml = (item) => `
+    <td>${escapeHtml(getNomeLavorazione(item))}</td>
+    <td>${escapeHtml(getInputSummary(item))}</td>
+    <td>${escapeHtml(getOutputSummary(item))}</td>
+    <td>
+        <button class="edit-animal-btn" data-id="${escapeAttr(item._id)}" title="Modifica lavorazione" aria-label="Modifica lavorazione">
+            <span class="edit-animal-icon" aria-hidden="true">✎</span>
+        </button>
+    </td>
+`;
+
+const renderEmptyState = (message) => {
+    if (!lavorazioniTableBody) {
+        return;
+    }
+
+    lavorazioniTableBody.innerHTML = `
+        <tr class="empty-row">
+            <td colspan="4">${escapeHtml(message)}</td>
+        </tr>
+    `;
+};
+
+const renderTable = (items) => {
+    if (!lavorazioniTableBody) {
+        return;
+    }
+
+    rowDataMap.clear();
+
+    if (!Array.isArray(items) || items.length === 0) {
+        renderEmptyState('Nessuna lavorazione trovata con i filtri selezionati.');
+        return;
+    }
+
+    items.forEach((item) => rowDataMap.set(String(item._id), item));
+
+    lavorazioniTableBody.innerHTML = items.map((item) => `
+        <tr data-id="${escapeAttr(item._id)}" class="lavorazione-row" tabindex="0" role="button" aria-label="Apri dettaglio lavorazione">
+            ${rowHtml(item)}
+        </tr>
+    `).join('');
+};
+
+const applyFilters = () => {
+    const nomeValue = normalizeText(filterNomeLavorazione?.value);
+    const inputValue = normalizeText(filterInputLavorazione?.value);
+    const outputValue = normalizeText(filterOutputLavorazione?.value);
+
+    const filteredItems = allLavorazioni.filter((item) => {
+        const matchesNome = !nomeValue || normalizeText(getNomeLavorazione(item)).includes(nomeValue);
+        const matchesInput = !inputValue || normalizeText(getInputSummary(item)).includes(inputValue);
+        const matchesOutput = !outputValue || normalizeText(getOutputSummary(item)).includes(outputValue);
+        return matchesNome && matchesInput && matchesOutput;
+    });
+
+    renderTable(filteredItems);
+
+    if (allLavorazioni.length === 0) {
+        renderStatus('Non hai ancora salvato lavorazioni.', '#b45309');
+        return;
+    }
+
+    if (filteredItems.length === 0) {
+        renderStatus('Nessuna lavorazione trovata con i filtri selezionati.', '#b45309');
+        return;
+    }
+
+    renderStatus(`${filteredItems.length} lavorazione/i visibili.`, 'green');
+};
+
+const fetchLavorazioni = async () => {
+    const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
+    const token = localStorage.getItem('token');
+
+    if (!aziendaId) {
+        renderStatus('Nessuna azienda selezionata. Torna alla home e seleziona un\'azienda.', '#b45309');
+        renderEmptyState('Seleziona prima un\'azienda dalla home.');
+        return;
+    }
+
+    if (!token) {
+        renderStatus('Sessione non valida. Effettua nuovamente il login.', 'red');
+        renderEmptyState('Accesso richiesto.');
+        return;
+    }
+
+    const aziendaName = localStorage.getItem(SELECTED_AZIENDA_NAME_KEY) || aziendaId;
+    if (currentAziendaBadge) {
+        currentAziendaBadge.textContent = `Azienda attiva: ${aziendaName} ▾`;
+    }
+
+    try {
+        const params = new URLSearchParams({
+            aziendaId,
+            isTemplate: 'true'
+        });
+
+        const response = await fetch(`/api/lavorazioni?${params.toString()}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json().catch(() => ([]));
+
+        if (!response.ok) {
+            const errorMessage = Array.isArray(data) ? 'Errore nel caricamento delle lavorazioni.' : (data.message || 'Errore nel caricamento delle lavorazioni.');
+            renderStatus(errorMessage, 'red');
+            renderEmptyState('Errore nel caricamento.');
+            return;
+        }
+
+        allLavorazioni = Array.isArray(data) ? data : [];
+        applyFilters();
+    } catch (error) {
+        console.error('Errore durante il recupero delle lavorazioni:', error);
+        renderStatus('Errore di connessione al server.', 'red');
+        renderEmptyState('Errore di connessione.');
+    }
+};
+
+const restoreRow = (tr, item) => {
+    tr.classList.remove('editing');
+    tr.innerHTML = rowHtml(item);
+};
+
+const openInlineEdit = (tr, item) => {
+    if (!tr || !item || tr.classList.contains('editing')) {
+        return;
+    }
+
+    tr.classList.add('editing');
+    tr.innerHTML = `
+        <td><input class="inline-input" data-field="nomeTemplate" value="${escapeAttr(item.nomeTemplate || '')}" placeholder="Nome lavorazione"></td>
+        <td>${escapeHtml(getInputSummary(item))}</td>
+        <td><input class="inline-input" data-field="outputName" value="${escapeAttr(item.outputName || '')}" placeholder="Output principale"></td>
+        <td>
+            <button class="save-animal-btn" data-id="${escapeAttr(item._id)}" title="Salva" aria-label="Salva">✔</button>
+            <button class="cancel-edit-btn" data-id="${escapeAttr(item._id)}" title="Annulla" aria-label="Annulla">✕</button>
+        </td>
+    `;
+};
+
+const saveInlineEdit = async (tr, lavorazioneId) => {
+    const token = localStorage.getItem('token');
+
+    if (!tr || !lavorazioneId || !token) {
+        renderStatus('Dati mancanti per aggiornare la lavorazione.', 'red');
+        return;
+    }
+
+    const payload = {};
+    tr.querySelectorAll('[data-field]').forEach((element) => {
+        const field = element.dataset.field;
+        const value = String(element.value || '').trim();
+        payload[field] = value;
+    });
+
+    if (!payload.nomeTemplate) {
+        renderStatus('Il nome lavorazione è obbligatorio.', 'red');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/lavorazioni/${lavorazioneId}`, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            renderStatus(data.message || 'Errore durante la modifica della lavorazione.', 'red');
+            return;
+        }
+
+        renderStatus(data.message || 'Lavorazione modificata con successo.', 'green');
+        await fetchLavorazioni();
+    } catch (error) {
+        console.error('Errore durante la modifica della lavorazione:', error);
+        renderStatus('Errore di connessione durante la modifica.', 'red');
+    }
+};
+
+if (filterNomeLavorazione) {
+    filterNomeLavorazione.addEventListener('input', applyFilters);
+}
+
+if (filterInputLavorazione) {
+    filterInputLavorazione.addEventListener('input', applyFilters);
+}
+
+if (filterOutputLavorazione) {
+    filterOutputLavorazione.addEventListener('input', applyFilters);
+}
+
+if (lavorazioniTableBody) {
+    lavorazioniTableBody.addEventListener('click', async (event) => {
+        const clickedRow = event.target.closest('tr[data-id]');
+        const editButton = event.target.closest('.edit-animal-btn');
+        if (editButton) {
+            const tr = editButton.closest('tr');
+            const item = rowDataMap.get(editButton.dataset.id);
+            if (tr && item) {
+                openInlineEdit(tr, item);
+            }
+            return;
+        }
+
+        const saveButton = event.target.closest('.save-animal-btn');
+        if (saveButton) {
+            await saveInlineEdit(saveButton.closest('tr'), saveButton.dataset.id);
+            return;
+        }
+
+        const cancelButton = event.target.closest('.cancel-edit-btn');
+        if (cancelButton) {
+            const tr = cancelButton.closest('tr');
+            const item = rowDataMap.get(cancelButton.dataset.id);
+            if (tr && item) {
+                restoreRow(tr, item);
+            }
+            return;
+        }
+
+        if (clickedRow && !clickedRow.classList.contains('editing')) {
+            const item = rowDataMap.get(clickedRow.dataset.id);
+            openDetails(item);
+        }
+    });
+
+    lavorazioniTableBody.addEventListener('keydown', (event) => {
+        const row = event.target.closest('tr[data-id]');
+        if (!row || row.classList.contains('editing')) {
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            const item = rowDataMap.get(row.dataset.id);
+            openDetails(item);
+        }
+    });
+}
+
+fetchLavorazioni();
