@@ -7,6 +7,24 @@ import Lavorazione from '../models/lavorazione.js';
 const router = express.Router();
 router.use(checkAuth);
 router.use(checkUserType(['allevatore']));
+
+const ALLOWED_FASI = [
+	'Ricevimento',
+	'Centrifugazione',
+	'Omogeneizzazione',
+	'Trattamento termico',
+	'Inoculo',
+	'Coagulazione',
+	'Rottura cagliata',
+	'Formatura',
+	'Salatura',
+	'Stagionatura',
+	'Concentrazione',
+	'Zangolatura',
+	'Confezionamento'
+];
+
+const ALLOWED_FASI_SET = new Set(ALLOWED_FASI);
 //valida ObjectId di MongoDB
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 // verifica che l'azienda appartenga all'utente autenticato
@@ -63,7 +81,21 @@ const normalizeFasi = (fasi) => {
 		completed: fase?.completed === undefined ? false : Boolean(fase.completed)
 	}));
 
+	const hasInvalidFase = normalizedFasi.some((fase) => !ALLOWED_FASI_SET.has(fase.name));
+	if (hasInvalidFase) {
+		return { ok: false, status: 400, message: `Le fasi consentite sono: ${ALLOWED_FASI.join(', ')}` };
+	}
+
 	return { ok: true, value: normalizedFasi };
+};
+
+const parseBooleanLike = (value) => {
+	if (typeof value === 'boolean') return value;
+	if (typeof value !== 'string') return null;
+	const normalized = value.trim().toLowerCase();
+	if (normalized === 'true') return true;
+	if (normalized === 'false') return false;
+	return null;
 };
 // POST /api/lavorazioni - crea una nuova lavorazione, con validazione dei campi e controllo di proprietà
 export const createLavorazione = async (req, res) => {
@@ -71,6 +103,8 @@ export const createLavorazione = async (req, res) => {
 		const {
 			aziendaId,
 			tipoLavorazione,
+			nomeTemplate,
+			isTemplate,
 			startedAt,
 			endedAt,
 			status,
@@ -101,12 +135,19 @@ export const createLavorazione = async (req, res) => {
 			return res.status(normalizedFasi.status || 400).json({ message: normalizedFasi.message });
 		}
 
+		const parsedIsTemplate = parseBooleanLike(isTemplate);
+		if (isTemplate !== undefined && parsedIsTemplate === null) {
+			return res.status(400).json({ message: 'isTemplate deve essere true o false' });
+		}
+
 		const newLavorazione = new Lavorazione({
 			aziendaId,
 			tipoLavorazione: String(tipoLavorazione).trim(),
+			nomeTemplate: typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined,
+			isTemplate: parsedIsTemplate ?? false,
 			startedAt: startedAt || undefined,
 			endedAt: endedAt || undefined,
-			status: status || undefined,
+			status: status || 'in_corso',
 			notes: typeof notes === 'string' ? notes.trim() : undefined,
 			inputs: normalizedInputs.value,
 			fasi: normalizedFasi.value,
@@ -116,9 +157,12 @@ export const createLavorazione = async (req, res) => {
 		});
 
 		await newLavorazione.save();
+		const creationMessage = newLavorazione.isTemplate
+			? 'Template lavorazione creato con successo'
+			: 'Lavorazione creata con successo';
 
 		return res.status(201).json({
-			message: 'Lavorazione creata con successo',
+			message: creationMessage,
 			lavorazione: newLavorazione
 		});
 	} catch (error) {
@@ -134,6 +178,8 @@ export const updateLavorazione = async (req, res) => {
 		const { id } = req.params;
 		const {
 			tipoLavorazione,
+			nomeTemplate,
+			isTemplate,
 			startedAt,
 			endedAt,
 			status,
@@ -169,7 +215,14 @@ export const updateLavorazione = async (req, res) => {
 			return res.status(normalizedFasi.status || 400).json({ message: normalizedFasi.message });
 		}
 
+		const parsedIsTemplate = parseBooleanLike(isTemplate);
+		if (isTemplate !== undefined && parsedIsTemplate === null) {
+			return res.status(400).json({ message: 'isTemplate deve essere true o false' });
+		}
+
 		if (tipoLavorazione !== undefined) existingLavorazione.tipoLavorazione = String(tipoLavorazione).trim();
+		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;
+		if (parsedIsTemplate !== null) existingLavorazione.isTemplate = parsedIsTemplate;
 		if (startedAt !== undefined) existingLavorazione.startedAt = startedAt;
 		if (endedAt !== undefined) existingLavorazione.endedAt = endedAt;
 		if (status !== undefined) existingLavorazione.status = status;
@@ -196,7 +249,7 @@ export const updateLavorazione = async (req, res) => {
 // GET /api/lavorazioni - recupera le lavorazioni dell'azienda con filtri opzionali per tipo di lavorazione e stato
 export const getLavorazioni = async (req, res) => {
 	try {
-		const { aziendaId, tipoLavorazione, status } = req.query;
+		const { aziendaId, tipoLavorazione, status, isTemplate } = req.query;
 
 		if (!aziendaId) {
 			return res.status(400).json({ message: 'aziendaId è obbligatorio' });
@@ -208,6 +261,16 @@ export const getLavorazioni = async (req, res) => {
 		}
 
 		const filter = { aziendaId };
+		const parsedIsTemplate = parseBooleanLike(isTemplate);
+		if (isTemplate !== undefined && parsedIsTemplate === null) {
+			return res.status(400).json({ message: 'isTemplate deve essere true o false' });
+		}
+
+		if (parsedIsTemplate === null) {
+			filter.isTemplate = { $ne: true };
+		} else {
+			filter.isTemplate = parsedIsTemplate;
+		}
 
 		if (tipoLavorazione) {
 			filter.tipoLavorazione = String(tipoLavorazione).trim();
@@ -224,8 +287,36 @@ export const getLavorazioni = async (req, res) => {
 	}
 };
 
+// DELETE /api/lavorazioni/:id - elimina una lavorazione esistente, con controllo di proprietà
+export const deleteLavorazione = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ message: 'ID lavorazione non valido' });
+		}
+
+		const existingLavorazione = await Lavorazione.findById(id);
+		if (!existingLavorazione) {
+			return res.status(404).json({ message: 'Lavorazione non trovata' });
+		}
+
+		const ownershipCheck = await assertAziendaOwnedByUser(existingLavorazione.aziendaId, req.user.userId);
+		if (!ownershipCheck.ok) {
+			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
+		}
+
+		await Lavorazione.deleteOne({ _id: id });
+
+		return res.status(200).json({ message: 'Lavorazione eliminata con successo' });
+	} catch (error) {
+		return res.status(500).json({ message: 'Errore del server' });
+	}
+};
+
 router.post('/', createLavorazione);
 router.patch('/:id', updateLavorazione);
 router.get('/', getLavorazioni);
+router.delete('/:id', deleteLavorazione);
 
 export default router;

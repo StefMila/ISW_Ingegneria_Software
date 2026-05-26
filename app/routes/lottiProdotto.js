@@ -8,9 +8,9 @@ import LottoProdotto from '../models/lottoProdotto.js';
 const router = express.Router();
 router.use(checkAuth);
 router.use(checkUserType(['allevatore']));
-
+// helper per validare ObjectId di MongoDB
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
-
+// verifica che l'azienda appartenga all'utente autenticato 
 const assertAziendaOwnedByUser = async (aziendaId, userId) => {
 	if (!isValidObjectId(aziendaId)) {
 		return { ok: false, status: 400, message: 'aziendaId non valido' };
@@ -27,7 +27,7 @@ const assertAziendaOwnedByUser = async (aziendaId, userId) => {
 
 	return { ok: true };
 };
-
+// genera un numero per il codice del lotto prodotto basato sulla data corrente
 export const createLottoProdotto = async (req, res) => {
 	try {
 		const {
@@ -55,9 +55,13 @@ export const createLottoProdotto = async (req, res) => {
 			return res.status(400).json({ message: 'lavorazioneId non valido' });
 		}
 
-		const existingLavorazione = await Lavorazione.findOne({ _id: lavorazioneId, aziendaId }).select('_id aziendaId');
+		const existingLavorazione = await Lavorazione.findOne({ _id: lavorazioneId, aziendaId }).select('_id aziendaId isTemplate');
 		if (!existingLavorazione) {
 			return res.status(404).json({ message: 'Lavorazione non trovata per questa azienda' });
+		}
+
+		if (existingLavorazione.isTemplate === true) {
+			return res.status(400).json({ message: 'La lavorazione selezionata è un template e non può essere usata per creare un lotto prodotto' });
 		}
 
 		const newLottoProdotto = new LottoProdotto({
@@ -88,7 +92,7 @@ export const createLottoProdotto = async (req, res) => {
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
-
+// PATCH /api/lottiProdotto/:id - aggiorna un lotto prodotto esistente, con validazione dei campi e controllo di proprietà
 export const updateLottoProdotto = async (req, res) => {
 	try {
 		const { id } = req.params;
@@ -123,10 +127,14 @@ export const updateLottoProdotto = async (req, res) => {
 			const existingLavorazione = await Lavorazione.findOne({
 				_id: lavorazioneId,
 				aziendaId: existingLottoProdotto.aziendaId
-			}).select('_id');
+			}).select('_id isTemplate');
 
 			if (!existingLavorazione) {
 				return res.status(404).json({ message: 'Lavorazione non trovata per questa azienda' });
+			}
+
+			if (existingLavorazione.isTemplate === true) {
+				return res.status(400).json({ message: 'La lavorazione selezionata è un template e non può essere usata per creare un lotto prodotto' });
 			}
 
 			existingLottoProdotto.lavorazioneId = lavorazioneId;
@@ -156,7 +164,7 @@ export const updateLottoProdotto = async (req, res) => {
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
-
+// GET /api/lottiProdotto - recupera i lotti prodotto dell'azienda con filtri opzionali per lavorazione e numero di lotto
 export const getLottiProdotto = async (req, res) => {
 	try {
 		const { aziendaId, lavorazioneId, lotNumber } = req.query;
@@ -190,9 +198,37 @@ export const getLottiProdotto = async (req, res) => {
 	}
 };
 
+// DELETE /api/lotti-prodotto/:id - elimina un lotto prodotto esistente, con controllo di proprietà
+export const deleteLottoProdotto = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ message: 'ID lotto prodotto non valido' });
+		}
+
+		const existingLottoProdotto = await LottoProdotto.findById(id);
+		if (!existingLottoProdotto) {
+			return res.status(404).json({ message: 'Lotto prodotto non trovato' });
+		}
+
+		const ownershipCheck = await assertAziendaOwnedByUser(existingLottoProdotto.aziendaId, req.user.userId);
+		if (!ownershipCheck.ok) {
+			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
+		}
+
+		await LottoProdotto.deleteOne({ _id: id });
+
+		return res.status(200).json({ message: 'Lotto prodotto eliminato con successo' });
+	} catch (error) {
+		return res.status(500).json({ message: 'Errore del server' });
+	}
+};
+
 router.post('/', createLottoProdotto);
 router.patch('/:id', updateLottoProdotto);
 router.get('/', getLottiProdotto);
+router.delete('/:id', deleteLottoProdotto);
 
 export default router;
 

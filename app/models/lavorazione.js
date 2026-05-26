@@ -57,6 +57,17 @@ const lavorazioneSchema = new Schema({
         trim: true,
         index: true
     },
+    nomeTemplate: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    isTemplate: {
+        type: Boolean,
+        required: true,
+        default: false,
+        index: true
+    },
     startedAt: {
         type: Date,
         required: true,
