@@ -24,6 +24,39 @@
       <h2>Le tue mungiture</h2>
       <p id="statusMsg" class="status"></p>
 
+      <div class="mungiture-filters" id="mungitureFilters">
+        <label>
+          Data da
+          <input type="date" id="filterStartedAtFrom">
+        </label>
+        <label>
+          Data a
+          <input type="date" id="filterStartedAtTo">
+        </label>
+        <label>
+          Mucca
+          <select id="filterAnimaleId">
+            <option value="">Tutte le mucche</option>
+          </select>
+        </label>
+        <button type="button" id="clearMungitureFilters">Reset filtri</button>
+      </div>
+
+      <div class="mungiture-summary" id="mungitureSummary">
+        <div class="mungiture-summary-card">
+          <span class="mungiture-summary-label">Mungiture visibili</span>
+          <strong id="visibleMungitureCount">0</strong>
+        </div>
+        <div class="mungiture-summary-card">
+          <span class="mungiture-summary-label">Litri visibili</span>
+          <strong id="visibleMungitureLiters">0 L</strong>
+        </div>
+        <div class="mungiture-summary-card">
+          <span class="mungiture-summary-label">Mucche coinvolte</span>
+          <strong id="visibleAnimaliCount">0</strong>
+        </div>
+      </div>
+
       <div class="table-wrapper">
         <table class="animali-table mungiture-table" id="mungitureTable">
           <thead>

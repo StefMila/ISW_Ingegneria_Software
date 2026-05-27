@@ -217,13 +217,30 @@ export const getIotLitersReading = async (req, res) => {
         return res.status(500).json({ message: 'Errore del server' });
     }
 };
-// GET /api/mungiture - recupera le mungiture dell'azienda con filtri opzionali per animale e stato
+// GET /api/mungiture - recupera le mungiture dell'azienda con filtri opzionali per animale, stato e intervallo date
 export const getMungitura = async (req, res) => {
     try {
-        const { aziendaId, animaleId, status } = req.query;
+        const { aziendaId, animaleId, status, startedAtFrom, startedAtTo } = req.query;
+        const startedAtFilter = {};
 
         if (!aziendaId) {
             return res.status(400).json({ message: 'aziendaId è obbligatorio' });
+        }
+
+        if (startedAtFrom) {
+            const parsedFrom = new Date(startedAtFrom);
+            if (Number.isNaN(parsedFrom.getTime())) {
+                return res.status(400).json({ message: 'startedAtFrom non valido' });
+            }
+            startedAtFilter.$gte = parsedFrom;
+        }
+
+        if (startedAtTo) {
+            const parsedTo = new Date(startedAtTo);
+            if (Number.isNaN(parsedTo.getTime())) {
+                return res.status(400).json({ message: 'startedAtTo non valido' });
+            }
+            startedAtFilter.$lte = parsedTo;
         }
 
         const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
@@ -241,6 +258,10 @@ export const getMungitura = async (req, res) => {
         }
         if (status) {
             filter.status = status;
+        }
+
+        if (Object.keys(startedAtFilter).length > 0) {
+            filter.startedAt = startedAtFilter;
         }
 
         const mungiture = await Mungitura.find(filter).sort({ startedAt: -1 });

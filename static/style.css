@@ -851,6 +851,65 @@ input[type="checkbox"]:invalid {
   display: block;
 }
 
+.mungiture-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin: 16px 0 14px;
+}
+
+.mungiture-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-dark);
+  font-weight: 600;
+  min-width: 180px;
+}
+
+.mungiture-filters input,
+.mungiture-filters select {
+  padding: 10px;
+  font-size: 0.95rem;
+  border: 1px solid #b5c9a0;
+  border-radius: 8px;
+  background: #f9fdf4;
+}
+
+.mungiture-filters input:focus,
+.mungiture-filters select:focus {
+  outline: 2px solid var(--green-light);
+  border-color: var(--green-mid);
+}
+
+.mungiture-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mungiture-summary-card {
+  background: #f9fdf4;
+  border: 1px solid #d5e3bf;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 8px rgba(45, 90, 27, 0.08);
+}
+
+.mungiture-summary-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  margin-bottom: 6px;
+}
+
+.mungiture-summary-card strong {
+  font-size: 1.3rem;
+  color: var(--green-dark);
+}
+
 
 @media (max-width: 900px) {
   /* In mobile le aree header diventano stacked su più righe */
@@ -882,6 +941,10 @@ input[type="checkbox"]:invalid {
     transform: none;
     width: 100%;
     text-align: center;
+  }
+
+  .mungiture-filters label {
+    min-width: 100%;
   }
 }
 

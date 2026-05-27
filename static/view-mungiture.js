@@ -4,8 +4,16 @@ const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
 const statusMsg = document.getElementById('statusMsg');
 const tableBody = document.getElementById('mungitureTableBody');
 const currentAziendaBadge = document.getElementById('currentAziendaBadge');
+const filterStartedAtFrom = document.getElementById('filterStartedAtFrom');
+const filterStartedAtTo = document.getElementById('filterStartedAtTo');
+const filterAnimaleId = document.getElementById('filterAnimaleId');
+const clearMungitureFiltersButton = document.getElementById('clearMungitureFilters');
+const visibleMungitureCount = document.getElementById('visibleMungitureCount');
+const visibleMungitureLiters = document.getElementById('visibleMungitureLiters');
+const visibleAnimaliCount = document.getElementById('visibleAnimaliCount');
 
 let animaliMap = new Map();
+let currentMungiture = [];
 
 const getToken = () => (localStorage.getItem('token') || '').trim();
 const getAziendaId = () => (localStorage.getItem(SELECTED_AZIENDA_ID_KEY) || '').trim();
@@ -62,6 +70,110 @@ const renderEmptyState = (message) => {
   `;
 };
 
+const updateSummary = (items) => {
+  if (visibleMungitureCount) {
+    visibleMungitureCount.textContent = String(items.length);
+  }
+
+  if (visibleMungitureLiters) {
+    const totalLiters = items.reduce((sum, item) => {
+      return sum + (typeof item?.quantity === 'number' ? item.quantity : 0);
+    }, 0);
+    visibleMungitureLiters.textContent = `${totalLiters.toFixed(2)} L`;
+  }
+
+  if (visibleAnimaliCount) {
+    const uniqueAnimali = new Set(
+      items
+        .map((item) => String(item?.animaleId || '').trim())
+        .filter(Boolean)
+    );
+    visibleAnimaliCount.textContent = String(uniqueAnimali.size);
+  }
+};
+
+const populateAnimaliFilter = () => {
+  if (!filterAnimaleId) {
+    return;
+  }
+
+  const selectedValue = filterAnimaleId.value;
+  const options = Array.from(animaliMap.entries())
+    .sort((left, right) => left[1].localeCompare(right[1], 'it'))
+    .map(([id, label]) => `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`);
+
+  filterAnimaleId.innerHTML = `
+    <option value="">Tutte le mucche</option>
+    ${options.join('')}
+  `;
+
+  if (selectedValue && animaliMap.has(selectedValue)) {
+    filterAnimaleId.value = selectedValue;
+  }
+};
+
+const getDateRange = () => {
+  const fromValue = filterStartedAtFrom?.value || '';
+  const toValue = filterStartedAtTo?.value || '';
+
+  const fromDate = fromValue ? new Date(`${fromValue}T00:00:00`) : null;
+  const toDate = toValue ? new Date(`${toValue}T23:59:59.999`) : null;
+
+  return {
+    fromDate: fromDate && !Number.isNaN(fromDate.getTime()) ? fromDate : null,
+    toDate: toDate && !Number.isNaN(toDate.getTime()) ? toDate : null
+  };
+};
+
+const getFilteredMungiture = () => {
+  const animaleIdFilter = (filterAnimaleId?.value || '').trim();
+  const { fromDate, toDate } = getDateRange();
+
+  return currentMungiture.filter((item) => {
+    const itemAnimaleId = String(item?.animaleId || '').trim();
+    if (animaleIdFilter && itemAnimaleId !== animaleIdFilter) {
+      return false;
+    }
+
+    if (!fromDate && !toDate) {
+      return true;
+    }
+
+    const startedAtDate = new Date(item?.startedAt || '');
+    if (Number.isNaN(startedAtDate.getTime())) {
+      return false;
+    }
+
+    if (fromDate && startedAtDate < fromDate) {
+      return false;
+    }
+
+    if (toDate && startedAtDate > toDate) {
+      return false;
+    }
+
+    return true;
+  });
+};
+
+const renderMungiture = () => {
+  const items = getFilteredMungiture();
+  updateSummary(items);
+
+  if (items.length === 0) {
+    renderEmptyState('Nessuna mungitura corrisponde ai filtri selezionati.');
+    if (currentMungiture.length === 0) {
+      renderStatus('Nessuna mungitura registrata.', '#b45309');
+    } else {
+      renderStatus('Nessun risultato per i filtri selezionati.', '#b45309');
+    }
+    return;
+  }
+
+  tableBody.innerHTML = items.map(buildRow).join('');
+  renderStatus(`${items.length} mungitura/e visualizzate.`, 'green');
+};
+
 const loadAnimaliMap = async () => {
   const aziendaId = getAziendaId();
   const token = getToken();
@@ -87,6 +199,7 @@ const loadAnimaliMap = async () => {
     });
 
   animaliMap = new Map(entries);
+  populateAnimaliFilter();
 };
 
 const getStatoLabel = (status) => {
@@ -156,16 +269,20 @@ const fetchMungiture = async () => {
     }
 
     const items = Array.isArray(data) ? data : [];
+    currentMungiture = items;
+    updateSummary(items);
+
     if (items.length === 0) {
       renderStatus('Nessuna mungitura registrata.', '#b45309');
       renderEmptyState('Nessuna mungitura disponibile.');
       return;
     }
 
-    tableBody.innerHTML = items.map(buildRow).join('');
-    renderStatus(`${items.length} mungitura/e caricate.`, 'green');
+    renderMungiture();
   } catch (error) {
     console.error('Errore durante il recupero mungiture:', error);
+    currentMungiture = [];
+    updateSummary([]);
     renderStatus('Errore di connessione al server.', 'red');
     renderEmptyState('Errore di connessione.');
   }
@@ -217,6 +334,18 @@ if (tableBody) {
     await deleteMungitura(mungituraId);
   });
 }
+
+[filterStartedAtFrom, filterStartedAtTo, filterAnimaleId].forEach((element) => {
+  element?.addEventListener('input', renderMungiture);
+  element?.addEventListener('change', renderMungiture);
+});
+
+clearMungitureFiltersButton?.addEventListener('click', () => {
+  if (filterStartedAtFrom) filterStartedAtFrom.value = '';
+  if (filterStartedAtTo) filterStartedAtTo.value = '';
+  if (filterAnimaleId) filterAnimaleId.value = '';
+  renderMungiture();
+});
 
 setAziendaBadge();
 fetchMungiture();
