@@ -120,11 +120,11 @@ paths:
         - Azienda
       responses:
         '200':
-          description: Informazioni azienda disponibili
+          description: Informazioni complete azienda disponibili
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AziendaPublicCollection'
+                $ref: '#/components/schemas/ShowAziendaResponse'
               examples:
                 success:
                   value:
