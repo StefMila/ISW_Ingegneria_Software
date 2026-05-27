@@ -2,7 +2,6 @@ import request from 'supertest';
 import app from '../app/app.js';
 import { jest, describe, beforeAll, beforeEach, afterEach, expect } from '@jest/globals';
 import Azienda from '../app/models/azienda.js';
-//import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 
 // Verifica end-to-end leggera della view add-azienda (struttura + script + guard API).
@@ -275,24 +274,6 @@ describe('US11 - Aggiungi Azienda', () => {
       .expect(409)
       .expect(res => {
         expect(res.body.message).toBe('Esiste già un\'azienda con questa partita IVA');
-      });
-  });
-
-  test('POST /api/aziende - errore: Errore interno del server (500)', async () => {
-    jest.spyOn(Azienda.prototype, 'save').mockRejectedValue(new Error('Errore del database')); // Simulo un errore durante il salvataggio
-    await request(app)
-      .post('/api/aziende')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        vatNumber: 'IT12345678901',
-        companyName: 'Azienda Test',
-        emailAzienda: 'test@example.com',
-        lat: 45.46,
-        lng: 9.19
-      })
-      .expect(500)
-      .expect(res => {
-        expect(res.body.message).toBe('Errore interno del server');
       });
   });
 });

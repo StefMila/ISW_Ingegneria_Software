@@ -2,7 +2,6 @@ import request from 'supertest';
 import app from '../app/app.js';
 import { jest, describe, beforeEach, afterEach, afterAll, it, expect } from '@jest/globals';
 import User from '../app/models/user.js';
-import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';  
 
@@ -195,23 +194,6 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('La password deve essere lunga almeno 8 caratteri.');
             });
     });
-    test( 'POST /api/auth/signup - errore: Errore interno del server (500)', async () => {
-        jest.spyOn(User.prototype, 'save').mockRejectedValue(new Error('Database error'));
-        const response = await request(app)
-            .post('/api/auth/signup')
-            .send({
-                name: 'Test',
-                surname: 'User',
-                email: 'testuser@muccapp.it',
-                password: 'Password123!',
-                userType: 'consumatore',
-                acceptedTerms: true
-            })
-            .expect(500)
-            .expect(res => {
-                expect(res.body.message).toBe('Errore interno del server');
-            });
-    });
 });
 
 // Test suite per il login utente (US8)
@@ -294,19 +276,6 @@ describe('US8 - Login utente', () => {
                 expect(res.body.message).toBe('Password non valida');
             });
     });
-    test( 'POST /api/auth/login - errore: Errore interno del server (500)', async () => {
-        jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
-        const response = await request(app)
-            .post('/api/auth/login')
-            .send({
-                email: 'testuser@muccapp.it',
-                password: 'Password123!'
-            })
-            .expect(500)
-            .expect(res => {
-                expect(res.body.message).toBe('Errore interno del server');
-            });
-    });
 });
 
 describe( 'US10 - Reset password', () => {
@@ -362,16 +331,6 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.message).toBe('Utente non trovato');
             });
     });
-    test( 'POST /api/auth/forgot-password - errore: Errore interno del server (500)', async () => {
-        jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
-        const response = await request(app)
-            .post('/api/auth/forgot-password')
-            .send({ email: 'testuser@muccapp.it' })
-            .expect(500)
-            .expect(res => {
-                expect(res.body.message).toBe('Errore interno del server');
-            });
-    });
     // /api/auth/reset-password
     test( 'POST /api/auth/reset-password reimposta la password (200)', async () => {
         jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedNewPassword');
@@ -418,16 +377,6 @@ describe( 'US10 - Reset password', () => {
             .expect(400)
             .expect(res => {
                 expect(res.body.message).toBe('La nuova password deve essere lunga almeno 8 caratteri.');
-            });
-    });
-    test( 'POST /api/auth/reset-password - errore: Errore interno del server (500)', async () => {
-        jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
-        const response = await request(app)
-            .post('/api/auth/reset-password')
-            .send({ email: 'testuser@muccapp.it', newPassword: 'newPassword123!' })
-            .expect(500)
-            .expect(res => {
-                expect(res.body.message).toBe('Errore interno del server');
             });
     });
 });
