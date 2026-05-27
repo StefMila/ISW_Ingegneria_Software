@@ -6,6 +6,23 @@ import { checkAuth, checkUserType } from './auth.js';
 import { registerAnimale, getAnimali, deleteAnimale, updateAnimale } from './animali.js';
 
 const router = express.Router();
+// Funzione di utilità per verificare che l'azienda esista e sia di proprietà dell'utente autenticato
+export const assertAziendaOwnedByUser = async (aziendaId, userId) => {
+    if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
+        return { ok: false, status: 400, message: 'aziendaId non è un ObjectId valido' };
+    }
+
+    const existingAzienda = await azienda.findById(aziendaId).select('_id ownerUserId');
+    if (!existingAzienda) {
+        return { ok: false, status: 404, message: 'Azienda non trovata' };
+    }
+
+    if (String(existingAzienda.ownerUserId) !== String(userId)) {
+        return { ok: false, status: 403, message: 'Non hai i permessi per questa azienda' };
+    }
+
+    return { ok: true };
+};
 // Funzione di normalizzazione per le categorie prodotto accettando sia array che stringa separata da virgole
 function normalizeCategories(input) {
     const rawValues = Array.isArray(input)

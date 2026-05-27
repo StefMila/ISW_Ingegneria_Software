@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import animale from '../models/animale.js';
 import azienda from '../models/azienda.js';
 import { checkAuth, checkUserType } from './auth.js';
+import { assertAziendaOwnedByUser } from './aziende.js';
 
 
 const router = express.Router();
@@ -16,23 +17,6 @@ const resolveAziendaIdFromRequest = (req) => {
     const pathAziendaId = typeof req.params?.aziendaId === 'string' ? req.params.aziendaId.trim() : '';
     const bodyAziendaId = typeof req.body?.aziendaId === 'string' ? req.body.aziendaId.trim() : '';
     return pathAziendaId || bodyAziendaId;
-};
-// Funzione di utilità per verificare che l'azienda esista e sia di proprietà dell'utente autenticato
-const assertAziendaOwnedByUser = async (aziendaId, userId) => {
-    if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
-        return { ok: false, status: 400, message: 'aziendaId non è un ObjectId valido' };
-    }
-
-    const existingAzienda = await azienda.findById(aziendaId).select('_id ownerUserId');
-    if (!existingAzienda) {
-        return { ok: false, status: 404, message: 'Azienda non trovata' };
-    }
-
-    if (String(existingAzienda.ownerUserId) !== String(userId)) {
-        return { ok: false, status: 403, message: 'Non hai i permessi per questa azienda' };
-    }
-
-    return { ok: true };
 };
 
 // handler per la registrazione di un nuovo animale --> risponde a POST su /api/aziende/{aziendaId}/animali
