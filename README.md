@@ -57,6 +57,8 @@ Server: `http://localhost:3000`
 - `npm test`: esegue i test con Jest
 - `npm run gen-env`: aggiorna la specifica env
 - `npm run seed`: popola il database con dati di test
+- `npm run seed:mungiture`: popola mungiture demo distribuite su piu anni (2024-2026)
+- `npm run seed:eventi`: popola eventi demo distribuiti su piu anni (2024-2026)
 
 ## Seed database
 
@@ -74,6 +76,29 @@ Credenziali principali seed:
 | distributore | distributore@muccapp.it     | Password123! |
 | veterinario  | veterinario@muccapp.it      | Password123! |
 | consumatore  | consumatore@muccapp.it      | Password123! |
+
+### Seed modulari per dominio
+
+Per avere dati realistici e verificare grafici/filtri, sono disponibili seed separati:
+
+- `npm run seed:mungiture`
+	- inserisce mungiture `completata` con date distribuite sui mesi e su piu anni
+	- utile per testare dashboard statistiche giornaliere/mensili/annuali
+- `npm run seed:eventi`
+	- inserisce eventi distribuiti sui mesi e su piu anni
+	- utile per testare calendario e filtri eventi
+
+Entrambi i seed sono idempotenti: rimuovono prima i dati demo creati da seed precedenti e poi li reinseriscono.
+
+Ordine consigliato:
+
+```bash
+npm run seed
+npm run seed:mungiture
+npm run seed:eventi
+```
+
+Nota: `seed:mungiture` e `seed:eventi` richiedono che il seed base (`npm run seed`) sia gia stato eseguito almeno una volta.
 
 ## Documentazione API
 
