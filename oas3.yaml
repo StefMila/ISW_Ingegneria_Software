@@ -2894,7 +2894,7 @@ paths:
 
     get:
       summary: Elenco mungiture
-      description: Restituisce le mungiture dell'azienda autenticata con filtri opzionali per animale e stato.
+      description: Restituisce le mungiture dell'azienda autenticata con filtri opzionali per animale, stato e intervallo di avvio.
       tags:
         - Mungitura
       security:
@@ -2919,6 +2919,20 @@ paths:
               - in_corso
               - completata
               - annullata
+        - in: query
+          name: startedAtFrom
+          required: false
+          description: Data/ora minima di avvio mungitura inclusiva.
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: startedAtTo
+          required: false
+          description: Data/ora massima di avvio mungitura inclusiva.
+          schema:
+            type: string
+            format: date-time
       responses:
         '200':
           description: Lista mungiture trovata
