@@ -112,6 +112,51 @@ paths:
                   value:
                     message: Errore interno del server
 
+  /api/aziende/:id:
+    get:
+      summary: Informazioni azienda
+      description: Restituisce le informazioni dell'azienda.
+      tags:
+        - Azienda
+      responses:
+        '200':
+          description: Informazioni azienda disponibili
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AziendaPublicCollection'
+              examples:
+                success:
+                  value:
+                    items:
+                      - _id: 665f8fd8ad8f8c0012f9c123
+                        companyName: Azienda Agricola Rossi
+                        address: Via Roma 10, Milano
+                        categories:
+                          - latte
+                          - formaggio
+                        emailAzienda: info@azienda-rossi.it
+                        phoneNumber: "+39021234567"
+                        website: https://www.azienda-rossi.it
+                        geo:
+                          lat: 45.4642
+                          lng: 9.19
+                        location:
+                          type: Point
+                          coordinates:
+                            - 9.19
+                            - 45.4642
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: Errore interno del server
+
   /api/punti-vendita/public:
     get:
       summary: Dataset punti vendita pubblico
@@ -3787,6 +3832,114 @@ components:
           type: string
           format: email
           example: info@azienda-rossi.it
+    
+
+    ShowAziendaResponse:
+      type: object
+      description: Dettagli completi dell'azienda agricola per la visualizzazione dell'allevatore
+      required:
+        - _id
+        - companyName
+        - ownerUserId
+        - vatNumber
+      properties:
+        _id:
+          type: string
+          example: "665f8fd8ad8f8c0012f9c123"
+          description: ID univoco del database generato da MongoDB
+        companyName:
+          type: string
+          example: "Azienda Agricola Rossi"
+        ownerUserId:
+          type: string
+          description: ID dell'allevatore proprietario, valorizzato automaticamente dal token JWT
+          example: "665f8d90ad8f8c0012f9b456"
+        vatNumber:
+          type: string
+          example: "IT12345678901"
+          description: Partita IVA dell'azienda
+        address:
+          type: string
+          example: "Via Roma 10"
+        geo:
+          type: object
+          description: Coordinate di geolocalizzazione rapide
+          properties:
+            lat:
+              type: number
+              format: float
+              example: 46.0626
+              description: Latitudine della posizione dell'azienda
+            lng:
+              type: number
+              format: float
+              example: 13.2249
+              description: Longitudine della posizione dell'azienda
+        emailAzienda:
+          type: string
+          format: email
+          example: "info@azienda-rossi.it"
+        phoneNumber:
+          type: string
+          example: "+39021234567"
+        website:
+          type: string
+          format: uri
+          example: "https://www.azienda-rossi.it"
+        description:
+          type: string
+          example: "Siamo un'azienda agricola con monitoraggio IoT avanzato a Milano."
+        categories:
+          type: array
+          description: Categorie di prodotti offerti dall'azienda
+          items:
+            type: string
+          example: ["latte", "ricotta"]
+        formattedAddress:
+          type: string
+          example: "Via Roma, 10, 20100 Milano MI, Italia"
+        placeId:
+          type: string
+          example: "ChIJN1t_tDeuEmsRUsoyG83A16Y"
+        city:
+          type: string
+          example: "Milano"
+        province:
+          type: string
+          example: "MI"
+        country:
+          type: string
+          example: "Italia"
+        location:
+          type: object
+          description: Struttura GeoJSON standard utilizzata per le query geospaziali 2dsphere
+          required:
+            - type
+            - coordinates
+          properties:
+            type:
+              type: string
+              enum: [Point]
+              default: Point
+              example: "Point"
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              minItems: 2
+              maxItems: 2
+              example: [13.2249, 46.0626]
+              description: "[Longitudine, Latitudine]"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-27T21:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-05-27T22:30:00.000Z"
+
           
     CreateAnimaleRequest:
       type: object
