@@ -18,6 +18,12 @@ const mungituraSchema = new mongoose.Schema({
         required: true,
         default: Date.now,
     },
+    semiLavoratoId: {
+        type: String,
+        required: true,
+        default: () => `SL-${new mongoose.Types.ObjectId().toString()}`,
+        index: true
+    },
     endedAt: {
         type: Date,
         required: false,
@@ -57,11 +63,11 @@ mungituraSchema.path('endedAt').validate(function (value) {
 }, 'endedAt deve essere maggiore o uguale a startedAt');
 
 mungituraSchema.path('quantity').validate(function (value) {
-    if (this.status !== 'completata') {
+    if (value === undefined || value === null) {
         return true;
     }
     return typeof value === 'number' && value >= 0;
-}, 'quantity è obbligatoria e deve essere >= 0 quando la mungitura è completata');
+}, 'quantity deve essere >= 0 quando valorizzata');
 
 const Mungitura = mongoose.model('Mungitura', mungituraSchema);
 export default Mungitura;

@@ -851,6 +851,65 @@ input[type="checkbox"]:invalid {
   display: block;
 }
 
+.mungiture-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin: 16px 0 14px;
+}
+
+.mungiture-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-dark);
+  font-weight: 600;
+  min-width: 180px;
+}
+
+.mungiture-filters input,
+.mungiture-filters select {
+  padding: 10px;
+  font-size: 0.95rem;
+  border: 1px solid #b5c9a0;
+  border-radius: 8px;
+  background: #f9fdf4;
+}
+
+.mungiture-filters input:focus,
+.mungiture-filters select:focus {
+  outline: 2px solid var(--green-light);
+  border-color: var(--green-mid);
+}
+
+.mungiture-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mungiture-summary-card {
+  background: #f9fdf4;
+  border: 1px solid #d5e3bf;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 8px rgba(45, 90, 27, 0.08);
+}
+
+.mungiture-summary-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  margin-bottom: 6px;
+}
+
+.mungiture-summary-card strong {
+  font-size: 1.3rem;
+  color: var(--green-dark);
+}
+
 
 @media (max-width: 900px) {
   /* In mobile le aree header diventano stacked su più righe */
@@ -882,6 +941,10 @@ input[type="checkbox"]:invalid {
     transform: none;
     width: 100%;
     text-align: center;
+  }
+
+  .mungiture-filters label {
+    min-width: 100%;
   }
 }
 
@@ -975,6 +1038,68 @@ input[type="checkbox"]:invalid {
 
 .animali-table tbody td:last-child {
   text-align: center;
+}
+
+/* Tabelle mungiture: le azioni vanno in colonna per restare leggibili su celle strette. */
+.mungiture-table tbody td:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  justify-content: center;
+  min-width: 120px;
+}
+
+.mungiture-table tbody td:last-child button {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.15;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+}
+
+.mungiture-table .delete-mungitura-btn {
+  border: 1px solid #c13c3c;
+  border-radius: 8px;
+  background: #fff;
+  color: #b42318;
+}
+
+.mungiture-table .delete-mungitura-btn:hover {
+  background: #fde8e8;
+}
+
+.primary-mungitura-action {
+  min-width: 220px;
+  padding: 14px 22px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(15, 39, 4, 0.15);
+}
+
+.terminate-scale-btn,
+.terminate-manual-btn {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.15;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  border-radius: 8px;
+}
+
+.terminate-scale-btn {
+  border: 1px solid var(--green-mid);
+  background: #eef8e6;
+  color: var(--green-dark);
+}
+
+.terminate-manual-btn {
+  border: 1px solid #9a6700;
+  background: #fff5d7;
+  color: #7a4e00;
 }
 
 /* Azioni sulla riga animale: modifica ed elimina affiancati */

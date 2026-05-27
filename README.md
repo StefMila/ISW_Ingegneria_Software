@@ -84,6 +84,14 @@ Endpoint ufficiali (consigliati):
 - `POST /api/azienda/{aziendaId}/animali`
 - `GET /api/azienda/{aziendaId}/animali`
 	- supporta filtri, sort e paginazione
+- `POST /api/mungiture`
+	- avvia una mungitura per un animale dell'azienda autenticata
+- `GET /api/mungiture`
+	- lista mungiture con filtri per azienda, animale e stato
+- `PATCH /api/mungiture/{id}`
+	- chiude o aggiorna una mungitura con `status`, `endedAt`, `quantity`, `unit=litri` e `notes`
+- `GET /api/mungiture/{id}/iot-litri`
+	- lettura simulata dei litri dalla bilancia IoT
 
 Endpoint legacy (deprecati ma ancora supportati per compatibilita):
 - `POST /api/animali/register`
