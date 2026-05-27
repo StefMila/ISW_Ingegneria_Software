@@ -22,7 +22,7 @@ describe('US7 - US69 - Registrazione utente', () => {
         jest.restoreAllMocks();
     });
 
-    test( 'POST /api/auth/signup - esegue la registrazione di un nuovo utente', async () => {
+    test( 'POST /api/auth/signup - esegue la registrazione di un nuovo utente (200)', async () => {
             const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -39,7 +39,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Utente registrato con successo');
             });
     });
-    test( 'POST /api/auth/signup - errore: Termini non accettati', async () => {
+    test( 'POST /api/auth/signup - errore: Termini non accettati (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -55,7 +55,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('È necessario accettare i Termini e Condizioni per proseguire.')
             });
     });
-    test( 'POST /api/auth/signup - errore: Utente già esistente', async () => {
+    test( 'POST /api/auth/signup - errore: Utente già esistente (409)', async () => {
         jest.spyOn(User, 'findOne').mockResolvedValue({ email: 'testuser@muccapp.it' });
         const response = await request(app)
             .post('/api/auth/signup')
@@ -72,7 +72,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Utente già esistente');
             });
     });
-    test( 'POST /api/auth/signup - errore: Nome mancante', async () => {
+    test( 'POST /api/auth/signup - errore: Nome mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -87,7 +87,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Nome, cognome, email, password e ruolo sono obbligatori');
             });
     });
-    test( 'POST /api/auth/signup - errore: Cognome mancante', async () => {
+    test( 'POST /api/auth/signup - errore: Cognome mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -102,7 +102,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Nome, cognome, email, password e ruolo sono obbligatori');
             });
     });
-    test( 'POST /api/auth/signup - errore: Email mancante', async () => {
+    test( 'POST /api/auth/signup - errore: Email mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -117,7 +117,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Nome, cognome, email, password e ruolo sono obbligatori');
             });
     });
-    test( 'POST /api/auth/signup - errore: Password mancante', async () => {
+    test( 'POST /api/auth/signup - errore: Password mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -132,7 +132,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Nome, cognome, email, password e ruolo sono obbligatori');
             });
     });
-    test( 'POST /api/auth/signup - errore: Ruolo mancante', async () => {
+    test( 'POST /api/auth/signup - errore: Ruolo mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -147,7 +147,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Nome, cognome, email, password e ruolo sono obbligatori');
             });
     });
-    test( 'POST /api/auth/signup - errore: Ruolo non valido', async () => {
+    test( 'POST /api/auth/signup - errore: Ruolo non valido (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -163,7 +163,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Ruolo non valido.');
             });
     });
-    test( 'POST /api/auth/signup - errore: Email non valida', async () => {
+    test( 'POST /api/auth/signup - errore: Email non valida (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -179,7 +179,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('Email non valida.');
             });
     });
-    test( 'POST /api/auth/signup - errore: Password non conforme', async () => {
+    test( 'POST /api/auth/signup - errore: Password non conforme (400)', async () => {
         const response = await request(app)
             .post('/api/auth/signup')
             .send({
@@ -195,7 +195,7 @@ describe('US7 - US69 - Registrazione utente', () => {
                 expect(res.body.message).toBe('La password deve essere lunga almeno 8 caratteri.');
             });
     });
-    test( 'POST /api/auth/signup - errore: Errore interno del server', async () => {
+    test( 'POST /api/auth/signup - errore: Errore interno del server (500)', async () => {
         jest.spyOn(User.prototype, 'save').mockRejectedValue(new Error('Database error'));
         const response = await request(app)
             .post('/api/auth/signup')
@@ -225,7 +225,7 @@ describe('US8 - Login utente', () => {
         jest.clearAllMocks();
     });
 
-    test( 'POST /api/auth/login - esegue il login di un utente esistente', async () => { //Manca il token
+    test( 'POST /api/auth/login - esegue il login di un utente esistente (200)', async () => { //Manca il token
         jest.spyOn(User, 'findOne').mockResolvedValue({
             _id: 'mocked_id',
             email: 'testuser@muccapp.it',
@@ -245,7 +245,7 @@ describe('US8 - Login utente', () => {
                 expect(res.body.token).toBeDefined();
             });
     });
-    test( 'POST /api/auth/login - errore: Email mancante', async () => {
+    test( 'POST /api/auth/login - errore: Email mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/login')
             .send({
@@ -256,7 +256,7 @@ describe('US8 - Login utente', () => {
                 expect(res.body.message).toBe('Email e password sono obbligatori');
             });
     });
-    test( 'POST /api/auth/login - errore: Password mancante', async () => {
+    test( 'POST /api/auth/login - errore: Password mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/login')
             .send({
@@ -267,7 +267,7 @@ describe('US8 - Login utente', () => {
                 expect(res.body.message).toBe('Email e password sono obbligatori');
             });
     });
-    test( 'POST /api/auth/login - errore: Email non valida', async () => {
+    test( 'POST /api/auth/login - errore: Email non valida (401)', async () => {
         jest.spyOn(User, 'findOne').mockResolvedValue(null);
         const response = await request(app)
             .post('/api/auth/login')
@@ -280,7 +280,7 @@ describe('US8 - Login utente', () => {
                 expect(res.body.message).toBe('Email non valida');
             });
     });
-    test( 'POST /api/auth/login - errore: Password non valida', async () => {
+    test( 'POST /api/auth/login - errore: Password non valida (401)', async () => {
         jest.spyOn(User, 'findOne').mockResolvedValue({ email: 'testuser@muccapp.it', password: 'hashedpassword' });
         jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
         const response = await request(app)
@@ -294,7 +294,7 @@ describe('US8 - Login utente', () => {
                 expect(res.body.message).toBe('Password non valida');
             });
     });
-    test( 'POST /api/auth/login - errore: Errore interno del server', async () => {
+    test( 'POST /api/auth/login - errore: Errore interno del server (500)', async () => {
         jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
         const response = await request(app)
             .post('/api/auth/login')
@@ -333,7 +333,7 @@ describe( 'US10 - Reset password', () => {
     });
 
     // /api/auth/forgot-password
-    test( 'POST /api/auth/forgot-password verifica l\'email e genera un token di reset', async () => {
+    test( 'POST /api/auth/forgot-password verifica l\'email e genera un token di reset (200)', async () => {
         const response = await request(app)
             .post('/api/auth/forgot-password')
             .send({ email: 'testuser@muccapp.it' })
@@ -343,7 +343,7 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.token).toBeDefined();
             });
     });
-    test( 'POST /api/auth/forgot-password - errore: Email mancante', async () => {
+    test( 'POST /api/auth/forgot-password - errore: Email mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/forgot-password')
             .send({})
@@ -352,7 +352,7 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.message).toBe('Email è obbligatoria');
             });
     });
-    test( 'POST /api/auth/forgot-password - errore: Utente non trovato', async () => {
+    test( 'POST /api/auth/forgot-password - errore: Utente non trovato (404)', async () => {
         jest.spyOn(User, 'findOne').mockResolvedValue(null);
         const response = await request(app)
             .post('/api/auth/forgot-password')
@@ -362,7 +362,7 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.message).toBe('Utente non trovato');
             });
     });
-    test( 'POST /api/auth/forgot-password - errore: Errore interno del server', async () => {
+    test( 'POST /api/auth/forgot-password - errore: Errore interno del server (500)', async () => {
         jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
         const response = await request(app)
             .post('/api/auth/forgot-password')
@@ -373,7 +373,7 @@ describe( 'US10 - Reset password', () => {
             });
     });
     // /api/auth/reset-password
-    test( 'POST /api/auth/reset-password reimposta la password', async () => {
+    test( 'POST /api/auth/reset-password reimposta la password (200)', async () => {
         jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedNewPassword');
         const response = await request(app)
             .post('/api/auth/reset-password')
@@ -383,7 +383,7 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.message).toBe('Password aggiornata con successo');
             });
     });
-    test( 'POST /api/auth/reset-password - errore: Email mancante', async () => {
+    test( 'POST /api/auth/reset-password - errore: Email mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/reset-password')
             .send({ newPassword: 'newPassword123!' })
@@ -392,7 +392,7 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.message).toBe('Email e newPassword sono obbligatori');
             });
     });
-    test( 'POST /api/auth/reset-password - errore: newPassword mancante', async () => {
+    test( 'POST /api/auth/reset-password - errore: newPassword mancante (400)', async () => {
         const response = await request(app)
             .post('/api/auth/reset-password')
             .send({ email: 'testuser@muccapp.it' })
@@ -401,7 +401,7 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.message).toBe('Email e newPassword sono obbligatori');
             });
     });
-    test( 'POST /api/auth/reset-password - errore: Utente non trovato', async () => {
+    test( 'POST /api/auth/reset-password - errore: Utente non trovato (404)', async () => {
         jest.spyOn(User, 'findOne').mockResolvedValue(null);
         const response = await request(app)
             .post('/api/auth/reset-password')
@@ -411,7 +411,7 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.message).toBe('Utente non trovato');
             });
     });
-    test( 'POST /api/auth/reset-password - errore: newPassword non soddisfa i criteri', async () => {
+    test( 'POST /api/auth/reset-password - errore: newPassword non soddisfa i criteri (400)', async () => {
         const response = await request(app)
             .post('/api/auth/reset-password')
             .send({ email: 'testuser@muccapp.it', newPassword: 'pw' })
@@ -420,7 +420,7 @@ describe( 'US10 - Reset password', () => {
                 expect(res.body.message).toBe('La nuova password deve essere lunga almeno 8 caratteri.');
             });
     });
-    test( 'POST /api/auth/reset-password - errore: Errore interno del server', async () => {
+    test( 'POST /api/auth/reset-password - errore: Errore interno del server (500)', async () => {
         jest.spyOn(User, 'findOne').mockRejectedValue(new Error('Database error'));
         const response = await request(app)
             .post('/api/auth/reset-password')
