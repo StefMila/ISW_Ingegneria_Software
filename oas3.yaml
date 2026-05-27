@@ -118,6 +118,14 @@ paths:
       description: Restituisce le informazioni dell'azienda.
       tags:
         - Azienda
+      parameters:
+        name: id
+        in: path
+        required: true
+        description: ID univoco dell'azienda da visualizzare
+        schema:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
       responses:
         '200':
           description: Informazioni complete azienda disponibili
