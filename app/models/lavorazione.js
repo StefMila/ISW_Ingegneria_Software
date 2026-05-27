@@ -57,6 +57,26 @@ const lavorazioneSchema = new Schema({
         trim: true,
         index: true
     },
+    // lettera 1 codiceLavorazione: distingue tra diverse catergorie di lavorazione (es. A = latticini e derivati, B = uova, ecc.) -> scalabilità futura
+    // codiceTipoProd: {
+    //     type: String,
+    //     required: true,
+    //     enum: ['A', 'B', 'C', 'D'],
+    //     trim: true,
+    // },
+    // lettera 2 codiceLavorazione: identifica il tipoLavorazione specifico ( A = primosale, B = formaggio, C = yogurt, D = altro) 
+    codiceTipoLav: {
+        type: String,
+        required: true,
+        enum: ['A', 'B', 'C', 'D'],
+        trim: true,
+    },
+    //codice unico della lavorazione, composto da codiceTipoProd + codiceTipoLav + numero progressivo (es. AA001, AA002, AB001, ecc.)
+    codiceLavorazione: {
+        type: String,
+        required: true,
+        index: true
+    },
     nomeTemplate: {
         type: String,
         required: false,
@@ -116,6 +136,25 @@ const lavorazioneSchema = new Schema({
     timestamps: true
 });
 
+//middleware di generazione codiceLavorazione univoco per ogni nuovo template di lavorazione
+lavorazioneSchema.pre('validate', async function (next) {
+    // il metodo genera un nuovo codiceLavorazione solo se la nuova lavorazione è un template
+    if(!this.isTemplate) {
+        return;
+    }
+    if (this.isNew) {
+        try {
+            // Genera codiceLavorazione univoco basato su codiceTipoProd, codiceTipoLav e numero progressivo
+            const codiceTipoLav = this.codiceTipoLav; // es. 'A' per 'primo-sale'
+            const codiceTipoProd = 'A'; // per ora tutte le lavorazioni sono di tipo 'A' (latticini), ma in futuro si può estendere con altri tipi di prodotto
+            const counter = await mongoose.model('Lavorazione').countDocuments({ codiceTipoLav, isTemplate: true });
+            const numeroProgressivo = String(counter + 1).padStart(3, '0');
+            this.codiceLavorazione = `${codiceTipoProd}${codiceTipoLav}${numeroProgressivo}`;
+        } catch (error) {
+            throw error;
+        }
+    }
+});
 lavorazioneSchema.path('endedAt').validate(function (value) {
     if (!value) {
         return true;

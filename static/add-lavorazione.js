@@ -11,7 +11,7 @@ const OUTPUT_TO_TIPO = {
     'Latticello': 'altro',
     'Acque di lavaggio e reflui autolavanti': 'altro'
 };
-
+//TODO: funzione TIPO_TO_CODICETIPO per definizione codiceLavorazione
 const INPUT_TO_TYPE = {
     'Latte crudo': 'latte',
     'Latte in polvere': 'ingrediente',

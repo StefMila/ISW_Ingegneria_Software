@@ -87,6 +87,7 @@ export const createLavorazione = async (req, res) => {
 		const {
 			aziendaId,
 			tipoLavorazione,
+			codiceTipoLav, //TODO: implementazione livello frontend
 			nomeTemplate,
 			isTemplate,
 			startedAt,
@@ -100,8 +101,8 @@ export const createLavorazione = async (req, res) => {
 			outputUnit
 		} = req.body;
 
-		if (!aziendaId || !tipoLavorazione) {
-			return res.status(400).json({ message: 'aziendaId e tipoLavorazione sono obbligatori' });
+		if (!aziendaId || !tipoLavorazione || !codiceTipoLav) {
+			return res.status(400).json({ message: 'aziendaId, tipoLavorazione e codiceTipoLav sono obbligatori' });
 		}
 
 		const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
@@ -127,6 +128,7 @@ export const createLavorazione = async (req, res) => {
 		const newLavorazione = new Lavorazione({
 			aziendaId,
 			tipoLavorazione: String(tipoLavorazione).trim(),
+			codiceTipoLav: String(codiceTipoLav).trim(),
 			nomeTemplate: typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined,
 			isTemplate: parsedIsTemplate ?? false,
 			startedAt: startedAt || undefined,
@@ -151,9 +153,11 @@ export const createLavorazione = async (req, res) => {
 		});
 	} catch (error) {
 		if (error.name === 'ValidationError') {
+			console.error('Errore del server:', error);
 			return res.status(400).json({ message: 'dati lavorazione non validi' });
 		}
-		return res.status(500).json({ message: 'Errore del server' });
+		console.error('Errore del server:', error);
+		return res.status(500).json({ message: 'Errore del server:' });
 	}
 };
 // PATCH /api/lavorazioni/:id - aggiorna una lavorazione esistente, con validazione dei campi e controllo di proprietà
