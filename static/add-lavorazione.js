@@ -1,7 +1,8 @@
 const addLavorazioneForm = document.getElementById('add-lavorazione-form');
 const addLavorazioneMessage = document.getElementById('formStatus');
 const currentAziendaBadge = document.getElementById('currentAziendaBadge');
-const searchLavorazioneTemplateForm = document.getElementById('search-lavorazioneTemplate-form');
+const searchLavorazioneForm = document.getElementById('search-lavorazione-form');
+const searchLavorazioneMessage = document.getElementById('searchStatus');
 
 const OUTPUT_TO_TIPO = {
     'Latte alimentare confezionato': 'altro',
@@ -80,6 +81,8 @@ const getSelectedPhases = () => {
         }))
         .filter((fase) => fase.name);
 };
+
+const standardCodiceLavorazione = /^[A][A-D]\d{3}$/;
 
 if (addLavorazioneForm) {
     addLavorazioneForm.addEventListener('submit', async (event) => {
@@ -177,9 +180,41 @@ if (addLavorazioneForm) {
         }
     });
 }
-//TODO: controllo input (deve essere un codiceLavorazione e avere una corrispondenza nel DB) + comportamento bottone "Cerca Template"
-if(searchLavorazioneTemplateForm){
-    searchLavorazioneTemplateForm.addEventListener('submit', async (event) => {
+//TODO: controllo input (deve avere una corrispondenza nel DB) + comportamento bottone "Cerca Template" (ritorna il template cercato GET /api/lavorazioni/:id)
+if(searchLavorazioneForm){
+    searchLavorazioneForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!searchLavorazioneMessage) return;
 
+        const codiceLavorazione = getTrimmedValue('codiceLavorazione');
+
+        searchLavorazioneMessage.style.color = 'red';
+        searchLavorazioneMessage.textContent = '';
+
+        if(!codiceLavorazione){
+            searchLavorazioneMessage.textContent = 'Inserire il codice lavorazione per proseguire';
+            return;
+        }
+
+        if(!standardCodiceLavorazione.test(codiceLavorazione)){
+            searchLavorazioneMessage.textContent = 'Formato codice lavorazione errato'; 
+            return;
+        }
+
+        try{
+            const response = await fetch('http://localhost:3000/add-lavorazione.html?codiceLavorazione={codiceLavorazione}');
+
+            const responseData = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                searchLavorazioneMessage.textContent = responseData.message || 'Errore durante la ricerca del template';
+                return;
+            }
+
+            searchLavorazioneMessage.style.color = 'green';
+            searchLavorazioneMessage.textContent = responseData.message || 'Template lavorazione trovato';
+            searchLavorazioneForm.reset();
+        } catch (error) {
+            searchLavorazioneMessage.textContent = 'Errore di rete o del server';
+        }
     });
 }

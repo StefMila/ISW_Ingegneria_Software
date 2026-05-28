@@ -277,6 +277,8 @@ export const getLavorazioni = async (req, res) => {
 	}
 };
 
+//TODO US75: GET /api/lavorazioni/:id - visualizzazione del singolo template a partire dal codiceLavorazione
+
 // DELETE /api/lavorazioni/:id - elimina una lavorazione esistente, con controllo di proprietà
 export const deleteLavorazione = async (req, res) => {
 	try {

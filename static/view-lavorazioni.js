@@ -33,6 +33,8 @@ const escapeHtml = (value) => String(value || '')
 
 const escapeAttr = (value) => escapeHtml(value);
 
+const getCodiceLavorazione = (item) => item.codiceLavorazione || '—'
+
 const getNomeLavorazione = (item) => item.nomeTemplate || item.tipoLavorazione || '—';
 
 const getInputSummary = (item) => {
@@ -178,6 +180,7 @@ const openDetails = (item) => {
 
     body.innerHTML = `
         <div style="display:grid;gap:10px;">
+            <p style="margin:0;"><strong>Codice:</strong> ${escapeHtml(getCodiceLavorazione(item))}</p>
             <p style="margin:0;"><strong>Nome:</strong> ${escapeHtml(getNomeLavorazione(item))}</p>
             <p style="margin:0;"><strong>Input:</strong> ${escapeHtml(getInputSummary(item))}</p>
             <p style="margin:0;"><strong>Output:</strong> ${escapeHtml(getOutputSummary(item))}</p>
@@ -193,6 +196,7 @@ const openDetails = (item) => {
 };
 // tasto di modifica inline. 
 const rowHtml = (item) => `
+    <td>${escapeHtml(getCodiceLavorazione(item))}</td>
     <td>${escapeHtml(getNomeLavorazione(item))}</td>
     <td>${escapeHtml(getInputSummary(item))}</td>
     <td>${escapeHtml(getOutputSummary(item))}</td>
@@ -359,6 +363,7 @@ const openInlineEdit = (tr, item) => {
 
     tr.classList.add('editing');
     tr.innerHTML = `
+        <td><input class="inline-input" data-field="codiceLavorazione" value="${escapeAttr(item.codiceLavorazione || '')}" placeholder="Codice lavorazione"></td>
         <td><input class="inline-input" data-field="nomeTemplate" value="${escapeAttr(item.nomeTemplate || '')}" placeholder="Nome lavorazione"></td>
         <td>${escapeHtml(getInputSummary(item))}</td>
         <td><input class="inline-input" data-field="outputName" value="${escapeAttr(item.outputName || '')}" placeholder="Output principale"></td>

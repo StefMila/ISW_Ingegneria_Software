@@ -27,19 +27,20 @@
         <section class="section">
             <h2>Le tue lavorazioni 🛠️</h2>
             <p id="statusMsg" class="status"></p>
-            <!--TODO: aggiungi colonna visulizzazione codiceLavorazione: l'utente deve vederli per poter avviare una nuova lavorazione tramite codice (solo tabella template) -->
-            <!--TODO: dividere template Lavorazione da lavorazioni normali con 2 tabelle diverse-->
-            <!--TODO US75: nella tabella lavorazioni normali, inserire il codiceLavorazione solo nel Dettaglio Lavorazione -->
+            <!--TODO: dividere template Lavorazione da lavorazioni normali con 2 tabelle diverse (vogliamo evitare il codiceLavorazione nelle lavorazioni non template??)-->
+
             <div class="table-wrapper">
                 <table class="animali-table" id="lavorazioniTable">
                     <thead>
                         <tr class="header-labels">
+                            <th>Codice</th>
                             <th>Nome</th>
                             <th>Input</th>
                             <th>Output</th>
                             <th>Azioni</th>
                         </tr>
                     <tr class="header-filters">
+                        <th></th>
                         <th>
                             <input type="text" id="filterNomeLavorazione" placeholder="Filtra per nome..." data-filter="nome">
                         </th>
