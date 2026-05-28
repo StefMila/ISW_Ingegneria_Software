@@ -11,7 +11,14 @@ const OUTPUT_TO_TIPO = {
     'Latticello': 'altro',
     'Acque di lavaggio e reflui autolavanti': 'altro'
 };
-//TODO: funzione TIPO_TO_CODICETIPO per definizione codiceLavorazione
+
+const TIPO_TO_CODICETIPO = {
+    'primo-latte': 'A',
+    'formaggio': 'B',
+    'yogurt': 'C',
+    'altro': 'D'
+};
+
 const INPUT_TO_TYPE = {
     'Latte crudo': 'latte',
     'Latte in polvere': 'ingrediente',
@@ -115,6 +122,7 @@ if (addLavorazioneForm) {
 
         const tipoLavorazione = OUTPUT_TO_TIPO[outputPrincipale] || 'altro';
         const outputUnit = OUTPUT_TO_UNIT[outputPrincipale] || 'pezzi';
+        const codiceTipoLav = TIPO_TO_CODICETIPO[tipoLavorazione] || 'D';
 
         const inputs = materiePrime.map((materiaPrima) => ({
             type: INPUT_TO_TYPE[materiaPrima] || 'ingrediente',
@@ -134,6 +142,7 @@ if (addLavorazioneForm) {
             aziendaId,
             nomeTemplate,
             tipoLavorazione,
+            codiceTipoLav,
             isTemplate: true,
             status: 'in_corso',
             notes: templateNotes || undefined,

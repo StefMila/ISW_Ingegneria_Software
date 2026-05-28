@@ -74,7 +74,8 @@ const lavorazioneSchema = new Schema({
     //codice unico della lavorazione, composto da codiceTipoProd + codiceTipoLav + numero progressivo (es. AA001, AA002, AB001, ecc.)
     codiceLavorazione: {
         type: String,
-        required: true,
+        //required: true, //TODO: finché non è implementata la gestione di codiceLavorazione per la creazione di una lavorazione "non template", questo campo resta commentato
+        required: false,
         index: true
     },
     nomeTemplate: {
@@ -142,11 +143,11 @@ lavorazioneSchema.pre('validate', async function (next) {
     if(!this.isTemplate) {
         return;
     }
-    if (this.isNew) {
+    if (this.isNew || this.isModified('codiceTipoLav')) {
         try {
             // Genera codiceLavorazione univoco basato su codiceTipoProd, codiceTipoLav e numero progressivo
-            const codiceTipoLav = this.codiceTipoLav; // es. 'A' per 'primo-sale'
             const codiceTipoProd = 'A'; // per ora tutte le lavorazioni sono di tipo 'A' (latticini), ma in futuro si può estendere con altri tipi di prodotto
+            const codiceTipoLav = this.codiceTipoLav; // es. 'A' per 'primo-sale'
             const counter = await mongoose.model('Lavorazione').countDocuments({ codiceTipoLav, isTemplate: true });
             const numeroProgressivo = String(counter + 1).padStart(3, '0');
             this.codiceLavorazione = `${codiceTipoProd}${codiceTipoLav}${numeroProgressivo}`;

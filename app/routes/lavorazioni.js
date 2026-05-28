@@ -87,7 +87,7 @@ export const createLavorazione = async (req, res) => {
 		const {
 			aziendaId,
 			tipoLavorazione,
-			codiceTipoLav, //TODO: implementazione livello frontend
+			codiceTipoLav,
 			nomeTemplate,
 			isTemplate,
 			startedAt,
@@ -166,6 +166,7 @@ export const updateLavorazione = async (req, res) => {
 		const { id } = req.params;
 		const {
 			tipoLavorazione,
+			codiceTipoLav,
 			nomeTemplate,
 			isTemplate,
 			startedAt,
@@ -209,6 +210,7 @@ export const updateLavorazione = async (req, res) => {
 		}
 
 		if (tipoLavorazione !== undefined) existingLavorazione.tipoLavorazione = String(tipoLavorazione).trim();
+		if (codiceTipoLav !== undefined) existingLavorazione.codiceTipoLav = String(codiceTipoLav).trim();
 		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;
 		if (parsedIsTemplate !== null) existingLavorazione.isTemplate = parsedIsTemplate;
 		if (startedAt !== undefined) existingLavorazione.startedAt = startedAt;

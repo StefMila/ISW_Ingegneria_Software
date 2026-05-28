@@ -2143,6 +2143,7 @@ paths:
                 value:
                   aziendaId: 665f8fd8ad8f8c0012f9c123
                   tipoLavorazione: yogurt
+                  codiceTipoLav: C
                   nomeTemplate: Template Yogurt Bianco
                   isTemplate: true
                   status: in_corso
@@ -2164,6 +2165,7 @@ paths:
                 value:
                   aziendaId: 665f8fd8ad8f8c0012f9c123
                   tipoLavorazione: formaggio
+                  codiceTipoLav: B
                   isTemplate: false
                   status: in_corso
                   startedAt: 2026-05-26T07:45:00.000Z
@@ -2195,6 +2197,7 @@ paths:
                       _id: 665fa8d8ad8f8c0012f9d111
                       aziendaId: 665f8fd8ad8f8c0012f9c123
                       tipoLavorazione: yogurt
+                      codiceTipoLav: C
                       nomeTemplate: Template Yogurt Bianco
                       isTemplate: true
                       status: in_corso
@@ -2210,6 +2213,7 @@ paths:
                           completed: false
                       outputName: Vasetti di yogurt
                       outputUnit: vasetti
+                      codiceLavorazione: AC001
                 lavorazioneCreated:
                   value:
                     message: Lavorazione creata con successo
@@ -2217,6 +2221,7 @@ paths:
                       _id: 665fa8d8ad8f8c0012f9d112
                       aziendaId: 665f8fd8ad8f8c0012f9c123
                       tipoLavorazione: formaggio
+                      codiceTipoLav: B
                       isTemplate: false
                       status: in_corso
         '400':
@@ -2228,7 +2233,7 @@ paths:
               examples:
                 missingRequired:
                   value:
-                    message: aziendaId e tipoLavorazione sono obbligatori
+                    message: aziendaId, tipoLavorazione e codiceTipoLav sono obbligatori
                 invalidTemplateFlag:
                   value:
                     message: isTemplate deve essere true o false
@@ -2396,9 +2401,11 @@ paths:
                       _id: 665fa8d8ad8f8c0012f9d111
                       aziendaId: 665f8fd8ad8f8c0012f9c123
                       tipoLavorazione: yogurt
+                      codiceTipoLav: C
                       nomeTemplate: Template Yogurt Bianco Premium
                       isTemplate: true
                       outputName: Vasetti di yogurt intero
+                      codiceLavorazione: AC001
         '400':
           description: ID o dati non validi
           content:
@@ -3655,6 +3662,14 @@ components:
             - yogurt
             - altro
           example: yogurt
+        codiceTipoLav:
+          type: string
+          enum:
+            - A
+            - B
+            - C
+            - D
+          example: C
         nomeTemplate:
           type: string
           nullable: true
@@ -3712,6 +3727,10 @@ components:
           type: string
           format: date-time
           example: 2026-05-26T08:30:00.000Z
+        codiceLavorazione:
+          type: string
+          default: null
+          example: AC001
 
     CreateLavorazioneRequest:
       type: object
@@ -3719,6 +3738,7 @@ components:
       required:
         - aziendaId
         - tipoLavorazione
+        - codiceTipoLav
       properties:
         aziendaId:
           type: string
@@ -3731,6 +3751,14 @@ components:
             - yogurt
             - altro
           example: yogurt
+        codiceTipoLav:
+          type: string
+          enum:
+            - A
+            - B
+            - C
+            - D
+          example: C
         nomeTemplate:
           type: string
           description: Nome leggibile del template, utile quando isTemplate=true.
@@ -3784,6 +3812,13 @@ components:
             - formaggio
             - yogurt
             - altro
+        codiceTipoLav:
+          type: string
+          enum:
+            - A
+            - B
+            - C
+            - D
         nomeTemplate:
           type: string
         isTemplate:
