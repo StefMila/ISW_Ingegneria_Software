@@ -22,7 +22,7 @@ const buildAuthHeader = () => {
 // Test specifici per lavorazioni (evitando duplicati dei guard 401 già presenti in routes.test.js).
 describe('Routes - Lavorazioni', () => {
     const authHeader = buildAuthHeader();
-
+    //TODO: distinguere la mancanza di ogni parametro obbligatorio (3 test totali)
     test('POST /api/lavorazioni con campi obbligatori mancanti restituisce 400', async () => {
         await request(app)
             .post('/api/lavorazioni')

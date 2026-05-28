@@ -1,6 +1,7 @@
 const addLavorazioneForm = document.getElementById('add-lavorazione-form');
 const addLavorazioneMessage = document.getElementById('formStatus');
 const currentAziendaBadge = document.getElementById('currentAziendaBadge');
+const searchLavorazioneTemplateForm = document.getElementById('search-lavorazioneTemplate-form');
 
 const OUTPUT_TO_TIPO = {
     'Latte alimentare confezionato': 'altro',
@@ -174,5 +175,11 @@ if (addLavorazioneForm) {
         } catch (error) {
             addLavorazioneMessage.textContent = 'Errore di rete o del server';
         }
+    });
+}
+//TODO: controllo input (deve essere un codiceLavorazione e avere una corrispondenza nel DB) + comportamento bottone "Cerca Template"
+if(searchLavorazioneTemplateForm){
+    searchLavorazioneTemplateForm.addEventListener('submit', async (event) => {
+
     });
 }
