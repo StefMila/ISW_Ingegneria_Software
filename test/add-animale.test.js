@@ -147,6 +147,12 @@ describe('US13 - Add Animale - registrazione animale', () => {
       });
   });
 
+  test('GET /api/animali/azienda/:aziendaId/animali senza token restituisce 401', async () => {
+    await request(app)
+      .get('/api/animali/azienda/665f8fd8ad8f8c0012f9c123/animali')
+      .expect(401);
+  });
+
   // Caso token non valido - 403.
   test('POST /api/aziende/:aziendaId/animali - errore: token non valido (403)', async () => {
     await request(app)

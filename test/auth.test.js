@@ -278,6 +278,17 @@ describe('US8 - Login utente', () => {
     });
 });
 
+describe('US8 - Logout utente', () => {
+    test('POST /api/auth/logout restituisce 200', async () => {
+        await request(app)
+            .post('/api/auth/logout')
+            .expect(200)
+            .expect(res => {
+                expect(res.body.message).toContain('Logout effettuato con successo');
+            });
+    });
+});
+
 describe( 'US10 - Reset password', () => {
 
     beforeAll(() => {
