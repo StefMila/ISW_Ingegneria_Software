@@ -114,10 +114,12 @@ paths:
 
   /api/aziende/{id}:
     get:
-      summary: Informazioni aziendar
+      summary: Informazioni azienda
       description: Restituisce le informazioni dell'azienda.
       tags:
         - Azienda
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path

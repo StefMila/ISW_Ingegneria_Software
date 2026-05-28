@@ -1472,3 +1472,140 @@ input[type="checkbox"]:invalid {
     align-items: flex-start;
   }
 }
+
+.azienda-header-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #edf2f7;
+  padding-bottom: 20px;
+  margin-bottom: 25px;
+}
+
+.azienda-header-inline h2 {
+  color: #2d3748;
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.azienda-card-view {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Struttura di ogni singola riga di informazione (Etichetta a sinistra, Contenuto a destra) */
+.info-field-group {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f7fafc;
+}
+
+/* Ultimo elemento senza bordo inferiore */
+.info-field-group:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Stile dell'etichetta del campo */
+.info-field-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Contenitore del testo o dell'input di modifica */
+.field-content {
+  width: 100%;
+}
+
+/* Testo in modalità lettura */
+.view-mode-text {
+  font-size: 1.1rem;
+  color: #1a202c;
+  font-weight: 500;
+  display: inline-block;
+  padding: 6px 0;
+}
+
+/* Input in modalità modifica inline */
+.edit-mode-input {
+  width: 100%;
+  max-width: 500px; /* Evita che l'input diventi troppo largo su schermi giganti */
+  padding: 8px 12px;
+  font-size: 1rem;
+  color: #2d3748;
+  background-color: #fff;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Focus degli input di modifica */
+.edit-mode-input:focus {
+  border-color: #319795;
+  box-shadow: 0 0 0 3px rgba(49, 151, 149, 0.15);
+}
+
+
+.btn-primary, .btn-success, .btn-secondary {
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary {
+  background-color: #3182ce;
+  color: white;
+}
+.btn-primary:hover { background-color: #2b6cb0; }
+
+.btn-success {
+  background-color: #38a169;
+  color: white;
+}
+.btn-success:hover { background-color: #2f855a; }
+
+.btn-secondary {
+  background-color: #edf2f7;
+  color: #4a5568;
+}
+.btn-secondary:hover { background-color: #e2e8f0; }
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Classe globale per nascondere gli elementi (usata nel JS tramite classList) */
+.hidden {
+  display: none !important;
+}
+
+/* Responsive per schermi piccoli (Smartphone) */
+@media (max-width: 768px) {
+  .info-field-group {
+    grid-template-columns: 1fr; /* Impila l'etichetta sopra al valore */
+    gap: 8px;
+    align-items: flex-start;
+  }
+  
+  .azienda-header-inline {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

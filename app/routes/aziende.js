@@ -1,4 +1,3 @@
-
 import express from 'express';
 import azienda from '../models/azienda.js';
 import mongoose from 'mongoose';
@@ -167,30 +166,67 @@ router.get('/:aziendaId/animali', getAnimali);
 router.delete('/:aziendaId/animali/:id', deleteAnimale);
 router.patch('/:aziendaId/animali/:id', updateAnimale);
 
-// Route per ottenere le aziende dell'utente autenticato (allevatore)
-// Rotta pubblica: restituisce tutte le aziende con nome, indirizzo e coordinate
-router.get('/public', async (req, res) => {
-    try {
-        // Solo i campi pubblici
-        const items = await azienda.find({})
-            .select('_id companyName address geo location categories emailAzienda phoneNumber website')
-            .sort({ createdAt: 1 });
-        return res.status(200).json({ items });
-    } catch (error) {
-        console.error("Errore durante il recupero delle aziende pubbliche:", error);
-        return res.status(500).json({ message: 'Errore interno del server' });
-    }
-});
+// // Route per ottenere le aziende dell'utente autenticato (allevatore)
+// // Rotta pubblica: restituisce tutte le aziende con nome, indirizzo e coordinate
+// router.get('/public', async (req, res) => {
+//     try {
+//         // Solo i campi pubblici
+//         const items = await azienda.find({})
+//             .select('_id companyName address geo location categories emailAzienda phoneNumber website')
+//             .sort({ createdAt: 1 });
+//         return res.status(200).json({ items });
+//     } catch (error) {
+//         console.error("Errore durante il recupero delle aziende pubbliche:", error);
+//         return res.status(500).json({ message: 'Errore interno del server' });
+//     }
+// });
 
 router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
         const items = await azienda.find({ ownerUserId: req.user.userId })
             .select('_id companyName vatNumber address emailAzienda')
-            .sort({ createdAt: 1 });
+            .sort({ createdAt: 1 })
 
-        return res.status(200).json({ items });
+        const itemsId = items.map(az => {
+            const azObj = az.toObject();
+            return {
+                ...azObj,
+                links: {
+                    self: `/api/aziende/${azObj._id}`
+                }
+            };
+        });
+
+        return res.status(200).json({ itemsId });
     } catch (error) {
         console.error('Errore durante il recupero delle aziende dell\'utente:', error);
+        return res.status(500).json({
+            message: 'Errore interno del server'
+        });
+    }
+});
+
+// Richiede l'id come parametro del percorso e restituisce i dettagli completi della azienda
+router.get('/:id', checkAuth, checkUserType(['allevatore']), async (req, res) => {
+    try {
+        const {id} = req.params;
+        const ownership = await assertAziendaOwnedByUser(id, req.user.userId);
+        if(!ownership.ok) {
+            return res.status(ownership.status).json({ message: ownership.message });
+        }
+
+        const item = await azienda.findById(req.params.id);
+        const itemInfo = {
+            ...item.toObject(),
+            links: {
+                self: `/api/aziende/${item._id}`,
+                collection: '/api/aziende/mine'
+            }
+        };
+
+        return res.status(200).json({ itemInfo });
+    } catch (error) {
+        console.error('Errore durante il recupero delle informazioni dell\'azienda selezionata:', error);
         return res.status(500).json({
             message: 'Errore interno del server'
         });

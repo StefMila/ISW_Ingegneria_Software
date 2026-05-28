@@ -20,6 +20,12 @@ describe('Routes - Azienda e Animali (guard)', () => {
       .expect(401);
   });
 
+  test('GET /api/aziende/:id senza token restituisce 401', async() => {
+    await request(app)
+      .get('/api/aziende/:id')
+      .expect(401);
+  })
+
   test('PATCH /api/aziende/:id/categories senza token restituisce 401', async () => {
     await request(app)
       .patch('/api/aziende/665f8fd8ad8f8c0012f9c123/categories')
