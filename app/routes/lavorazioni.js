@@ -29,7 +29,7 @@ const ALLOWED_FASI_SET = new Set(ALLOWED_FASI);
 //valida ObjectId di MongoDB
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 // normalizza l'input degli array di lavorazione. Rimuove spazi, converte in minuscolo e filtra ID non validi
-const normalizeInputs = (inputs) => {
+export const normalizeInputs = (inputs) => {
 	if (inputs === undefined) {
 		return { ok: true, value: undefined };
 	}
@@ -51,7 +51,7 @@ const normalizeInputs = (inputs) => {
 	return { ok: true, value: normalizedInputs };
 };
 // normalizza l'input delle fasi di lavorazione, rimuovendo spazi e convertendo in booleano i campi completed
-const normalizeFasi = (fasi) => {
+export const normalizeFasi = (fasi) => {
 	if (fasi === undefined) {
 		return { ok: true, value: undefined };
 	}
@@ -73,7 +73,7 @@ const normalizeFasi = (fasi) => {
 	return { ok: true, value: normalizedFasi };
 };
 
-const parseBooleanLike = (value) => {
+export const parseBooleanLike = (value) => {
 	if (typeof value === 'boolean') return value;
 	if (typeof value !== 'string') return null;
 	const normalized = value.trim().toLowerCase();
