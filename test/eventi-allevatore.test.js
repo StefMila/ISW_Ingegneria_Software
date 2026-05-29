@@ -132,10 +132,66 @@ describe('US79 Eventi Allevatore - creazione evento', () => {
       });
   });
 
-  // Caso campi obbligatori mancanti - 400.
-  test('POST /api/aziende/:aziendaId/eventi - errore: campi obbligatori mancanti (400)', async () => {
+  // Casi campi obbligatori mancanti - 400.
+  test('POST /api/aziende/:aziendaId/eventi - errore: title mancante (400)', async () => {
     const payload = basePayload();
     delete payload.title;
+
+    await request(app)
+      .post(`/api/aziende/${aziendaId}/eventi`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(payload)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('aziendaId, title, type, startAt, endAt e location sono obbligatori');
+      });
+  });
+
+  test('POST /api/aziende/:aziendaId/eventi - errore: type mancante (400)', async () => {
+    const payload = basePayload();
+    delete payload.type;
+
+    await request(app)
+      .post(`/api/aziende/${aziendaId}/eventi`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(payload)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('aziendaId, title, type, startAt, endAt e location sono obbligatori');
+      });
+  });
+
+  test('POST /api/aziende/:aziendaId/eventi - errore: startAt mancante (400)', async () => {
+    const payload = basePayload();
+    delete payload.startAt;
+
+    await request(app)
+      .post(`/api/aziende/${aziendaId}/eventi`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(payload)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('aziendaId, title, type, startAt, endAt e location sono obbligatori');
+      });
+  });
+
+  test('POST /api/aziende/:aziendaId/eventi - errore: endAt mancante (400)', async () => {
+    const payload = basePayload();
+    delete payload.endAt;
+
+    await request(app)
+      .post(`/api/aziende/${aziendaId}/eventi`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(payload)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('aziendaId, title, type, startAt, endAt e location sono obbligatori');
+      });
+  });
+
+  test('POST /api/aziende/:aziendaId/eventi - errore: location mancante (400)', async () => {
+    const payload = basePayload();
+    delete payload.location;
 
     await request(app)
       .post(`/api/aziende/${aziendaId}/eventi`)
