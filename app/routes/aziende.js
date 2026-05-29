@@ -184,7 +184,7 @@ router.patch('/:aziendaId/animali/:id', updateAnimale);
 router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
         const items = await azienda.find({ ownerUserId: req.user.userId })
-            .select('_id companyName vatNumber address emailAzienda')
+            .select('_id companyName vatNumber address emailAzienda createdAt')
             .sort({ createdAt: 1 })
 
         const itemsId = items.map(az => {
@@ -197,7 +197,7 @@ router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) =
             };
         });
 
-        return res.status(200).json({ itemsId });
+        return res.status(200).json({ items: itemsId });
     } catch (error) {
         console.error('Errore durante il recupero delle aziende dell\'utente:', error);
         return res.status(500).json({

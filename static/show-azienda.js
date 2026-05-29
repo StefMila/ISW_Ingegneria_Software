@@ -1,5 +1,3 @@
-import { stringify } from "yamljs";
-
 const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
 const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
 
@@ -11,12 +9,40 @@ const statusMsg = document.getElementById('statusMsg');
 const editToggleBtn = document.getElementById('editToggleBtn');
 const actionButtonsDiv = document.getElementById('aziendaActionButtons');
 
+const listViewSection = document.getElementById('listViewSection');
+const detailViewSection = document.getElementById('detailViewSection');
+const farmsTableBody = document.getElementById('farmsTableBody');
+const backToListBtn = document.getElementById('backToListBtn');
+
+const campiAzienda = ['companyName', 'vatNumber', 'emailAzienda', 'address'];
+
 //  Utility per formattazione e rendering
 const formatDate = (iso) => {
   if (!iso) return '—';
-  const d = new Date(iso);
+
+  // Se è già un oggetto Date valido
+  if (iso instanceof Date && !isNaN(iso)) {
+    return iso.toLocaleDateString('it-IT');
+  }
+
+  // Se è un timestamp numerico passato come stringa o numero, lo converte
+  const timestamp = Number(iso);
+  const d = !isNaN(timestamp) ? new Date(timestamp) : new Date(iso);
+  
   if (isNaN(d)) return '—';
   return d.toLocaleDateString('it-IT');
+
+  // Fallback manuale estremo: se è una stringa che inizia con YYYY-MM-DD (es. 2026-05-29...)
+  if (typeof iso === 'string' && iso.includes('-')) {
+    const soloData = iso.split('T')[0]; // Prende solo la parte prima della 'T'
+    const parti = soloData.split('-');
+    if (parti.length === 3) {
+      // Rigira le parti da YYYY-MM-DD a DD/MM/YYYY
+      return `${parti[2]}/${parti[1]}/${parti[0]}`;
+    }
+  }
+
+  return '—';
 };
 // Capitalizza la prima lettera di una stringa e rende il resto minuscolo, restituendo '—' se la stringa è vuota o non definita
 const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
@@ -27,28 +53,87 @@ const renderStatus = (text, color = '#1f2937') => {
   statusMsg.textContent = text;
 };
 
-const campiAzienda = ['companyName', 'vatNumber', 'emailAzienda', 'address'];
-
 const getAziendaIdFromUrl = () => {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get('id');
 };
 
-const fetchDettaglioAzienda = async() => {
+const initPage = async () => {
   const aziendaId = getAziendaIdFromUrl();
-  const token = localStorage.getItem('token');
+  renderStatus(''); // Resetta eventuali status messages
 
-  // Se non c'è l'id nell'url, reindirizzamento alla lista
-  if(!aziendaId) {
-    renderStatus('Nessun ID azienda specificato nell\'URL. Seleziona un\'azienda dal menu.', '#b45309');
-    setTimeout(() => {
-        window.location.href = '/gestione-aziende.html';
-    }, 3000);
-    return;
+  if(aziendaId) {
+    listViewSection.classList.add('hidden');
+    detailViewSection.classList.remove('hidden');
+    await fetchDettaglioAzienda(aziendaId);
+  } else {
+    detailViewSection.classList.add('hiddem');
+    listViewSection.classList.remove('hidden');
+    if(isEditing) toggleEditMode(false);
+    await fetchTutteLeAziende();
   }
+}
+
+const fetchTutteLeAziende = async () => {
+  const token = localStorage.getItem('token');
+  renderStatus('Caricamento elenco aziende...', '#3182ce');
 
   try {
-    const response = await fetch(`/api/aziende(${aziendaId}`, {
+    const response = await fetch('/api/aziende/mine', {
+      headers: { 'Authorization': `Bearer ${token}`}
+    });
+    const data = await response.json();
+
+    if(!response.ok) {
+      renderStatus(data.message || 'Errore nel recupero dell\'elenco aziende.', 'red');
+      return;
+    }
+
+    farmsTableBody.innerHTML = '';
+    renderStatus(''); // Pulisce loading test
+
+    const aziende = Array.isArray(data.items) ? data.items : [];
+
+    if(aziende.length === 0) {
+      farmsTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: #64758b;">Nessuna azienda associata a questo account.</td></tr>`;
+      return;
+    }
+
+    aziende.forEach(farm => {
+      const idAzienda = farm._id || farm-id;
+      const tr = document.createElement('tr');
+
+      tr.innerHTML= `
+        <td><strong>${farm.companyName || '—'}</strong></td>
+        <td>${farm.address || '—'}</td>
+        <td>${formatDate(farm.createdAt)}</td>
+        <td style="text-align: center;">
+          <button class="btn-icon view-btn" data-id="${idAzienda}" title="Visualizza dettagli">👁️</button>
+          <button class="btn-icon btn-disabled" title="Elimina (Non funzionante)" style="color: #94a3b8;">🗑️</button>
+        </td>
+      `;
+      farmsTableBody.appendChild(tr);
+    });
+
+    farmsTableBody.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        window.history.pushState({}, '', `?id=${id}`);
+        initPage();
+      });
+    });
+  
+  } catch(error) {
+    console.error('Errore durante fetch lista aziende:', error);
+    renderStatus('Errore di connessione al server durante il recupero dei dati.', 'red');
+  }
+};
+
+const fetchDettaglioAzienda = async(aziendaId) => {
+  const token = localStorage.getItem('token');
+
+  try {
+    const response = await fetch(`/api/aziende/${aziendaId}`, {
       headers: {Authorization: `Bearer ${token}`}
     });
     const data = await response.json();
@@ -56,7 +141,8 @@ const fetchDettaglioAzienda = async() => {
     // Se azienda con id non esiset, link per tornare alla lista aziende
     if(!response.ok) {
       renderStatus(data.message || 'Errore nel recupero dell\'azienda.', 'red');
-      actionButtonsDiv.innerHTML = `<a href="/gestione-aziende.html" class="btn-primary" style="text-decoration: none;">Torna alla lista delle aziende</a>`;
+      actionButtonsDiv.innerHTML = `<button id="backToListBtn" class="btn-secondary">Torna alla lista delle aziende</button>`;
+      document.getElementById('backToListBtn').addEventListener('click', navigateBackToList);
       return;
     }
 
@@ -106,13 +192,16 @@ const toggleEditMode = (editing) => {
       <button id="cancelBtn" class="btn-secondary" style="color: red;"> Annulla</button>
       `;
 
-      document.getElementById('saveBtn').addEventListener('click', savaModificheAzienda);
+      document.getElementById('saveBtn').addEventListener('click', salvaModificheAzienda);
       document.getElementById('cancelBtn').addEventListener('click', () => {
         mostraDatiAzienda(aziendaAttuale);
         toggleEditMode(false);
       });
   } else {
-    actionButtonsDiv.innerHTML = `<button id="editToggleBtn" class="btn-primary"> Modifica Dati</button>`;
+    actionButtonsDiv.innerHTML = `
+      <button id="backToListBtn" class="btn-secondary" style="margin-right: 10px;">← Torna alla lista</button>
+      <button id="editToggleBtn" class="btn-primary">Modifica Dati</button>
+    `;
     document.getElementById('editToggleBtn').addEventListener('click', () => {
       toggleEditMode(true)
     });
@@ -123,9 +212,9 @@ const salvaModificheAzienda = async() => {
   const aziendaId = getAziendaIdFromUrl();
   const token = localStorage.getItem('token');
 
-  const fromData = {};
+  const formData = {};
   campiAzienda.forEach(campo => {
-    fromData[campo] = document.getElementById(`edit-${campo}`).value.trim();
+    formData[campo] = document.getElementById(`edit-${campo}`).value.trim();
   });
 
   try {
@@ -135,7 +224,7 @@ const salvaModificheAzienda = async() => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(fromData)
+      body: JSON.stringify(formData)
     });
 
     const data = await response.json().catch(() => ({}));
@@ -147,35 +236,35 @@ const salvaModificheAzienda = async() => {
 
     renderStatus('Dati aziendali aggiornati correttamente!', 'green');
 
-    aziendaAttuale = {...aziendaAttuale, ...fromData};
+    aziendaAttuale = {...aziendaAttuale, ...formData};
     mostraDatiAzienda(aziendaAttuale);
     toggleEditMode(false);
 
-    // Aggiornamento e sincronizzazione con lo switcher
-    const aziendaIdDallUrl = getAziendaIdFromUrl();
-    const aziendaIdAttivoInStorage = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
-
-    // Se l'azienda modificata dall'utente è quella attiva nel menu
-    if(aziendaIdDallUrl === aziendaIdAttivoInStorage) {
-      localStorage.setItem(SELECTED_AZIENDA_NAME_KEY, fromData.companyName);
-
+   // Sync context update with top dropdown switchers
+    if (aziendaId === localStorage.getItem(SELECTED_AZIENDA_ID_KEY)) {
+      localStorage.setItem(SELECTED_AZIENDA_NAME_KEY, formData.companyName);
       const badgeBtn = document.getElementById('currentAziendaBadge');
-      const dropdown = document.getElementById('aziendaSwitcherDropdown');
-      if(badgeBtn) {
-        const arrow = dropdown ? ' ▾' : '';
-        badgeBtn.textContent = `Azienda attiva: ${fromData.companyName}${arrow}`;
+      if (badgeBtn) {
+        badgeBtn.textContent = `Azienda attiva: ${formData.companyName} ▾`;
       }
     }
-  } catch(error) {
+  } catch (error) {
     console.error('Errore durante il salvataggio:', error);
     renderStatus('Errore di connessione durante il salvataggio.', 'red');
   }
 };
 
-if(editToggleBtn) {
-  editToggleBtn.addEventListener('click', () => {
-    toggleEditMode(true)
-  });
+const navigateBackToList = () => {
+  window.history.pushState({}, '', window.location.pathname);
+  initPage();
+};
+
+if (backToListBtn) {
+  backToListBtn.addEventListener('click', navigateBackToList);
+}
+
+if (editToggleBtn) {
+  editToggleBtn.addEventListener('click', () => toggleEditMode(true));
 }
 
 // Ascolto dello switcher condiviso
@@ -192,6 +281,11 @@ window.addEventListener('aziendaChanged', async (e) => {
     toggleEditMode(false);
   }
 
-  // Ricarica i dati della nuova azienda selezionata
-  await fetchDettaglioAzienda();
+  await initPage();
 });
+
+// Listens to native browser Back and Forward navigation changes securely
+window.addEventListener('popstate', initPage);
+
+// Initial Execution on window load
+document.addEventListener('DOMContentLoaded', initPage);

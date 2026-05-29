@@ -21,4 +21,4 @@ const buildAuthHeader = () => {
 
 describe('Routes - Visualizzazione azienda', () => {
     test('GET /api/aziende/mine con campi obbligatori mancanti restituisce 400', async () => {
-})
+})});

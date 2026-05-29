@@ -12,10 +12,10 @@
       <div class="nav-buttons">
         ${homeLink}
         <div class="nav-dropdown">
-          <button class="nav-dropdown-toggle">La tua azienda \u25be</button>
+          <button class="nav-dropdown-toggle">La tua attività \u25be</button>
           <ul class="nav-dropdown-menu">
             <li><a href="/add-azienda.html">Aggiungi azienda</a></li>
-            <li><a href="/view-azienda.html">Elimina azienda</a></li>
+            <li><a href="/show-azienda.html">Gestisci aziende</a></li>
           </ul>
         </div>
         <div class="nav-dropdown">
