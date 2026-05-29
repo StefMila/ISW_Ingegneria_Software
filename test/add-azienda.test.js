@@ -276,4 +276,17 @@ describe('US11 - Aggiungi Azienda', () => {
         expect(res.body.message).toBe('Esiste già un\'azienda con questa partita IVA');
       });
   });
+
+  test('GET /api/aziende/mine senza token restituisce 401', async () => {
+    await request(app)
+      .get('/api/aziende/mine')
+      .expect(401);
+  });
+
+  test('PATCH /api/aziende/:id/categories senza token restituisce 401', async () => {
+    await request(app)
+      .patch('/api/aziende/665f8fd8ad8f8c0012f9c123/categories')
+      .send({ categories: ['latte'] })
+      .expect(401);
+  });
 });
