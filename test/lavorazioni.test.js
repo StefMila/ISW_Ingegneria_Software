@@ -324,7 +324,10 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     await request(app)
       .get('/api/lavorazioni')
       .set('Authorization', `Bearer ${token}`)
-      .query(aziendaId)
+      .query({
+        aziendaId: aziendaId,
+        ...basePayload()
+      })
       .expect(200);
   });
 
