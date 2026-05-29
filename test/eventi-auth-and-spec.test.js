@@ -1,10 +1,9 @@
 import request from 'supertest';
 import app from '../app/app.js';
 
-// Questi test verificano due aspetti fondamentali:
-// 1) sicurezza degli endpoint eventi (devono essere protetti da token)
-// 2) coerenza tra implementazione e documentazione OpenAPI.
-describe('Eventi API - protezione endpoint', () => {
+// Verifica che gli endpoint siano protetti e che la documentazione OpenAPI sia allineata.
+describe('US79 Eventi - protezione endpoint', () => {
+  // Caso senza token - 401.
   test('GET /api/aziende/:aziendaId/eventi senza token restituisce 401', async () => {
     const response = await request(app)
       .get('/api/aziende/665f8fd8ad8f8c0012f9c123/eventi')
@@ -13,6 +12,7 @@ describe('Eventi API - protezione endpoint', () => {
     expect(response.body.message).toContain('Token mancante');
   });
 
+  // Caso alias legacy rimosso - 404.
   test('GET /api/eventi senza /pubblici restituisce 404 dopo la rimozione degli alias legacy', async () => {
     const response = await request(app)
       .get('/api/eventi?aziendaId=665f8fd8ad8f8c0012f9c123')
@@ -21,6 +21,7 @@ describe('Eventi API - protezione endpoint', () => {
     expect(response.body).toEqual({});
   });
 
+  // Caso alias legacy rimosso - 404.
   test('POST /api/eventi/sincronizzazioni/google restituisce 404 dopo la rimozione degli alias legacy', async () => {
     await request(app)
       .post('/api/eventi/sincronizzazioni/google')
@@ -28,12 +29,14 @@ describe('Eventi API - protezione endpoint', () => {
       .expect(404);
   });
 
+  // Caso alias legacy rimosso - 404.
   test('POST /api/eventi/:id/sincronizzazioni/google restituisce 404 dopo la rimozione degli alias legacy', async () => {
     await request(app)
       .post('/api/eventi/665f8fd8ad8f8c0012f9c124/sincronizzazioni/google')
       .expect(404);
   });
 
+  // Caso alias legacy rimosso - 404.
   test('POST /api/eventi/google-sync-all restituisce 404 dopo la rimozione dell alias legacy', async () => {
     await request(app)
       .post('/api/eventi/google-sync-all')
@@ -41,12 +44,14 @@ describe('Eventi API - protezione endpoint', () => {
       .expect(404);
   });
 
+  // Caso alias legacy rimosso - 404.
   test('POST /api/eventi/:id/google-sync restituisce 404 dopo la rimozione dell alias legacy', async () => {
     await request(app)
       .post('/api/eventi/665f8fd8ad8f8c0012f9c124/google-sync')
       .expect(404);
   });
 
+  // Caso senza token - 401.
   test('POST /api/aziende/:aziendaId/eventi/sincronizzazioni/google senza token restituisce 401', async () => {
     const response = await request(app)
       .post('/api/aziende/665f8fd8ad8f8c0012f9c123/eventi/sincronizzazioni/google')
@@ -57,13 +62,12 @@ describe('Eventi API - protezione endpoint', () => {
   });
 });
 
-describe('OpenAPI - allineamento endpoint eventi', () => {
+describe('US79 Eventi - documentazione OpenAPI', () => {
   test('Spec contiene i path noun-based di sincronizzazione eventi', async () => {
     const response = await request(app)
       .get('/api-docs/spec.json')
       .expect(200);
 
-    // Se la spec e aggiornata, i nuovi path REST devono essere presenti.
     const paths = response.body?.paths || {};
     expect(paths['/api/aziende/{aziendaId}/eventi/sincronizzazioni/google']).toBeDefined();
     expect(paths['/api/aziende/{aziendaId}/eventi/{id}/sincronizzazioni/google']).toBeDefined();
@@ -86,7 +90,6 @@ describe('OpenAPI - allineamento endpoint eventi', () => {
       .get('/api-docs/spec.json')
       .expect(200);
 
-    // Verifichiamo anche gli esempi business richiesti (public/private).
     const examples = response.body?.paths?.['/api/aziende/{aziendaId}/eventi']?.post?.requestBody?.content?.['application/json']?.examples;
     expect(examples?.temporaneoPubblico).toBeDefined();
     expect(examples?.singoloPrivato).toBeDefined();

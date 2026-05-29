@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiche Mungiture - MuccApp</title>
+    <script src="/auth-control.js"></script>
+    <script>
+        protectRoute(['allevatore']);
+    </script>
+    <script src="/menu-allevatore.js"></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="stats-mungiture-page">
+    <main class="dashboard-container-wide">
+        <div id="allevatoreHeaderMount"></div>
+        <script>
+            renderAllevatoreHeader({ showHomeLink: true, showStats: true });
+        </script>
+
+        <section class="section">
+            <h2>Statistiche mungiture</h2>
+            <p id="statsStatus" class="status stats-status"></p>
+
+            <div class="stats-global-filters">
+                <label>
+                    Mucche filtro
+                    <select id="filterCow">
+                        <option value="">Tutte le mucche</option>
+                    </select>
+                </label>
+                <button type="button" id="refreshStatsBtn">Aggiorna</button>
+            </div>
+
+            <div class="stats-period-grid">
+                <div class="stats-block">
+                    <div class="stats-block-header">
+                        <h3>Giorno</h3>
+                        <label>
+                            <input type="date" id="filterDate" aria-label="Filtro giorno">
+                        </label>
+                    </div>
+
+                    <div class="mungiture-summary stats-single-summary stats-day-summary">
+                        <div class="mungiture-summary-card">
+                            <div class="stats-card-main-row">
+                                <span class="stats-card-icon" aria-hidden="true">🥛</span>
+                                <div>
+                                    <span class="mungiture-summary-label">Totale giornaliero</span>
+                                    <div class="stats-value-row">
+                                        <strong id="dailyTotalCard">0.00 L</strong>
+                                        <span id="dailyTrendChip" class="stats-trend-chip">↔ 0.00%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mungiture-summary-card stats-topcow-card">
+                            <span class="mungiture-summary-label">Mucche top del giorno</span>
+                            <ol id="dayTopCowList" class="stats-topcow-list" aria-label="Elenco mucche più produttive del giorno">
+                                <li class="stats-topcow-empty">Nessun dato disponibile</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-block">
+                    <div class="stats-block-header">
+                        <h3>Mese</h3>
+                        <div class="stats-inline-filters">
+                            <label>
+                                <select id="filterMonth" aria-label="Filtro mese">
+                                    <option value="">Tutti</option>
+                                    <option value="0">Gennaio</option>
+                                    <option value="1">Febbraio</option>
+                                    <option value="2">Marzo</option>
+                                    <option value="3">Aprile</option>
+                                    <option value="4">Maggio</option>
+                                    <option value="5">Giugno</option>
+                                    <option value="6">Luglio</option>
+                                    <option value="7">Agosto</option>
+                                    <option value="8">Settembre</option>
+                                    <option value="9">Ottobre</option>
+                                    <option value="10">Novembre</option>
+                                    <option value="11">Dicembre</option>
+                                </select>
+                            </label>
+                            <label>
+                                <select id="filterMonthYear" aria-label="Filtro anno per mese"></select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mungiture-summary stats-single-summary">
+                        <div class="mungiture-summary-card">
+                            <div class="stats-card-main-row">
+                                <span class="stats-card-icon" aria-hidden="true">🥛</span>
+                                <div>
+                                    <span class="mungiture-summary-label">Totale mensile</span>
+                                    <div class="stats-value-row">
+                                        <strong id="monthlyTotalCard">0.00 L</strong>
+                                        <span id="monthlyTrendChip" class="stats-trend-chip">↔ 0.00%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mungiture-summary-card stats-topcow-card">
+                            <span class="mungiture-summary-label">Mucca top del mese</span>
+                            <div class="stats-topcow-chart-wrap">
+                                <canvas id="monthTopCowChart" aria-label="Grafico mucca più produttiva del mese" role="img"></canvas>
+                            </div>
+                            <p id="monthTopCowLabel" class="stats-topcow-label">Nessun dato</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-block">
+                    <div class="stats-block-header">
+                        <h3>Anno</h3>
+                        <label>
+                            <select id="filterYear" aria-label="Filtro anno"></select>
+                        </label>
+                    </div>
+
+                    <div class="mungiture-summary stats-single-summary">
+                        <div class="mungiture-summary-card">
+                            <div class="stats-card-main-row">
+                                <span class="stats-card-icon" aria-hidden="true">📊</span>
+                                <div>
+                                    <span class="mungiture-summary-label">Litri annuali (anno selezionato)</span>
+                                    <div class="stats-value-row">
+                                        <strong id="annualTotalCard">0.00 L</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mungiture-summary-card stats-topcow-card">
+                            <span class="mungiture-summary-label">Mucca top dell'anno</span>
+                            <div class="stats-topcow-chart-wrap">
+                                <canvas id="yearTopCowChart" aria-label="Grafico mucca più produttiva dell'anno" role="img"></canvas>
+                            </div>
+                            <p id="yearTopCowLabel" class="stats-topcow-label">Nessun dato</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-block">
+                <div class="stats-block-header stats-block-header-multi">
+                    <h3>Anni a confronto</h3>
+                    <label class="stats-multi-select-label">
+                        <span>Seleziona anni</span>
+                        <select id="compareYears" multiple size="4" aria-label="Seleziona anni da confrontare"></select>
+                    </label>
+                </div>
+
+                <p class="stats-helper-text">Tieni premuto Ctrl (o Cmd su Mac) per selezionare piu anni.</p>
+
+                <div class="stats-chart-canvas-wrap">
+                    <canvas id="yearsComparisonChart" aria-label="Grafico confronto litri mensili per anni selezionati" role="img"></canvas>
+                </div>
+            </div>
+
+            <div class="stats-block">
+                <h3>Latte per mucca</h3>
+                <div class="table-wrapper">
+                    <table class="animali-table">
+                        <thead>
+                            <tr class="header-labels">
+                                <th>Mucca</th>
+                                <th>Mungiture annuali</th>
+                                <th>Litri annuali</th>
+                                <th>Media annuale/mung.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="milkPerCowTableBody">
+                            <tr>
+                                <td colspan="4" class="status">Nessun dato disponibile.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Include chart.js per le statistiche -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="/stats-mungiture.js"></script>
+    <script src="/logout.js"></script>
+    <script src="/azienda-switcher.js"></script>
+ </body>
+</html>
