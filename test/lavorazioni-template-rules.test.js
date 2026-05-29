@@ -55,6 +55,7 @@ describe('Routes - Lavorazioni template rules', () => {
       body: {
         aziendaId,
         tipoLavorazione: 'altro',
+        codiceTipoLav: 'C1',
         isTemplate: 'yes'
       }
     };
@@ -72,6 +73,7 @@ describe('Routes - Lavorazioni template rules', () => {
       body: {
         aziendaId,
         tipoLavorazione: 'altro',
+        codiceTipoLav: 'C1',
         fasi: [{ name: 'Fase inventata', completed: false }]
       }
     };

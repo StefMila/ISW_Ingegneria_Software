@@ -64,7 +64,8 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     });
     jest.spyOn(Lavorazione, 'findById').mockResolvedValue({
       _id: lavorazioneId,
-      ...basePayload()
+      ...basePayload(),
+      save: jest.fn().mockResolvedValue(undefined)
     });
     jest.spyOn(Lavorazione.prototype, 'save').mockResolvedValue({
       _id: lavorazioneId,
@@ -315,11 +316,15 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     //TODO: altri test PATCH --> normalizedInputs (400), normalizedFasi(400), parsedIsTemplate (400), validationError (400)
 
   test('GET /api/lavorazioni ritorna le informazioni sulle lavorazioni interessate (200)', async () => {
-    jest.spyOn(Lavorazione, 'find').mockResolvedValue({
-      aziendaId: aziendaId,
-      isTemplate: basePayload().isTemplate,
-      tipoLavorazione: basePayload().tipoLavorazione,
-      status: basePayload().status
+    jest.spyOn(Lavorazione, 'find').mockReturnValue({
+      sort: jest.fn().mockResolvedValue([
+        {
+          aziendaId: aziendaId,
+          isTemplate: basePayload().isTemplate,
+          tipoLavorazione: basePayload().tipoLavorazione,
+          status: basePayload().status
+        }
+      ])
     });
     await request(app)
       .get('/api/lavorazioni')
