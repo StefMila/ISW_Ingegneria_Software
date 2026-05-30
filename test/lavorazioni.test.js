@@ -202,7 +202,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
         expect(res.body.message).toBe('Non hai i permessi per questa azienda');
       });
   });
-    //TODO: altri test POST --> normalizedInputs (400), normalizedFasi(400), parsedIsTemplate (400), validationError (400)
+
   test('PATCH /api/lavorazioni/:id aggiorna una lavorazione esistente (200)', async () => {
     await request(app)
         .patch(`/api/lavorazioni/${lavorazioneId}`)
@@ -224,6 +224,28 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
           .expect((res) => {
             expect(res.body.message).toBe('ID lavorazione non valido');
           });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: fasi non valide (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ fasi: [{ name: 'Fase inventata', completed: false }] })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Le fasi consentite sono: Ricevimento, Centrifugazione, Omogeneizzazione, Trattamento termico, Inoculo, Coagulazione, Rottura cagliata, Formatura, Salatura, Stagionatura, Concentrazione, Zangolatura, Confezionamento');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: isTemplate non Boolean (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ isTemplate: 'not_boolean' })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('isTemplate deve essere true o false');
+      });
   });
 
   test('PATCH /api/lavorazioni/:id - errore: tentativo senza token (401)', async () => {
@@ -253,7 +275,6 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  // Caso token non valido - 403.
   test('PATCH /api/lavorazioni/:id - errore: token non valido (403)', async () => {
     await request(app)
       .patch(`/api/lavorazioni/${lavorazioneId}`)
@@ -265,6 +286,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
+  // Caso token non valido - 403.
   test('PATCH /api/lavorazioni/:id - errore: ruolo non autorizzato (403)', async () => {
     const tokenConsumatore = jwt.sign(
       { userId: 'mocked_user_id', userType: 'consumatore' },
@@ -313,7 +335,6 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
         expect(res.body.message).toBe('Lavorazione non trovata');
       });
   });
-    //TODO: altri test PATCH --> normalizedInputs (400), normalizedFasi(400), parsedIsTemplate (400), validationError (400)
 
   test('GET /api/lavorazioni ritorna le informazioni sulle lavorazioni interessate (200)', async () => {
     jest.spyOn(Lavorazione, 'find').mockReturnValue({
@@ -334,6 +355,21 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
         ...basePayload()
       })
       .expect(200);
+  });
+
+  test('GET /api/lavorazioni - errore: isTemplate non Boolean (400)', async () => {
+    const payload = basePayload();
+    delete payload.isTemplate;
+
+    await request(app)
+      .get('/api/lavorazioni')
+      .set('Authorization', `Bearer ${token}`)
+      .query({
+        aziendaId: aziendaId,
+        ...basePayload(),
+        isTemplate: 'not_boolean'
+      })
+      .expect(400);
   });
 
   test('GET /api/lavorazioni - errore: aziendaId mancante (400)', async () => {
@@ -415,7 +451,6 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
         expect(res.body.message).toBe('Non hai i permessi per questa azienda');
       });
   });
-    //TODO: altri test GET --> parsedIsTemplate (400), ricerca avvenuta con successo (200)
 
     // Caso lavorazione eliminata con successo - 200.
   test('DELETE /api/lavorazioni/:id elimina lavorazione con successo (200)', async () => {
