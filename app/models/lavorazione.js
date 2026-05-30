@@ -75,8 +75,7 @@ const lavorazioneSchema = new Schema({
     codiceLavorazione: {
         type: String,
         //required: true, //TODO: finché non è implementata la gestione di codiceLavorazione per la creazione di una lavorazione "non template", questo campo resta commentato
-        required: false,
-        index: true
+        required: false
     },
     nomeTemplate: {
         type: String,
@@ -137,6 +136,15 @@ const lavorazioneSchema = new Schema({
     timestamps: true
 });
 
+lavorazioneSchema.index(
+    { codiceLavorazione: 1 }, 
+    { 
+        unique: true, 
+        partialFilterExpression: { isTemplate: true } 
+    }
+);
+
+
 //middleware di generazione codiceLavorazione univoco per ogni nuovo template di lavorazione
 lavorazioneSchema.pre('validate', async function (next) {
     // il metodo genera un nuovo codiceLavorazione solo se la nuova lavorazione è un template
@@ -151,6 +159,8 @@ lavorazioneSchema.pre('validate', async function (next) {
             const counter = await mongoose.model('Lavorazione').countDocuments({ codiceTipoLav, isTemplate: true });
             const numeroProgressivo = String(counter + 1).padStart(3, '0');
             this.codiceLavorazione = `${codiceTipoProd}${codiceTipoLav}${numeroProgressivo}`;
+
+
         } catch (error) {
             throw error;
         }

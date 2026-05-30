@@ -4,7 +4,7 @@ const currentAziendaBadge = document.getElementById('currentAziendaBadge');
 const searchLavorazioneForm = document.getElementById('search-lavorazione-form');
 const searchLavorazioneMessage = document.getElementById('searchStatus');
 
-const OUTPUT_TO_TIPO = {
+export const OUTPUT_TO_TIPO = {
     'Latte alimentare confezionato': 'altro',
     'Formaggi stagionati o freschi strutturati': 'formaggio',
     'Vasetti di yogurt': 'yogurt',
@@ -14,7 +14,7 @@ const OUTPUT_TO_TIPO = {
     'Acque di lavaggio e reflui autolavanti': 'altro'
 };
 
-const TIPO_TO_CODICETIPO = {
+export const TIPO_TO_CODICETIPO = {
     'primo-latte': 'A',
     'formaggio': 'B',
     'yogurt': 'C',
@@ -37,7 +37,7 @@ const INPUT_TO_UNIT = {
     'Fermenti lattici': 'Kg'
 };
 
-const OUTPUT_TO_UNIT = {
+export const OUTPUT_TO_UNIT = {
     'Latte alimentare confezionato': 'L',
     'Formaggi stagionati o freschi strutturati': 'pezzi/forme',
     'Vasetti di yogurt': 'vasetti',
@@ -180,7 +180,7 @@ if (addLavorazioneForm) {
         }
     });
 }
-//TODO: controllo input (deve avere una corrispondenza nel DB) + comportamento bottone "Cerca Template" (ritorna il template cercato GET /api/lavorazioni/:id)
+//TODO: comportamento bottone "Cerca Template" (ritorna il template cercato GET /api/lavorazioni/:id)
 if(searchLavorazioneForm){
     searchLavorazioneForm.addEventListener('submit', async (event) => {
         event.preventDefault();
