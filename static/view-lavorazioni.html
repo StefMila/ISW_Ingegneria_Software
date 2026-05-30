@@ -27,17 +27,20 @@
         <section class="section">
             <h2>Le tue lavorazioni 🛠️</h2>
             <p id="statusMsg" class="status"></p>
+            <!--TODO: dividere template Lavorazione da lavorazioni normali con 2 tabelle diverse (vogliamo evitare il codiceLavorazione nelle lavorazioni non template??)-->
 
             <div class="table-wrapper">
                 <table class="animali-table" id="lavorazioniTable">
                     <thead>
                         <tr class="header-labels">
+                            <th>Codice</th>
                             <th>Nome</th>
                             <th>Input</th>
                             <th>Output</th>
                             <th>Azioni</th>
                         </tr>
                     <tr class="header-filters">
+                        <th></th>
                         <th>
                             <input type="text" id="filterNomeLavorazione" placeholder="Filtra per nome..." data-filter="nome">
                         </th>
@@ -62,7 +65,7 @@
 
     </main>
 
-    <script src="/view-lavorazioni.js"></script>
+    <script type="module" src="/view-lavorazioni.js"></script>
     <script src="/logout.js"></script>
     <script src="/azienda-switcher.js"></script>
 </body>

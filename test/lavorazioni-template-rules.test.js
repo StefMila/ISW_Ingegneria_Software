@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import mongoose from 'mongoose';
 
 const mockFindByIdAzienda = jest.fn();
 const mockLavorazioneFind = jest.fn();
@@ -24,7 +25,7 @@ jest.unstable_mockModule('../app/models/lavorazione.js', () => ({
   default: MockLavorazioneModel
 }));
 
-const { createLavorazione, getLavorazioni } = await import('../app/routes/lavorazioni.js');
+const { createLavorazione, updateLavorazione, getLavorazioni } = await import('../app/routes/lavorazioni.js');
 
 const makeRes = () => {
   const res = {};
@@ -39,6 +40,7 @@ const makeSelectable = (value) => ({
 
 const userId = '665f8fd8ad8f8c0012f9c999';
 const aziendaId = '665f8fd8ad8f8c0012f9c123';
+//const lavorazioneId = '6658a5e3f1b2c3d4e5f6a7b8';
 
 describe('Routes - Lavorazioni template rules', () => {
   beforeEach(() => {
@@ -49,12 +51,13 @@ describe('Routes - Lavorazioni template rules', () => {
     }));
   });
 
-  test('POST /api/lavorazioni rifiuta isTemplate non boolean-like', async () => {
+  test('POST /api/lavorazioni - errore: isTemplate non Boolean (400)', async () => {
     const req = {
       user: { userId },
       body: {
         aziendaId,
         tipoLavorazione: 'altro',
+        codiceTipoLav: 'D',
         isTemplate: 'yes'
       }
     };
@@ -66,12 +69,13 @@ describe('Routes - Lavorazioni template rules', () => {
     expect(res.json).toHaveBeenCalledWith({ message: 'isTemplate deve essere true o false' });
   });
 
-  test('POST /api/lavorazioni rifiuta fasi non consentite', async () => {
+  test('POST /api/lavorazioni - errore: fasi non consentite (400)', async () => {
     const req = {
       user: { userId },
       body: {
         aziendaId,
         tipoLavorazione: 'altro',
+        codiceTipoLav: 'D',
         fasi: [{ name: 'Fase inventata', completed: false }]
       }
     };
@@ -85,7 +89,7 @@ describe('Routes - Lavorazioni template rules', () => {
     });
   });
 
-  test('GET /api/lavorazioni senza isTemplate applica filtro default che esclude i template', async () => {
+  test('GET /api/lavorazioni senza isTemplate applica filtro default che esclude i template (200)', async () => {
     const sortMock = jest.fn().mockResolvedValue([]);
     mockLavorazioneFind.mockReturnValue({ sort: sortMock });
 
