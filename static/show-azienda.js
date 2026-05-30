@@ -67,7 +67,7 @@ const initPage = async () => {
     detailViewSection.classList.remove('hidden');
     await fetchDettaglioAzienda(aziendaId);
   } else {
-    detailViewSection.classList.add('hiddem');
+    detailViewSection.classList.add('hidden');
     listViewSection.classList.remove('hidden');
     if(isEditing) toggleEditMode(false);
     await fetchTutteLeAziende();
@@ -100,7 +100,7 @@ const fetchTutteLeAziende = async () => {
     }
 
     aziende.forEach(farm => {
-      const idAzienda = farm._id || farm-id;
+      const idAzienda = farm._id || farm.id;
       const tr = document.createElement('tr');
 
       tr.innerHTML= `
@@ -109,7 +109,7 @@ const fetchTutteLeAziende = async () => {
         <td>${formatDate(farm.createdAt)}</td>
         <td style="text-align: center;">
           <button class="btn-icon view-btn" data-id="${idAzienda}" title="Visualizza dettagli">👁️</button>
-          <button class="btn-icon btn-disabled" title="Elimina (Non funzionante)" style="color: #94a3b8;">🗑️</button>
+          <button class="btn-icon delete-btn" data-id="${idAzienda}" title="Elimina azienda" style="color: #94a3b8;">🗑️</button>
         </td>
       `;
       farmsTableBody.appendChild(tr);
@@ -120,6 +120,14 @@ const fetchTutteLeAziende = async () => {
         const id = e.currentTarget.getAttribute('data-id');
         window.history.pushState({}, '', `?id=${id}`);
         initPage();
+      });
+    });
+
+    farmsTableBody.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evita conflitti se la riga avesse altri eventi
+        const id = e.currentTarget.getAttribute('data-id');
+        deleteAzienda(id);
       });
     });
   
@@ -243,7 +251,7 @@ const salvaModificheAzienda = async() => {
     // Esce dalla modalità modifica
     isEditing = false;
 
-    aziendaAttuale = {...aziendaAttuale, ...formData};
+
     mostraDatiAzienda(aziendaAttuale);
     toggleEditMode(false);
 
@@ -261,6 +269,43 @@ const salvaModificheAzienda = async() => {
   } catch (error) {
     console.error('Errore durante il salvataggio:', error);
     renderStatus('Errore di connessione durante il salvataggio.', 'red');
+  }
+};
+
+const deleteAzienda = async (idAzienda) => {
+  const confermato = confirm("Sei sicuro di voler eliminare definitivamente questa azienda agricola? L'azione non è reversibile.");
+  if (!confermato) return;
+
+  const token = localStorage.getItem('token');
+  renderStatus('Eliminazione azienda in corso...', '#3182ce');
+
+  try {
+    const response = await fetch(`/api/aziende/${idAzienda}`, {
+      method: 'DELETE',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      renderStatus(data.message || "Errore durante l'eliminazione dell'azienda.", 'red');
+      return;
+    }
+
+    // Successo: mostra il messaggio verde e ricarica l'elenco aggiornato
+    renderStatus(data.message || 'Azienda eliminata con successo.', '#10b981');
+    
+    // Aspetta un secondo per far leggere il messaggio di successo prima di ricaricare la tabella
+    setTimeout(() => {
+      fetchTutteLeAziende();
+    }, 1200);
+
+  } catch (error) {
+    console.error('Errore durante eliminazione azienda:', error);
+    renderStatus('Errore di connessione al server durante l\'eliminazione.', 'red');
   }
 };
 

@@ -161,11 +161,6 @@ router.post('/create', checkAuth, checkUserType(['allevatore']), registerAzienda
 router.post('/signup', checkAuth, checkUserType(['allevatore']), registerAzienda);
 router.post('/', checkAuth, checkUserType(['allevatore']), registerAzienda);
 
-// Endpoint annidati consigliati per la gestione animali per azienda.
-router.post('/:aziendaId/animali', registerAnimale);
-router.get('/:aziendaId/animali', getAnimali);
-router.delete('/:aziendaId/animali/:id', deleteAnimale);
-router.patch('/:aziendaId/animali/:id', updateAnimale);
 
 // // Route per ottenere le aziende dell'utente autenticato (allevatore)
 // // Rotta pubblica: restituisce tutte le aziende con nome, indirizzo e coordinate
@@ -375,5 +370,12 @@ router.delete('/:id', checkAuth, checkUserType(['allevatore']), async (req, res)
         });
     }
 });
+
+// Endpoint annidati consigliati per la gestione animali per azienda.
+router.post('/:aziendaId/animali', registerAnimale);
+router.get('/:aziendaId/animali', getAnimali);
+router.delete('/:aziendaId/animali/:id', deleteAnimale);
+router.patch('/:aziendaId/animali/:id', updateAnimale);
+
 
 export default router;

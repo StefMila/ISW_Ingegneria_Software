@@ -166,6 +166,111 @@ paths:
                 serverError:
                   value:
                     message: Errore interno del server
+    patch:
+      summary: Aggiorna informazioni azienda
+      description: Modifica i dati di un'azienda esistente di proprietà dell'allevatore autenticato.
+      tags:
+        - Azienda
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID univoco della azienda da modificare
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAziendaRequest'
+            examples:
+              updateNomeEVat:
+                summary: Modifica Ragione Sociale e Partita IVA
+                value:
+                  companyName: "Nuova Azienda Agricola Rossi"
+                  vatNumber: "IT12345687901"
+              updateContatti:
+                summary: Modifica Email e Indirizzo
+                value:
+                  emailAzienda: "info@aziendarossi.it"
+                  address: "Via delle Margherite 12, Calliano"
+      responses:
+        '200':
+          description: Azienda aggiornata con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  itemInfo:
+                    $ref: '#/components/schemas/AziendaCompleted'
+              examples:
+                success:
+                  value:
+                    message: "Azienda aggiornata con successo"
+                    itemInfo:
+                      _id: "665f9fd8ad8f8c0012f9d900"
+                      ownerUserId: "665f8d90ad8f8c0012f9b456"
+                      vatNumber: "IT12345678901"
+                      companyName: "Nuova Azienda Agricola Rossi"
+                      emailAzienda: "info@aziendarossi.it"
+                      address: "Via delle Margherite 12, Calliano"
+                      categories: ["latte", "formaggi"]
+        '400':
+          description: ID non valido (non rispetta il formato ObjectId di MongoDB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: "aziendaId non è un ObjectId valido"
+        '401':
+          description: Token JWT mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  value:
+                    message: "Token mancante o non valido"
+        '403':
+          description: L'utente autenticato non è il proprietario dell'azienda o non ha il ruolo 'allevatore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  value:
+                    message: "Non hai i permessi per questa azienda"
+        '404':
+          description: L'azienda con l'ID specificato non esiste nel database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: "Azienda non trovata"
+        '500':
+          description: Errore interno del server o del database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: "Errore interno del server"
 
   /api/punti-vendita/public:
     get:
@@ -1107,7 +1212,7 @@ paths:
   /api/aziende/{id}:
     delete:
       summary: Rimozione azienda
-      description: Elimina l'azienda identificata dall'id specificato.
+      description: Elimina l'azienda identificata dall'id specificato. Solo il proprietario può eliminarla.
       tags:
         - Azienda
       security:
@@ -1170,7 +1275,6 @@ paths:
                 notFound:
                   value:
                     message: Azienda non trovata
-
         '500':
           description: Errore interno del server
           content:
@@ -2957,6 +3061,55 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AziendaPublicItem'
+
+    UpdateAziendaRequest:
+      type: Object
+      properties:
+        companyName:
+          type: string
+          example: Nuova Azienda Agricola Rossi
+        vatNumber:
+          type: string
+            example: IT12345687901
+          emailAzienda:
+            type: string
+            format: email
+            example: info@aziendarossi.it
+          address:
+            type: string
+            example: Via delle Margherite 12, Calliano
+    
+    AziendaCompleted:
+      type: object
+      required:
+        - _id
+        - ownerUserId
+        - companyName
+      properties:
+        _id:
+          type: string
+          example: "665f9fd8ad8f8c0012f9d900"
+        ownerUserId:
+          type: string
+          example: "665f8d90ad8f8c0012f9b456"
+        vatNumber:
+          type: string
+          example: "IT12345678901"
+        companyName:
+          type: string
+          example: "Nuova Azienda Agricola Rossi"
+        emailAzienda:
+          type: string
+          format: email
+          example: "info@aziendarossi.it"
+        address:
+          type: string
+          example: "Via delle Margherite 12, Calliano"
+        categories:
+          type: array
+          items:
+            type: string
+          example: ["latte", "formaggi"]
 
     PuntoVenditaPublicItem:
       type: object
