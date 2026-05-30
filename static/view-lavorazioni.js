@@ -1,3 +1,5 @@
+import { OUTPUT_TO_TIPO, OUTPUT_TO_UNIT, TIPO_TO_CODICETIPO } from "./add-lavorazione.js";
+
 const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
 const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
 // Elementi DOM
@@ -363,7 +365,7 @@ const openInlineEdit = (tr, item) => {
 
     tr.classList.add('editing');
     tr.innerHTML = `
-        <td><input class="inline-input" data-field="codiceLavorazione" value="${escapeAttr(item.codiceLavorazione || '')}" placeholder="Codice lavorazione"></td>
+        <td>${escapeHtml(getCodiceLavorazione(item))}</td>
         <td><input class="inline-input" data-field="nomeTemplate" value="${escapeAttr(item.nomeTemplate || '')}" placeholder="Nome lavorazione"></td>
         <td>${escapeHtml(getInputSummary(item))}</td>
         <td><input class="inline-input" data-field="outputName" value="${escapeAttr(item.outputName || '')}" placeholder="Output principale"></td>
@@ -394,6 +396,18 @@ const saveInlineEdit = async (tr, lavorazioneId) => {
         return;
     }
 
+    // Definisco i campi da ricalcolare in vista di eventuali modifiche eseguite
+    const tipoLavorazione = OUTPUT_TO_TIPO[payload.outputName] || 'altro';
+    const outputUnit = OUTPUT_TO_UNIT[payload.outputName] || 'pezzi';
+    const codiceTipoLav = TIPO_TO_CODICETIPO[tipoLavorazione] || 'D';
+
+    const updatedPayload = {
+        ...payload,
+        tipoLavorazione,
+        outputUnit,
+        codiceTipoLav
+    };
+
     try {
         const response = await fetch(`/api/lavorazioni/${lavorazioneId}`, {
             method: 'PATCH',
@@ -401,7 +415,7 @@ const saveInlineEdit = async (tr, lavorazioneId) => {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(updatedPayload)
         });
 
         const data = await response.json().catch(() => ({}));
