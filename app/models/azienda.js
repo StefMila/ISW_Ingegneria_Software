@@ -30,8 +30,8 @@ const aziendaSchema = new Schema({
     // Dati di geolocalizzazione associati all'indirizzo (longitudine e latitudine)
     geo: {
         // Oggetto con latitudine e longitudine, utile per salvataggio rapido e query
-        lat: { type: Number, required: false },
-        lng: { type: Number, required: false }
+        lng: { type: Number, required: false },
+        lat: { type: Number, required: false }
     },
     //email da esporre nel sito
     emailAzienda: {
