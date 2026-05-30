@@ -188,8 +188,8 @@ const toggleEditMode = (editing) => {
 
   if(isEditing) {
     actionButtonsDiv.innerHTML = `
-      <button id="saveBtn" class="btn-success" style="color: green; margin-right: 10px; font-weight: bold;"> Salva</button>
-      <button id="cancelBtn" class="btn-secondary" style="color: red;"> Annulla</button>
+      <button id="saveBtn" class="btn-success" style="color: green; margin-right: 10px; font-weight: bold; cursor: pointer; background: none; border: 1px solid green; padding: 6px 12px; border-radius: 4px;">Salva</button>
+    <button id="cancelBtn" class="btn-secondary" style="color: red; cursor: pointer; background: none; border: 1px solid red; padding: 6px 12px; border-radius: 4px;">Annulla</button>
       `;
 
       document.getElementById('saveBtn').addEventListener('click', salvaModificheAzienda);
@@ -236,11 +236,21 @@ const salvaModificheAzienda = async() => {
 
     renderStatus('Dati aziendali aggiornati correttamente!', 'green');
 
+    // Aggiorna l'oggetto globale con i dati freschi del server (se presenti) o del form
+    const datiAggiornati = data.itemInfo || formData;
+    aziendaAttuale = {...aziendaAttuale, ...datiAggiornati};
+    
+    // Esce dalla modalità modifica
+    isEditing = false;
+
     aziendaAttuale = {...aziendaAttuale, ...formData};
     mostraDatiAzienda(aziendaAttuale);
     toggleEditMode(false);
 
-   // Sync context update with top dropdown switchers
+    // Forza il reset dello stato della pagina per ripristinare i listener dei pulsanti
+    initPage();
+
+    // Sincronizza aggiornamento del contesto con i menu a tendina superiori
     if (aziendaId === localStorage.getItem(SELECTED_AZIENDA_ID_KEY)) {
       localStorage.setItem(SELECTED_AZIENDA_NAME_KEY, formData.companyName);
       const badgeBtn = document.getElementById('currentAziendaBadge');
@@ -255,9 +265,16 @@ const salvaModificheAzienda = async() => {
 };
 
 const navigateBackToList = () => {
+  isEditing = false; // Mette in sicurezza lo stato di editing
   window.history.pushState({}, '', window.location.pathname);
   initPage();
 };
+
+document.addEventListener('click', (e) => {
+  if (e.target && (e.target.id === 'backToListBtn' || e.target.closest('#backToListBtn'))) {
+    navigateBackToList();
+  }
+});
 
 if (backToListBtn) {
   backToListBtn.addEventListener('click', navigateBackToList);

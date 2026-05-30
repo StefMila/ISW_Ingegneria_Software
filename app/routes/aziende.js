@@ -5,6 +5,7 @@ import { checkAuth, checkUserType } from './auth.js';
 import { registerAnimale, getAnimali, deleteAnimale, updateAnimale } from './animali.js';
 
 const router = express.Router();
+
 // Funzione di utilità per verificare che l'azienda esista e sia di proprietà dell'utente autenticato
 export const assertAziendaOwnedByUser = async (aziendaId, userId) => {
     if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
@@ -233,6 +234,50 @@ router.get('/:id', checkAuth, checkUserType(['allevatore']), async (req, res) =>
     }
 });
 
+// Endpoint per la modifica dell'azienda
+router.patch('/:id', checkAuth, checkUserType(['allevatore']), async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        // DEBUG: Vediamo cosa manda il frontend nel terminale del server
+        console.log("=== RICEVUTA RICHIESTA DI MODIFICA ===");
+        console.log("ID Azienda:", id);
+        console.log("Dati ricevuti (req.body):", req.body);
+
+        const ownership = await assertAziendaOwnedByUser(id, req.user.userId);
+        if(!ownership.ok) {
+            return res.status(ownership.status).json({message: ownership.message });
+        }
+
+        const { companyName, vatNumber, emailAzienda, address } = req.body;
+
+        const updateData = {}
+        if (companyName !== undefined) updateData.companyName = companyName.trim();
+        if (vatNumber !== undefined) updateData.vatNumber = vatNumber.trim().toUpperCase();
+        if (emailAzienda !== undefined) updateData.emailAzienda = emailAzienda.trim().toLowerCase();
+        if (address !== undefined) updateData.address = address.trim();
+
+        console.log("Dati pronti per il database ($set):", updateData);
+
+        const updatedAzienda = await azienda.findByIdAndUpdate(
+            id,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
+        console.log("Oggetto memorizzato nel DB dopo la modifica:", updatedAzienda);
+
+        return res.status(200).json({
+            message: 'Azienda aggiornata con successo',
+            itemInfo: updatedAzienda
+        });
+    } catch(error) {
+        console.error("Errore durante l\'aggiornamento dell\'azienda:", error);
+        return res.status(500).json({ message: 'Errore interno del server'});
+    }
+});
+
+
 // Aggiunge nuove categorie prodotto all'azienda senza perdere quelle esistenti
 router.patch('/:id/categories', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
@@ -287,13 +332,25 @@ router.delete('/:id', checkAuth, checkUserType(['allevatore']), async (req, res)
                 message: 'ID dell\'azienda è obbligatorio'
             });
         }
-        // Verifico che l'utente sia il proprietario dell'azienda
-        if (req.user._id !== req.ownerUserId) {
-            return res.status(403).json({
-                message: 'Non sei il proprietario di questa azienda'
-            });
+        
+        const ownership = await assertAziendaOwnedByUser(id, req.user.userId);
+        if (!ownership.ok) {
+            return res.status(ownership.status).json({ message: ownership.message });
         }
+
         // TODO (relations): Prima di eliminare l'azienda, verificare che non ci siano mandrie o documenti associati ad essa, o implementare una cancellazione a cascata
+        try {
+            const conteggioAnimali = await mongoose.model('Animale').countDocuments({ aziendaId: id });
+            if (conteggioAnimali > 0) {
+                return res.status(400).json({ 
+                    message: `Impossibile eliminare l'azienda: ci sono ancora ${conteggioAnimali} animali associati. Eliminali prima di procedere.` 
+                });
+            }
+        } catch (modelError) {
+            // Se il modello Animale non è ancora registrato in mongoose, prosegue senza blocco
+            console.warn("Modello Animale non caricato o non trovato, salto il controllo relazioni:", modelError.message);
+        }
+
         const deletedAzienda = await azienda.findByIdAndDelete(id);
 
         if (!deletedAzienda) {
