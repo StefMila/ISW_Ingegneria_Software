@@ -171,8 +171,10 @@ export const updateLavorazione = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const {
+			aziendaId,
 			tipoLavorazione,
 			codiceTipoLav,
+			codiceLavorazione,
 			nomeTemplate,
 			isTemplate,
 			templateId,
@@ -190,6 +192,26 @@ export const updateLavorazione = async (req, res) => {
 		if (!isValidObjectId(id)) {
 			return res.status(400).json({ message: 'ID lavorazione non valido' });
 		}
+		// escludo tutti i campi che non possono essere modificati, a prescindere dal fatto che la lavorazione interessata sia un template o meno
+		if (
+			aziendaId !== undefined ||
+			tipoLavorazione !== undefined ||
+			codiceTipoLav !== undefined ||
+			codiceLavorazione !== undefined ||
+			isTemplate !== undefined ||
+			templateId !== undefined ||
+			startedAt !== undefined ||
+			inputs !== undefined ||
+			fasi !== undefined ||
+			outputName !== undefined ||
+			outputUnit !== undefined
+		) {
+			return res.status(400).json({ message: 'I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili' });
+		}
+
+		if (nomeTemplate === undefined && endedAt === undefined && notes === undefined && status === undefined && outputQuantity === undefined) {
+            return res.status(400).json({ message: 'Nessun campo aggiornabile fornito' });
+        }
 
 		const existingLavorazione = await Lavorazione.findById(id);
 		if (!existingLavorazione) {
@@ -201,35 +223,20 @@ export const updateLavorazione = async (req, res) => {
 			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
 		}
 
-		const normalizedInputs = normalizeInputs(inputs);
-		if (!normalizedInputs.ok) {
-			return res.status(normalizedInputs.status || 400).json({ message: normalizedInputs.message });
+		if (existingLavorazione.isTemplate && status !== undefined) {
+			return res.status(422).json({ message: 'Lo status di un template di lavorazione non può essere modificato' });
 		}
 
-		const normalizedFasi = normalizeFasi(fasi);
-		if (!normalizedFasi.ok) {
-			return res.status(normalizedFasi.status || 400).json({ message: normalizedFasi.message });
+		if(!existingLavorazione.isTemplate && nomeTemplate !== undefined) {
+			return res.status(422).json({ message: 'Il nome di un template non può essere modificato da una lavorazione non template' });
 		}
 
-		const parsedIsTemplate = parseBooleanLike(isTemplate);
-		if (isTemplate !== undefined && parsedIsTemplate === null) {
-			return res.status(400).json({ message: 'isTemplate deve essere true o false' });
-		}
-
-		if (tipoLavorazione !== undefined) existingLavorazione.tipoLavorazione = String(tipoLavorazione).trim();
-		if (codiceTipoLav !== undefined) existingLavorazione.codiceTipoLav = String(codiceTipoLav).trim();
 		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;
-		if (parsedIsTemplate !== null) existingLavorazione.isTemplate = parsedIsTemplate;
 		if (templateId !== undefined) existingLavorazione.templateId = templateId;
-		if (startedAt !== undefined) existingLavorazione.startedAt = startedAt;
 		if (endedAt !== undefined) existingLavorazione.endedAt = endedAt;
 		if (status !== undefined) existingLavorazione.status = status;
 		if (notes !== undefined) existingLavorazione.notes = typeof notes === 'string' ? notes.trim() : undefined;
-		if (normalizedInputs.value !== undefined) existingLavorazione.inputs = normalizedInputs.value;
-		if (normalizedFasi.value !== undefined) existingLavorazione.fasi = normalizedFasi.value;
-		if (outputName !== undefined) existingLavorazione.outputName = typeof outputName === 'string' ? outputName.trim() : undefined;
 		if (outputQuantity !== undefined) existingLavorazione.outputQuantity = outputQuantity;
-		if (outputUnit !== undefined) existingLavorazione.outputUnit = typeof outputUnit === 'string' ? outputUnit.trim() : undefined;
 
 		await existingLavorazione.save();
 
@@ -241,6 +248,7 @@ export const updateLavorazione = async (req, res) => {
 		if (error.name === 'ValidationError') {
 			return res.status(400).json({ message: 'dati lavorazione non validi' });
 		}
+		console.error('Errore del server:', error);
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
@@ -285,7 +293,31 @@ export const getLavorazioni = async (req, res) => {
 	}
 };
 
-//TODO US75: GET /api/lavorazioni/:id - visualizzazione del singolo template a partire dal codiceLavorazione
+//GET /api/lavorazioni/:id - visualizzazione del singolo template a partire dal suo ID
+const getTemplateLavorazioneById = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ message: 'ID lavorazione non valido' });
+		}
+
+		const existingTemplate = await Lavorazione.findById(id);
+		if (!existingTemplate || !existingTemplate.isTemplate) {
+			return res.status(404).json({ message: 'Nessun template corrispondente trovato'});
+		}
+
+		const ownershipCheck = await assertAziendaOwnedByUser(existingTemplate.aziendaId, req.user.userId);
+		if (!ownershipCheck.ok) {
+			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
+		}
+
+		return res.status(200).json(existingTemplate);
+	} catch (error) {
+		console.error('Errore del server:', error);
+		return res.status(500).json({ message: 'Errore del server' });
+	}
+};
 
 // DELETE /api/lavorazioni/:id - elimina una lavorazione esistente, con controllo di proprietà
 export const deleteLavorazione = async (req, res) => {
@@ -317,6 +349,7 @@ export const deleteLavorazione = async (req, res) => {
 router.post('/', createLavorazione);
 router.patch('/:id', updateLavorazione);
 router.get('/', getLavorazioni);
+router.get('/:id', getTemplateLavorazioneById);
 router.delete('/:id', deleteLavorazione);
 
 export default router;

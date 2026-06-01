@@ -2538,6 +2538,81 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /api/lavorazioni/{id}:
+    get:
+      summary: Visualizza template
+      description: Restituisce i dettagli di una lavorazione template (non funziona per lavorazioni non template).
+      tags:
+        - Lavorazione
+      security:
+       - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template Lavorazione trovato
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LavorazioneItem'
+              examples:
+                templateDetails:
+                  value:
+                    _id: 665fa8d8ad8f8c0012f9d111
+                    aziendaId: 665f8fd8ad8f8c0012f9c123
+                    tipoLavorazione: yogurt
+                    codiceTipoLav: C
+                    nomeTemplate: Template Yogurt Bianco Premium
+                    isTemplate: true
+                    notes: Template di prova
+                    status: in_corso
+                    outputName: Vasetti di yogurt
+                    outputUnit: vasetti
+                    codiceLavorazione: AC001
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID lavorazione non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Template non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Nessun template corrispondente trovato
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     patch:
       summary: Aggiorna lavorazione
       description: Aggiorna i campi della lavorazione esistente. I campi non passati non vengono modificati.
@@ -2561,13 +2636,12 @@ paths:
               updateTemplate:
                 value:
                   nomeTemplate: Template Yogurt Bianco Premium
-                  outputName: Vasetti di yogurt intero
-                  isTemplate: true
+                  notes: Aggiornamento nome template
               updateOperativa:
-                value:
-                  nomeTemplate: Produzione formaggi freschi
-                  outputName: Formaggi freschi
-                  isTemplate: false
+                value:    
+                  notes: Aggiornamento quantità di prodotto finale              
+                  status: completata
+                  outputQuantity: 45
       responses:
         '200':
           description: Lavorazione aggiornata con successo
@@ -2586,7 +2660,10 @@ paths:
                       codiceTipoLav: C
                       nomeTemplate: Template Yogurt Bianco Premium
                       isTemplate: true
-                      outputName: Vasetti di yogurt intero
+                      notes: Aggiornamento nome template
+                      status: in_corso
+                      outputName: Vasetti di yogurt
+                      outputUnit: vasetti
                       codiceLavorazione: AC001
                 lavorazioneUpdated:
                   value:
@@ -2598,7 +2675,11 @@ paths:
                       codiceTipoLav: B
                       isTemplate: false
                       templateId: 665fa8d8ad8f8c0012f9d117
+                      notes: Aggiornamento quantità di prodotto finale              
+                      status: completata
                       outputName: Formaggi freschi
+                      outputQuantity: 45
+                      outputUnit: kg
                       codiceLavorazione: AB002
         '400':
           description: ID o dati non validi
@@ -2607,12 +2688,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
+                nonModifiableFields:
+                  value:
+                    message: I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili
+                noFieldFound:
+                  value:
+                    message: Nessun campo aggiornabile fornito
                 invalidId:
                   value:
                     message: ID lavorazione non valido
-                invalidTemplateFlag:
-                  value:
-                    message: isTemplate deve essere true o false
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -2631,6 +2715,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Lavorazione non trovata
+        '422':
+          description: Violazione regole di business
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatusTransition:
+                  value:
+                    message: Lo status di un template di lavorazione non può essere modificato
+                invalidNomeTemplateTransition:
+                  value:
+                    message: Il nome di un template non può essere modificato da una lavorazione non template
         '500':
           description: Errore interno del server
           content:
@@ -3904,7 +4005,9 @@ components:
             - formaggio
             - yogurt
             - altro
-          example: yogurt
+          example: 
+            createTemplate: yogurt
+            createLavorazione: formaggio
         codiceTipoLav:
           type: string
           enum:
@@ -3912,19 +4015,27 @@ components:
             - B
             - C
             - D
-          example: C
+          example: 
+            createTemplate: C
+            createLavorazione: B
         nomeTemplate:
           type: string
           nullable: true
-          example: Template Yogurt Bianco
+          example: 
+            createTemplate: Template Yogurt Bianco
+            createLavorazione: null
         isTemplate:
           type: boolean
           default: false
-          example: true
+          example: 
+            createTemplate: true
+            createLavorazione: false
         templateId:
           type: string
           nullable: true
-          example: null
+          example: 
+            createTemplate: null
+            createLavorazione: 665fa8d8ad8f8c0012f9d117
         startedAt:
           type: string
           format: date-time
@@ -3956,7 +4067,9 @@ components:
         outputName:
           type: string
           nullable: true
-          example: Vasetti di yogurt
+          example: 
+            createTemplate: Vasetti di yogurt
+            createLavorazione: Formaggi freschi
         outputQuantity:
           type: number
           nullable: true
@@ -3965,7 +4078,9 @@ components:
         outputUnit:
           type: string
           nullable: true
-          example: vasetti
+          example: 
+            createTemplate: vasetti
+            createLavorazione: pezzi
         createdAt:
           type: string
           format: date-time
@@ -3977,7 +4092,9 @@ components:
         codiceLavorazione:
           type: string
           default: null
-          example: AC001
+          example: 
+            createTemplate: AC001
+            createLavorazione: AB002
 
     CreateLavorazioneRequest:
       type: object
@@ -3997,7 +4114,9 @@ components:
             - formaggio
             - yogurt
             - altro
-          example: yogurt
+          example: 
+            createTemplate: yogurt
+            createLavorazione: formaggio
         codiceTipoLav:
           type: string
           enum:
@@ -4005,11 +4124,15 @@ components:
             - B
             - C
             - D
-          example: C
+          example: 
+            createTemplate: C
+            createLavorazione: B
         nomeTemplate:
           type: string
           description: Nome leggibile del template, utile quando isTemplate=true.
-          example: Template Yogurt Bianco
+          example: 
+            createTemplate: Template Yogurt Bianco
+            createLavorazione: null
         isTemplate:
           oneOf:
             - type: boolean
@@ -4055,35 +4178,8 @@ components:
       type: object
       description: Corpo richiesta per aggiornare una lavorazione esistente.
       properties:
-        tipoLavorazione:
-          type: string
-          enum:
-            - primo-sale
-            - formaggio
-            - yogurt
-            - altro
-        codiceTipoLav:
-          type: string
-          enum:
-            - A
-            - B
-            - C
-            - D
         nomeTemplate:
           type: string
-        isTemplate:
-          oneOf:
-            - type: boolean
-            - type: string
-              enum:
-                - 'true'
-                - 'false'
-        templateId:
-          type: string
-          description: Se isTemplate è false, è possibile specificare un templateId da cui ereditare inputs, fasi, output, codiceLavorazione, ecc.
-        startedAt:
-          type: string
-          format: date-time
         endedAt:
           type: string
           format: date-time
@@ -4095,21 +4191,9 @@ components:
             - annullata
         notes:
           type: string
-        inputs:
-          type: array
-          items:
-            $ref: '#/components/schemas/LavorazioneInputItem'
-        fasi:
-          type: array
-          items:
-            $ref: '#/components/schemas/LavorazioneFaseItem'
-        outputName:
-          type: string
         outputQuantity:
           type: number
           minimum: 0
-        outputUnit:
-          type: string
 
     LavorazioneResponse:
       type: object

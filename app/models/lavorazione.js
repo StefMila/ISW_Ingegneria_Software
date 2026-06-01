@@ -71,10 +71,11 @@ const lavorazioneSchema = new Schema({
         enum: ['A', 'B', 'C', 'D'],
         trim: true,
     },
-    //codice unico della lavorazione, composto da codiceTipoProd + codiceTipoLav + numero progressivo (es. AA001, AA002, AB001, ecc.)
+    // codice unico della lavorazione, composto da codiceTipoProd + codiceTipoLav + numero progressivo (es. AA001, AA002, AB001, ecc.)
     codiceLavorazione: {
         type: String
     },
+    // nel caso in cui la lavorazione non sia un template, questo campo viene tralasciato. Il collegamento al template corrispondente avviene esclusivamente attraverso il campo templateId
     nomeTemplate: {
         type: String,
         required: false,
@@ -140,15 +141,6 @@ const lavorazioneSchema = new Schema({
     timestamps: true
 });
 
-lavorazioneSchema.index(
-    { codiceLavorazione: 1 }, 
-    { 
-        unique: true, 
-        partialFilterExpression: { isTemplate: true } 
-    }
-);
-
-
 //middleware di generazione codiceLavorazione univoco per ogni nuovo template di lavorazione
 lavorazioneSchema.pre('validate', async function (next) {
     //se la nuova lavorazione non è un template, deve avere un template da cui far riferimento (templateId)
@@ -165,7 +157,7 @@ lavorazioneSchema.pre('validate', async function (next) {
         }
     } else {
         // il metodo genera un nuovo codiceLavorazione solo se la nuova lavorazione è un template
-        if (this.isNew || this.isModified('codiceTipoLav')) {
+        if (this.isNew) {
             try {
                 // Genera codiceLavorazione univoco basato su codiceTipoProd, codiceTipoLav e numero progressivo
                 const codiceTipoProd = 'A'; // per ora tutte le lavorazioni sono di tipo 'A' (latticini), ma in futuro si può estendere con altri tipi di prodotto
@@ -180,6 +172,15 @@ lavorazioneSchema.pre('validate', async function (next) {
         }
     }
 });
+
+lavorazioneSchema.index(
+    { codiceLavorazione: 1 }, 
+    { 
+        unique: true, 
+        partialFilterExpression: { isTemplate: true } 
+    }
+);
+
 lavorazioneSchema.path('endedAt').validate(function (value) {
     if (!value) {
         return true;
