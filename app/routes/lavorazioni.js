@@ -29,7 +29,7 @@ const ALLOWED_FASI_SET = new Set(ALLOWED_FASI);
 //valida ObjectId di MongoDB
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 // normalizza l'input degli array di lavorazione. Rimuove spazi, converte in minuscolo e filtra ID non validi
-const normalizeInputs = (inputs) => {
+export const normalizeInputs = (inputs) => {
 	if (inputs === undefined) {
 		return { ok: true, value: undefined };
 	}
@@ -51,7 +51,7 @@ const normalizeInputs = (inputs) => {
 	return { ok: true, value: normalizedInputs };
 };
 // normalizza l'input delle fasi di lavorazione, rimuovendo spazi e convertendo in booleano i campi completed
-const normalizeFasi = (fasi) => {
+export const normalizeFasi = (fasi) => {
 	if (fasi === undefined) {
 		return { ok: true, value: undefined };
 	}
@@ -73,7 +73,7 @@ const normalizeFasi = (fasi) => {
 	return { ok: true, value: normalizedFasi };
 };
 
-const parseBooleanLike = (value) => {
+export const parseBooleanLike = (value) => {
 	if (typeof value === 'boolean') return value;
 	if (typeof value !== 'string') return null;
 	const normalized = value.trim().toLowerCase();
@@ -87,6 +87,7 @@ export const createLavorazione = async (req, res) => {
 		const {
 			aziendaId,
 			tipoLavorazione,
+			codiceTipoLav,
 			nomeTemplate,
 			isTemplate,
 			startedAt,
@@ -100,8 +101,8 @@ export const createLavorazione = async (req, res) => {
 			outputUnit
 		} = req.body;
 
-		if (!aziendaId || !tipoLavorazione) {
-			return res.status(400).json({ message: 'aziendaId e tipoLavorazione sono obbligatori' });
+		if (!aziendaId || !tipoLavorazione || !codiceTipoLav) {
+			return res.status(400).json({ message: 'aziendaId, tipoLavorazione e codiceTipoLav sono obbligatori' });
 		}
 
 		const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
@@ -127,6 +128,7 @@ export const createLavorazione = async (req, res) => {
 		const newLavorazione = new Lavorazione({
 			aziendaId,
 			tipoLavorazione: String(tipoLavorazione).trim(),
+			codiceTipoLav: String(codiceTipoLav).trim(),
 			nomeTemplate: typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined,
 			isTemplate: parsedIsTemplate ?? false,
 			startedAt: startedAt || undefined,
@@ -151,9 +153,11 @@ export const createLavorazione = async (req, res) => {
 		});
 	} catch (error) {
 		if (error.name === 'ValidationError') {
+			console.error('Errore del server:', error);
 			return res.status(400).json({ message: 'dati lavorazione non validi' });
 		}
-		return res.status(500).json({ message: 'Errore del server' });
+		console.error('Errore del server:', error);
+		return res.status(500).json({ message: 'Errore del server:' });
 	}
 };
 // PATCH /api/lavorazioni/:id - aggiorna una lavorazione esistente, con validazione dei campi e controllo di proprietà
@@ -162,6 +166,7 @@ export const updateLavorazione = async (req, res) => {
 		const { id } = req.params;
 		const {
 			tipoLavorazione,
+			codiceTipoLav,
 			nomeTemplate,
 			isTemplate,
 			startedAt,
@@ -205,6 +210,7 @@ export const updateLavorazione = async (req, res) => {
 		}
 
 		if (tipoLavorazione !== undefined) existingLavorazione.tipoLavorazione = String(tipoLavorazione).trim();
+		if (codiceTipoLav !== undefined) existingLavorazione.codiceTipoLav = String(codiceTipoLav).trim();
 		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;
 		if (parsedIsTemplate !== null) existingLavorazione.isTemplate = parsedIsTemplate;
 		if (startedAt !== undefined) existingLavorazione.startedAt = startedAt;
@@ -270,6 +276,8 @@ export const getLavorazioni = async (req, res) => {
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
+
+//TODO US75: GET /api/lavorazioni/:id - visualizzazione del singolo template a partire dal codiceLavorazione
 
 // DELETE /api/lavorazioni/:id - elimina una lavorazione esistente, con controllo di proprietà
 export const deleteLavorazione = async (req, res) => {

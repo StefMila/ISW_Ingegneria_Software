@@ -1,3 +1,5 @@
+import { OUTPUT_TO_TIPO, OUTPUT_TO_UNIT, TIPO_TO_CODICETIPO } from "./add-lavorazione.js";
+
 const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
 const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
 // Elementi DOM
@@ -32,6 +34,8 @@ const escapeHtml = (value) => String(value || '')
     .replace(/'/g, '&#39;');
 
 const escapeAttr = (value) => escapeHtml(value);
+
+const getCodiceLavorazione = (item) => item.codiceLavorazione || '—'
 
 const getNomeLavorazione = (item) => item.nomeTemplate || item.tipoLavorazione || '—';
 
@@ -178,6 +182,7 @@ const openDetails = (item) => {
 
     body.innerHTML = `
         <div style="display:grid;gap:10px;">
+            <p style="margin:0;"><strong>Codice:</strong> ${escapeHtml(getCodiceLavorazione(item))}</p>
             <p style="margin:0;"><strong>Nome:</strong> ${escapeHtml(getNomeLavorazione(item))}</p>
             <p style="margin:0;"><strong>Input:</strong> ${escapeHtml(getInputSummary(item))}</p>
             <p style="margin:0;"><strong>Output:</strong> ${escapeHtml(getOutputSummary(item))}</p>
@@ -193,6 +198,7 @@ const openDetails = (item) => {
 };
 // tasto di modifica inline. 
 const rowHtml = (item) => `
+    <td>${escapeHtml(getCodiceLavorazione(item))}</td>
     <td>${escapeHtml(getNomeLavorazione(item))}</td>
     <td>${escapeHtml(getInputSummary(item))}</td>
     <td>${escapeHtml(getOutputSummary(item))}</td>
@@ -359,6 +365,7 @@ const openInlineEdit = (tr, item) => {
 
     tr.classList.add('editing');
     tr.innerHTML = `
+        <td>${escapeHtml(getCodiceLavorazione(item))}</td>
         <td><input class="inline-input" data-field="nomeTemplate" value="${escapeAttr(item.nomeTemplate || '')}" placeholder="Nome lavorazione"></td>
         <td>${escapeHtml(getInputSummary(item))}</td>
         <td><input class="inline-input" data-field="outputName" value="${escapeAttr(item.outputName || '')}" placeholder="Output principale"></td>
@@ -389,6 +396,18 @@ const saveInlineEdit = async (tr, lavorazioneId) => {
         return;
     }
 
+    // Definisco i campi da ricalcolare in vista di eventuali modifiche eseguite
+    const tipoLavorazione = OUTPUT_TO_TIPO[payload.outputName] || 'altro';
+    const outputUnit = OUTPUT_TO_UNIT[payload.outputName] || 'pezzi';
+    const codiceTipoLav = TIPO_TO_CODICETIPO[tipoLavorazione] || 'D';
+
+    const updatedPayload = {
+        ...payload,
+        tipoLavorazione,
+        outputUnit,
+        codiceTipoLav
+    };
+
     try {
         const response = await fetch(`/api/lavorazioni/${lavorazioneId}`, {
             method: 'PATCH',
@@ -396,7 +415,7 @@ const saveInlineEdit = async (tr, lavorazioneId) => {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(updatedPayload)
         });
 
         const data = await response.json().catch(() => ({}));

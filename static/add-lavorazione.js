@@ -1,8 +1,10 @@
 const addLavorazioneForm = document.getElementById('add-lavorazione-form');
 const addLavorazioneMessage = document.getElementById('formStatus');
 const currentAziendaBadge = document.getElementById('currentAziendaBadge');
+const searchLavorazioneForm = document.getElementById('search-lavorazione-form');
+const searchLavorazioneMessage = document.getElementById('searchStatus');
 
-const OUTPUT_TO_TIPO = {
+export const OUTPUT_TO_TIPO = {
     'Latte alimentare confezionato': 'altro',
     'Formaggi stagionati o freschi strutturati': 'formaggio',
     'Vasetti di yogurt': 'yogurt',
@@ -10,6 +12,13 @@ const OUTPUT_TO_TIPO = {
     'Siero di latte residuo': 'altro',
     'Latticello': 'altro',
     'Acque di lavaggio e reflui autolavanti': 'altro'
+};
+
+export const TIPO_TO_CODICETIPO = {
+    'primo-latte': 'A',
+    'formaggio': 'B',
+    'yogurt': 'C',
+    'altro': 'D'
 };
 
 const INPUT_TO_TYPE = {
@@ -28,7 +37,7 @@ const INPUT_TO_UNIT = {
     'Fermenti lattici': 'Kg'
 };
 
-const OUTPUT_TO_UNIT = {
+export const OUTPUT_TO_UNIT = {
     'Latte alimentare confezionato': 'L',
     'Formaggi stagionati o freschi strutturati': 'pezzi/forme',
     'Vasetti di yogurt': 'vasetti',
@@ -73,6 +82,8 @@ const getSelectedPhases = () => {
         .filter((fase) => fase.name);
 };
 
+const standardCodiceLavorazione = /^[A][A-D]\d{3}$/;
+
 if (addLavorazioneForm) {
     addLavorazioneForm.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -115,6 +126,7 @@ if (addLavorazioneForm) {
 
         const tipoLavorazione = OUTPUT_TO_TIPO[outputPrincipale] || 'altro';
         const outputUnit = OUTPUT_TO_UNIT[outputPrincipale] || 'pezzi';
+        const codiceTipoLav = TIPO_TO_CODICETIPO[tipoLavorazione] || 'D';
 
         const inputs = materiePrime.map((materiaPrima) => ({
             type: INPUT_TO_TYPE[materiaPrima] || 'ingrediente',
@@ -134,6 +146,7 @@ if (addLavorazioneForm) {
             aziendaId,
             nomeTemplate,
             tipoLavorazione,
+            codiceTipoLav,
             isTemplate: true,
             status: 'in_corso',
             notes: templateNotes || undefined,
@@ -164,6 +177,44 @@ if (addLavorazioneForm) {
             addLavorazioneForm.reset();
         } catch (error) {
             addLavorazioneMessage.textContent = 'Errore di rete o del server';
+        }
+    });
+}
+//TODO: comportamento bottone "Cerca Template" (ritorna il template cercato GET /api/lavorazioni/:id)
+if(searchLavorazioneForm){
+    searchLavorazioneForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!searchLavorazioneMessage) return;
+
+        const codiceLavorazione = getTrimmedValue('codiceLavorazione');
+
+        searchLavorazioneMessage.style.color = 'red';
+        searchLavorazioneMessage.textContent = '';
+
+        if(!codiceLavorazione){
+            searchLavorazioneMessage.textContent = 'Inserire il codice lavorazione per proseguire';
+            return;
+        }
+
+        if(!standardCodiceLavorazione.test(codiceLavorazione)){
+            searchLavorazioneMessage.textContent = 'Formato codice lavorazione errato'; 
+            return;
+        }
+
+        try{
+            const response = await fetch('http://localhost:3000/add-lavorazione.html?codiceLavorazione={codiceLavorazione}');
+
+            const responseData = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                searchLavorazioneMessage.textContent = responseData.message || 'Errore durante la ricerca del template';
+                return;
+            }
+
+            searchLavorazioneMessage.style.color = 'green';
+            searchLavorazioneMessage.textContent = responseData.message || 'Template lavorazione trovato';
+            searchLavorazioneForm.reset();
+        } catch (error) {
+            searchLavorazioneMessage.textContent = 'Errore di rete o del server';
         }
     });
 }

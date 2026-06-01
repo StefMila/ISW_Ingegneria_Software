@@ -31,6 +31,9 @@
         <div class="nav-dropdown">
           <button class="nav-dropdown-toggle">Lavorazioni \u25be</button>
           <ul class="nav-dropdown-menu">
+            <li><a href="/avvia-mungitura.html">Avvia mungitura</a></li>
+            <li><a href="/view-mungiture.html">Visualizza mungiture</a></li>
+            <li><a href="/stats-mungiture.html">Statistiche mungitura</a></li>
             <li><a href="/add-lavorazione.html">Aggiungi lavorazione</a></li>
             <li><a href="/view-lavorazioni.html">Visualizza lavorazioni</a></li>
           </ul>
