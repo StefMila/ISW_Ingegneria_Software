@@ -37,16 +37,19 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     aziendaId,
 		tipoLavorazione: 'yogurt',
 		codiceTipoLav: 'C',
+    codiceLavorazione: 'AC001',
 		nomeTemplate: 'test_template',
 		isTemplate: parsedIsTemplate ?? false,
+    templateId: '665bc7c569f4b52b2c8a1234',
 		startedAt: '2026-05-29T09:00:00.000Z',
+    endedAt: undefined,
     notes: undefined,
 		status: 'in_corso',
     inputs: normalizedInputs.value,
     fasi: normalizedFasi.value,
-    outputName: undefined,
-		outputQuantity: undefined,
-		outputUnit: undefined
+    outputName: 'Vasetti di yogurt',
+		outputQuantity: '20',
+		outputUnit: 'vasetti'
   });
 
   beforeAll(() => {
@@ -105,6 +108,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
           expect(res.body.message).toBe('aziendaId, tipoLavorazione e codiceTipoLav sono obbligatori');
         });
     });
+
   test('POST /api/lavorazioni - errore: tipoLavorazione mancante (400)', async () => {
     const payload = basePayload();
     delete payload.tipoLavorazione;
@@ -117,6 +121,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
           expect(res.body.message).toBe('aziendaId, tipoLavorazione e codiceTipoLav sono obbligatori');
         });
   });
+
   test('POST /api/lavorazioni - errore: codiceTipoLav mancante (400)', async () => {
     const payload = basePayload();
     delete payload.codiceTipoLav;
@@ -129,6 +134,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
           expect(res.body.message).toBe('aziendaId, tipoLavorazione e codiceTipoLav sono obbligatori');
         });
   });
+
   test('POST /api/lavorazioni - errore: tentativo senza token (401)', async () => {
     await request(app)
       .post(`/api/lavorazioni`)
@@ -203,11 +209,26 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
+  test('POST /api/lavorazioni/:id - errore: Lavorazione non template con templateId mancante (400)', async () => {
+    const payload = basePayload();
+    delete payload.isTemplate;
+    delete payload.templateId;
+    
+    await request(app)
+      .post(`/api/lavorazioni`)
+      .set('Authorization', `Bearer ${token}`)
+      .send( payload )
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Se la lavorazione non è un template, deve riferirsi ad un template esistente');
+      });
+  });
+
   test('PATCH /api/lavorazioni/:id aggiorna una lavorazione esistente (200)', async () => {
     await request(app)
         .patch(`/api/lavorazioni/${lavorazioneId}`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ status: 'completata' })
+        .send({ outputQuantity: '20' })
         .expect(200)
         .expect(res => {
           expect(res.body.message).toBe('Lavorazione aggiornata con successo');
@@ -219,33 +240,143 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       await request(app)
           .patch('/api/lavorazioni/not-an-object-id')
           .set('Authorization', `Bearer ${token}`)
-          .send({ status: 'completata' })
+          .send({ outputQuantity: '20' })
           .expect(400)
           .expect((res) => {
             expect(res.body.message).toBe('ID lavorazione non valido');
           });
   });
 
-  test('PATCH /api/lavorazioni/:id - errore: fasi non valide (400)', async () => {
+  test('PATCH /api/lavorazioni/:id - errore: aziendaId non è modificabile (400)', async () => {
     await request(app)
       .patch(`/api/lavorazioni/${lavorazioneId}`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ fasi: [{ name: 'Fase inventata', completed: false }] })
+      .send({ aziendaId: aziendaId })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('Le fasi consentite sono: Ricevimento, Centrifugazione, Omogeneizzazione, Trattamento termico, Inoculo, Coagulazione, Rottura cagliata, Formatura, Salatura, Stagionatura, Concentrazione, Zangolatura, Confezionamento');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
       });
   });
 
-  test('PATCH /api/lavorazioni/:id - errore: isTemplate non Boolean (400)', async () => {
+  test('PATCH /api/lavorazioni/:id - errore: tipoLavorazione non è modificabile (400)', async () => {
     await request(app)
       .patch(`/api/lavorazioni/${lavorazioneId}`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ isTemplate: 'not_boolean' })
+      .send({ tipoLavorazione: basePayload().tipoLavorazione })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('isTemplate deve essere true o false');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
       });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: codiceTipoLav non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ codiceTipoLav: basePayload().codiceTipoLav })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: codiceLavorazione non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ codiceLavorazione: basePayload().codiceLavorazione })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: isTemplate non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ isTemplate: basePayload().isTemplate })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: templateId non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ templateId: basePayload().templateId })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: startedAt non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ startedAt: basePayload().startedAt })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: inputs non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ inputs: 'defined' })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: fasi non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ fasi: 'defined' })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: outputName non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ outputName: basePayload().outputName })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: outputUnit non è modificabile (400)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ outputUnit: basePayload().outputUnit })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: nessun campo modificabile (400)', async () => {
+      await request(app)
+          .patch(`/api/lavorazioni/${lavorazioneId}`)
+          .set('Authorization', `Bearer ${token}`)
+          .send({ })
+          .expect(400)
+          .expect((res) => {
+            expect(res.body.message).toBe('Nessun campo aggiornabile fornito');
+          });
   });
 
   test('PATCH /api/lavorazioni/:id - errore: tentativo senza token (401)', async () => {
@@ -329,10 +460,40 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     await request(app)
       .patch(`/api/lavorazioni/${lavorazioneId}`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ status: 'completata' })
+      .send({ outputQuantity: basePayload().outputQuantity })
       .expect(404)
       .expect((res) => {
         expect(res.body.message).toBe('Lavorazione non trovata');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: status template non è modificabile (422)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: basePayload().status })
+      .expect(422)
+      .expect((res) => {
+        expect(res.body.message).toBe('Lo status di un template di lavorazione non può essere modificato');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: nomeTemplate non è modificabile da una lavorazione non template (422)', async () => {
+    const payload = basePayload();
+    delete payload.isTemplate;
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue({
+      _id: lavorazioneId,
+      ...payload,
+      save: jest.fn().mockResolvedValue(undefined)
+    });
+    
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nomeTemplate: basePayload().nomeTemplate })
+      .expect(422)
+      .expect((res) => {
+        expect(res.body.message).toBe('Il nome di un template non può essere modificato da una lavorazione non template');
       });
   });
 
@@ -446,6 +607,119 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .get(`/api/lavorazioni`)
       .set('Authorization', `Bearer ${token}`)
       .query(basePayload())
+      .expect(403)
+      .expect((res) => {
+        expect(res.body.message).toBe('Non hai i permessi per questa azienda');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id visualizza correttamente il template lavorazione richiesto (200)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+  });
+
+  test('GET /api/lavorazioni/:id - errore: lavorazioneId non valido (400)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/not-an-object-id`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('ID lavorazione non valido');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id - errore: tentativo senza token (401)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .expect(401)
+      .expect((res) => {
+        expect(res.body.message).toBe('Token mancante o formato non valido: Accesso negato');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id - errore: token scaduto (401)', async () => {
+    const expiredToken = jwt.sign(
+      { userId: 'mocked_user_id', userType: 'allevatore' },
+      process.env.JWT_SECRET,
+      { expiresIn: '-1s' }
+    );
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${expiredToken}`)
+      .expect(401)
+      .expect((res) => {
+        expect(res.body.message).toBe('Token scaduto: Accesso negato');
+      });
+  });
+
+  // Caso token non valido - 403.
+  test('GET /api/lavorazioni/:id - errore: token non valido (403)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', 'Bearer token_non_valido')
+      .expect(403)
+      .expect((res) => {
+        expect(res.body.message).toBe('Token non valido: Accesso negato');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id - errore: ruolo non autorizzato (403)', async () => {
+    const tokenConsumatore = jwt.sign(
+      { userId: 'mocked_user_id', userType: 'consumatore' },
+      process.env.JWT_SECRET,
+      { expiresIn: '30m' }
+    );
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${tokenConsumatore}`)
+      .expect(403)
+      .expect((res) => {
+        expect(res.body.message).toBe('Permessi insufficienti: Accesso negato');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id - errore: Nessuna lavorazione trovata (404)', async () => {
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue(null);
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404)
+      .expect((res) => {
+        expect(res.body.message).toBe('Nessun template corrispondente trovato');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id - errore: Nessun template trovato (isTemplate == false) (404)', async () => {
+    const payload = basePayload();
+    delete payload.isTemplate;
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue(payload);
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404)
+      .expect((res) => {
+        expect(res.body.message).toBe('Nessun template corrispondente trovato');
+      });
+  });
+
+    // Caso 403 - utente non autorizzato (azienda non di sua proprieta).
+  test('GET /api/lavorazioni/:id - errore: utente non autorizzato (403)', async () => {
+    jest.spyOn(Azienda, 'findById').mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: aziendaId,
+        ownerUserId: 'altro_user_id'
+      })
+    });
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(403)
       .expect((res) => {
         expect(res.body.message).toBe('Non hai i permessi per questa azienda');

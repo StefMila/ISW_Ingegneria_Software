@@ -294,7 +294,7 @@ export const getLavorazioni = async (req, res) => {
 };
 
 //GET /api/lavorazioni/:id - visualizzazione del singolo template a partire dal suo ID
-const getTemplateLavorazioneById = async (req, res) => {
+export const getTemplateLavorazioneById = async (req, res) => {
 	try {
 		const { id } = req.params;
 
