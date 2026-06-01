@@ -1,8 +1,4 @@
-// Questo script gestisce la costruzione dinamica dell'header/menù 
-// per le pagine dell'allevatore, con opzioni per mostrare o nascondere 
-// determinate voci di menu.
 (function () {
-  // Costruisce la porzione navigazione con menu completo sempre visibile.
   const buildNavMenu = ({ showHomeLink }) => {
     const homeLink = showHomeLink
       ? '<a href="/home-allevatore.html" class="nav-home-btn">\u2190 Home</a>'
@@ -55,7 +51,7 @@
       </div>
     `;
   };
-// La funzione renderAllevatoreHeader è esposta globalmente e può essere chiamata da qualsiasi pagina che include questo script.
+
   window.renderAllevatoreHeader = function renderAllevatoreHeader(options = {}) {
     const {
       mountId = 'allevatoreHeaderMount',
@@ -64,19 +60,25 @@
     } = options;
 
     const mount = document.getElementById(mountId);
-    // Se la pagina non espone il mount, il renderer non deve fallire.
     if (!mount) return;
 
     const title = titleText
       ? `<h1 class="dashboard-title-light dashboard-title-centered">${titleText}</h1>`
       : '';
 
-    // Render centralizzato: in questo modo il markup fisso non e duplicato su ogni vista.
+    // Recuperiamo subito l'azienda per impostare il bottone info iniziale
+    const currentId = localStorage.getItem('selectedAziendaId');
+    const displayStyle = currentId ? 'inline-block' : 'none';
+    const infoUrl = currentId ? `/show-azienda.html?id=${currentId}` : '#';
+
     mount.innerHTML = `
       <header class="dashboard-header">
         ${buildNavMenu({ showHomeLink })}
         ${title}
-        <div class="header-right-actions">
+        <div class="header-right-actions" style="display: flex; align-items: center; gap: 10px;">
+          
+          <a id="headerShowAziendaBtn" href="${infoUrl}" class="button-link" style="display: ${displayStyle}; margin-left: 12px; padding: 6px 12px; font-size: 0.9rem; text-decoration: none; background-color: #ffffff; color: #000000; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold;">👁️ Info</a>
+          
           <div class="nav-dropdown" id="aziendaSwitcherDropdown">
             <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button" type="button">Azienda attiva: non selezionata \u25be</button>
             <ul class="nav-dropdown-menu azienda-switcher-menu" id="aziendaSwitcherMenu"></ul>
@@ -85,5 +87,19 @@
         </div>
       </header>
     `;
+
+    // Listener globale: se l'azienda cambia, aggiorna all'istante il link del bottone info
+    window.addEventListener('aziendaChanged', (e) => {
+      const infoBtn = document.getElementById('headerShowAziendaBtn');
+      const id = e.detail?.id || localStorage.getItem('selectedAziendaId');
+      if (infoBtn) {
+        if (id) {
+          infoBtn.href = `/show-azienda.html?id=${id}`;
+          infoBtn.style.display = 'inline-block';
+        } else {
+          infoBtn.style.display = 'none';
+        }
+      }
+    });
   };
 })();
