@@ -90,6 +90,7 @@ export const createLavorazione = async (req, res) => {
 			codiceTipoLav,
 			nomeTemplate,
 			isTemplate,
+			templateId,
 			startedAt,
 			endedAt,
 			status,
@@ -125,12 +126,17 @@ export const createLavorazione = async (req, res) => {
 			return res.status(400).json({ message: 'isTemplate deve essere true o false' });
 		}
 
+		if(!parsedIsTemplate && !templateId) {
+			return res.status(400).json({ message: 'Se la lavorazione non è un template, deve riferirsi ad un template esistente' });
+		}
+
 		const newLavorazione = new Lavorazione({
 			aziendaId,
 			tipoLavorazione: String(tipoLavorazione).trim(),
 			codiceTipoLav: String(codiceTipoLav).trim(),
 			nomeTemplate: typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined,
 			isTemplate: parsedIsTemplate ?? false,
+			templateId: templateId || undefined,
 			startedAt: startedAt || undefined,
 			endedAt: endedAt || undefined,
 			status: status || 'in_corso',
@@ -169,6 +175,7 @@ export const updateLavorazione = async (req, res) => {
 			codiceTipoLav,
 			nomeTemplate,
 			isTemplate,
+			templateId,
 			startedAt,
 			endedAt,
 			status,
@@ -213,6 +220,7 @@ export const updateLavorazione = async (req, res) => {
 		if (codiceTipoLav !== undefined) existingLavorazione.codiceTipoLav = String(codiceTipoLav).trim();
 		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;
 		if (parsedIsTemplate !== null) existingLavorazione.isTemplate = parsedIsTemplate;
+		if (templateId !== undefined) existingLavorazione.templateId = templateId;
 		if (startedAt !== undefined) existingLavorazione.startedAt = startedAt;
 		if (endedAt !== undefined) existingLavorazione.endedAt = endedAt;
 		if (status !== undefined) existingLavorazione.status = status;

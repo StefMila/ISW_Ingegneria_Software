@@ -89,7 +89,8 @@ const lavorazioneSchema = new Schema({
     templateId: { //necessario solo per lavorazioni non template, rimanda al template da cui sono state create
         type: Schema.Types.ObjectId,
         ref: 'Lavorazione',
-        required: function () { return !this.isTemplate; }
+        required: function () { return !this.isTemplate; },
+        index: true
     },
     startedAt: {
         type: Date,
@@ -153,7 +154,7 @@ lavorazioneSchema.pre('validate', async function (next) {
     //se la nuova lavorazione non è un template, deve avere un template da cui far riferimento (templateId)
     if(!this.isTemplate) {
         try {
-            const template = await mongoose.model('Lavorazione').findById(this.isTemplate);
+            const template = await mongoose.model('Lavorazione').findById(this.templateId);
             if (!template) {
                 this.invalidate('templateId', 'Template lavorazione non trovato');
                 new mongoose.Error.ValidationError(this);

@@ -273,6 +273,77 @@ paths:
                 serverError:
                   value:
                     message: "Errore interno del server"
+    delete:
+      summary: Rimozione azienda
+      description: Elimina l'azienda identificata dall'id specificato. Solo il proprietario può eliminarla.
+      tags:
+        - Azienda
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID dell'azienda da eliminare
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Azienda eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Azienda eliminata con successo
+        '400':
+          description: ID azienda non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID azienda non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Azienda non trovata
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/punti-vendita/public:
     get:
@@ -1210,79 +1281,6 @@ paths:
                 serverError:
                   value:
                     message: "Errore interno del server"
-  
-  /api/aziende/{id}:
-    delete:
-      summary: Rimozione azienda
-      description: Elimina l'azienda identificata dall'id specificato. Solo il proprietario può eliminarla.
-      tags:
-        - Azienda
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: ID dell'azienda da eliminare
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Azienda eliminata con successo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-              examples:
-                success:
-                  value:
-                    message: Azienda eliminata con successo
-        '400':
-          description: ID azienda non valido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidId:
-                  value:
-                    message: ID azienda non valido
-        '401':
-          description: Token mancante, non valido o scaduto
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingOrInvalidToken:
-                  value:
-                    message: "Token mancante o formato non valido: Accesso negato"
-        '403':
-          description: Permessi insufficienti (solo allevatore)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                forbiddenRole:
-                  value:
-                    message: "Permessi insufficienti: Accesso negato"
-        '404':
-          description: Azienda non trovata
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                notFound:
-                  value:
-                    message: Azienda non trovata
-        '500':
-          description: Errore interno del server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
               
   /api/aziende/{aziendaId}/animali:
     post:
@@ -2326,6 +2324,7 @@ paths:
                   tipoLavorazione: formaggio
                   codiceTipoLav: B
                   isTemplate: false
+                  templateId: 665fa8d8ad8f8c0012f9d117
                   status: in_corso
                   startedAt: 2026-05-26T07:45:00.000Z
                   inputs:
@@ -2382,7 +2381,23 @@ paths:
                       tipoLavorazione: formaggio
                       codiceTipoLav: B
                       isTemplate: false
+                      templateId: 665fa8d8ad8f8c0012f9d117
                       status: in_corso
+                      startedAt: 2026-05-26T07:45:00.000Z
+                      inputs:
+                        - type: latte
+                          name: Latte crudo
+                          quantity: 350
+                          unit: L
+                      fasi:
+                        - name: Coagulazione
+                          completed: true
+                        - name: Stagionatura
+                          completed: false
+                      outputName: Formaggi freschi
+                      outputQuantity: 40
+                      outputUnit: pezzi
+                      codiceLavorazione: AB002
         '400':
           description: Dati non validi
           content:
@@ -2396,6 +2411,9 @@ paths:
                 invalidTemplateFlag:
                   value:
                     message: isTemplate deve essere true o false
+                missingTemplateId:
+                  value:
+                    message: Se la lavorazione non è un template, deve riferirsi ad un template esistente
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -2545,6 +2563,11 @@ paths:
                   nomeTemplate: Template Yogurt Bianco Premium
                   outputName: Vasetti di yogurt intero
                   isTemplate: true
+              updateOperativa:
+                value:
+                  nomeTemplate: Produzione formaggi freschi
+                  outputName: Formaggi freschi
+                  isTemplate: false
       responses:
         '200':
           description: Lavorazione aggiornata con successo
@@ -2553,7 +2576,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LavorazioneResponse'
               examples:
-                success:
+                templateUpdated:
                   value:
                     message: Lavorazione aggiornata con successo
                     lavorazione:
@@ -2565,6 +2588,18 @@ paths:
                       isTemplate: true
                       outputName: Vasetti di yogurt intero
                       codiceLavorazione: AC001
+                lavorazioneUpdated:
+                  value:
+                    message: Lavorazione aggiornata con successo
+                    lavorazione:
+                      _id: 665fa8d8ad8f8c0012f9d112
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      tipoLavorazione: formaggio
+                      codiceTipoLav: B
+                      isTemplate: false
+                      templateId: 665fa8d8ad8f8c0012f9d117
+                      outputName: Formaggi freschi
+                      codiceLavorazione: AB002
         '400':
           description: ID o dati non validi
           content:
@@ -3457,21 +3492,21 @@ components:
             $ref: '#/components/schemas/AziendaPublicItem'
 
     UpdateAziendaRequest:
-      type: Object
+      type: object
       properties:
         companyName:
           type: string
           example: Nuova Azienda Agricola Rossi
         vatNumber:
           type: string
-            example: IT12345687901
-          emailAzienda:
-            type: string
-            format: email
-            example: info@aziendarossi.it
-          address:
-            type: string
-            example: Via delle Margherite 12, Calliano
+          example: IT12345687901
+        emailAzienda:
+          type: string
+          format: email
+          example: info@aziendarossi.it
+        address:
+          type: string
+          example: Via delle Margherite 12, Calliano
     
     AziendaCompleted:
       type: object
@@ -3886,6 +3921,10 @@ components:
           type: boolean
           default: false
           example: true
+        templateId:
+          type: string
+          nullable: true
+          example: null
         startedAt:
           type: string
           format: date-time
@@ -3979,6 +4018,9 @@ components:
                 - 'true'
                 - 'false'
           description: Flag booleano o stringa boolean-like.
+        templateId:
+          type: string
+          description: Se isTemplate è false, è possibile specificare un templateId da cui ereditare inputs, fasi, output, codiceLavorazione, ecc.
         startedAt:
           type: string
           format: date-time
@@ -4036,6 +4078,9 @@ components:
               enum:
                 - 'true'
                 - 'false'
+        templateId:
+          type: string
+          description: Se isTemplate è false, è possibile specificare un templateId da cui ereditare inputs, fasi, output, codiceLavorazione, ecc.
         startedAt:
           type: string
           format: date-time
