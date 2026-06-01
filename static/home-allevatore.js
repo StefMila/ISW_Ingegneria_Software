@@ -21,38 +21,15 @@ const renderStatus = (text, color = '#1f2937') => {
 };
 
 const renderCurrentAziendaBadge = (name) => {
-  if (!currentAziendaBadgeEl) return;
-  currentAziendaBadgeEl.textContent = `Azienda attiva: ${name || 'non selezionata'}`;
+  const badge = document.getElementById('currentAziendaBadge');
+  if (badge) {
+    badge.textContent = `Azienda attiva: ${name || 'non selezionata'} \u25be`;
+  }
 
   const currentId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
-
-  let infoBtn = document.getElementById('showAziendaBtn');
-
-  if(currentId) {
-    if(!infoBtn) {
-      infoBtn = document.createElement('a');
-      infoBtn.id = 'showAziendaBtn';
-      infoBtn.className = 'button-link';
-
-      infoBtn.style.marginLeft = '12px';
-      infoBtn.style.padding = '8px 16px'; // Un po' più compatto per l'header rispetto al default
-      infoBtn.style.fontSize = '0.9rem';
-      infoBtn.style.display = 'inline-block';
-      infoBtn.style.verticalAlign = 'middle';
-
-      // Lo inseriamo nell'header subito dopo il badge dell'azienda attiva
-      currentAziendaBadgeEl.parentNode.insertBefore(infoBtn, currentAziendaBadgeEl.nextSibling)
-    }
-    // Aggiorniamo la rotta dinamica e il testo del bottone
-    infoBtn.href = `/show-azienda.html?id=${currentId}`;
-    infoBtn.textContent = 'Visualizza info';
-    infoBtn.style.display = 'inline-block'; // Si assicura che sia visibile
-
-  } else {
-    // Se non c'è nessuna azienda selezionata, nascondiamo il bottone
-    if (infoBtn) infoBtn.style.display = 'none';
-  }
   
+  // Spara l'evento per aggiornare il bottone nell'header
+  window.dispatchEvent(new CustomEvent('aziendaChanged', { detail: { id: currentId } }));
 };
 
 const renderUpcomingEvents = (items) => {
@@ -108,6 +85,7 @@ const loadUpcomingEvents = async () => {
     upcomingEventsListEl.innerHTML = '<p class="status">Errore di connessione durante il caricamento eventi.</p>';
   }
 };
+
 // Funzione per caricare le aziende di proparietà dell'utente e gestire la logica di selezione
 const loadOwnedAziende = async () => {
   const token = localStorage.getItem('token');
