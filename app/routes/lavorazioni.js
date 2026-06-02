@@ -293,16 +293,19 @@ export const getLavorazioni = async (req, res) => {
 	}
 };
 
-//GET /api/lavorazioni/:id - visualizzazione del singolo template a partire dal suo ID
-export const getTemplateLavorazioneById = async (req, res) => {
+//GET /api/lavorazioni/search?codiceLavorazione=... - visualizzazione del singolo template a partire dal suo codiceLavorazione
+export const getTemplateByCodiceLavorazione = async (req, res) => {
 	try {
-		const { id } = req.params;
+		const { codiceLavorazione } = req.query;
 
-		if (!isValidObjectId(id)) {
-			return res.status(400).json({ message: 'ID lavorazione non valido' });
+		if (!codiceLavorazione) {
+			return res.status(400).json({ message: 'Il codice del template è obbligatorio' });
 		}
 
-		const existingTemplate = await Lavorazione.findById(id);
+		const existingTemplate = await Lavorazione.findOne({
+			codiceLavorazione: codiceLavorazione,
+			isTemplate: true
+		});
 		if (!existingTemplate || !existingTemplate.isTemplate) {
 			return res.status(404).json({ message: 'Nessun template corrispondente trovato'});
 		}
@@ -349,7 +352,7 @@ export const deleteLavorazione = async (req, res) => {
 router.post('/', createLavorazione);
 router.patch('/:id', updateLavorazione);
 router.get('/', getLavorazioni);
-router.get('/:id', getTemplateLavorazioneById);
+router.get('/search', getTemplateByCodiceLavorazione);
 router.delete('/:id', deleteLavorazione);
 
 export default router;
