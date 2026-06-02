@@ -2537,20 +2537,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/lavorazioni/{id}:
+  /api/lavorazioni/search:
     get:
       summary: Visualizza template
-      description: Restituisce i dettagli di una lavorazione template (non funziona per lavorazioni non template).
+      description: Restituisce i dettagli di un template lavorazione (non funziona per lavorazioni non template).
       tags:
         - Lavorazione
       security:
        - bearerAuth: []
       parameters:
-        - in: path
-          name: id
+        - in: query
+          name: codiceLavorazione
           required: true
           schema:
             type: string
+          description: Codice lavorazione assegnato al template di cui voglio reperire le informazioni.
       responses:
         '200':
           description: Template Lavorazione trovato
@@ -2575,15 +2576,18 @@ paths:
                     outputUnit: vasetti
                     codiceLavorazione: AC001
         '400':
-          description: ID non valido
+          description: Codice lavorazione non valido
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
-                invalidId:
+                noCodiceLavorazione:
                   value:
-                    message: ID lavorazione non valido
+                    message: Il codice del template è obbligatorio
+                invalidCodiceLavorazione:
+                  value:
+                    message: Codice template non valido
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -2613,6 +2617,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/lavorazioni/{id}:
     patch:
       summary: Aggiorna lavorazione
       description: Aggiorna i campi della lavorazione esistente. I campi non passati non vengono modificati.

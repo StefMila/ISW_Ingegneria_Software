@@ -70,6 +70,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       ...basePayload(),
       save: jest.fn().mockResolvedValue(undefined)
     });
+    jest.spyOn(Lavorazione, 'findOne').mockResolvedValue(basePayload());
     jest.spyOn(Lavorazione.prototype, 'save').mockResolvedValue({
       _id: lavorazioneId,
       ...basePayload(),
@@ -613,33 +614,43 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  test('GET /api/lavorazioni/:id visualizza correttamente il template lavorazione richiesto (200)', async () => {
+  test('GET /api/lavorazioni/search visualizza correttamente il template lavorazione richiesto (200)', async () => {
     await request(app)
-      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
   });
 
-  test('GET /api/lavorazioni/:id - errore: lavorazioneId non valido (400)', async () => {
+  test('GET /api/lavorazioni/search - errore: codiceLavorazione non valido (400)', async () => {
     await request(app)
-      .get(`/api/lavorazioni/not-an-object-id`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=invalid`)
       .set('Authorization', `Bearer ${token}`)
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('ID lavorazione non valido');
+        expect(res.body.message).toBe('Codice template non valido');
       });
   });
 
-  test('GET /api/lavorazioni/:id - errore: tentativo senza token (401)', async () => {
+  test('GET /api/lavorazioni/search - errore: codiceLavorazione mancante (400)', async () => {
     await request(app)
-      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Il codice del template è obbligatorio');
+      });
+  });
+
+  test('GET /api/lavorazioni/search - errore: tentativo senza token (401)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/search?codiceLavorazione=${basePayload().codiceLavorazione}`)
       .expect(401)
       .expect((res) => {
         expect(res.body.message).toBe('Token mancante o formato non valido: Accesso negato');
       });
   });
 
-  test('GET /api/lavorazioni/:id - errore: token scaduto (401)', async () => {
+  test('GET /api/lavorazioni/search - errore: token scaduto (401)', async () => {
     const expiredToken = jwt.sign(
       { userId: 'mocked_user_id', userType: 'allevatore' },
       process.env.JWT_SECRET,
@@ -647,7 +658,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     );
 
     await request(app)
-      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${expiredToken}`)
       .expect(401)
       .expect((res) => {
@@ -656,9 +667,9 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
   });
 
   // Caso token non valido - 403.
-  test('GET /api/lavorazioni/:id - errore: token non valido (403)', async () => {
+  test('GET /api/lavorazioni/search - errore: token non valido (403)', async () => {
     await request(app)
-      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', 'Bearer token_non_valido')
       .expect(403)
       .expect((res) => {
@@ -666,7 +677,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  test('GET /api/lavorazioni/:id - errore: ruolo non autorizzato (403)', async () => {
+  test('GET /api/lavorazioni/search - errore: ruolo non autorizzato (403)', async () => {
     const tokenConsumatore = jwt.sign(
       { userId: 'mocked_user_id', userType: 'consumatore' },
       process.env.JWT_SECRET,
@@ -674,7 +685,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     );
 
     await request(app)
-      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${tokenConsumatore}`)
       .expect(403)
       .expect((res) => {
@@ -682,11 +693,11 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  test('GET /api/lavorazioni/:id - errore: Nessuna lavorazione trovata (404)', async () => {
-    jest.spyOn(Lavorazione, 'findById').mockResolvedValue(null);
+  test('GET /api/lavorazioni/search - errore: Nessuna lavorazione trovata (404)', async () => {
+    jest.spyOn(Lavorazione, 'findOne').mockResolvedValue(null);
 
     await request(app)
-      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(404)
       .expect((res) => {
@@ -694,13 +705,13 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  test('GET /api/lavorazioni/:id - errore: Nessun template trovato (isTemplate == false) (404)', async () => {
+  test('GET /api/lavorazioni/search - errore: Nessun template trovato (isTemplate == false) (404)', async () => {
     const payload = basePayload();
     delete payload.isTemplate;
-    jest.spyOn(Lavorazione, 'findById').mockResolvedValue(payload);
+    jest.spyOn(Lavorazione, 'findOne').mockResolvedValue(payload);
 
     await request(app)
-      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(404)
       .expect((res) => {
@@ -709,7 +720,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
   });
 
     // Caso 403 - utente non autorizzato (azienda non di sua proprieta).
-  test('GET /api/lavorazioni/:id - errore: utente non autorizzato (403)', async () => {
+  test('GET /api/lavorazioni/search - errore: utente non autorizzato (403)', async () => {
     jest.spyOn(Azienda, 'findById').mockReturnValue({
       select: jest.fn().mockResolvedValue({
         _id: aziendaId,
@@ -718,7 +729,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     });
 
     await request(app)
-      .get(`/api/lavorazioni/${lavorazioneId}`)
+      .get(`/api/lavorazioni/search?codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(403)
       .expect((res) => {

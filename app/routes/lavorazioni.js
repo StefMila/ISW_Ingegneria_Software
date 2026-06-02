@@ -302,6 +302,11 @@ export const getTemplateByCodiceLavorazione = async (req, res) => {
 			return res.status(400).json({ message: 'Il codice del template è obbligatorio' });
 		}
 
+		const standardCodiceLavorazione = /^[A][A-D]\d{3}$/;
+		if(!standardCodiceLavorazione.test(codiceLavorazione)){
+			return res.status(400).json({ message: 'Codice template non valido'});
+		}
+
 		const existingTemplate = await Lavorazione.findOne({
 			codiceLavorazione: codiceLavorazione,
 			isTemplate: true
