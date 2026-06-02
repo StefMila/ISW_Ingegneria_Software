@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aggiungi Sensore IoT - MuccApp</title>
+  <script src="/auth-control.js"></script> 
+  <script>protectRoute(['allevatore']);</script>
+  <script src="/menu-allevatore.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-container">
+    <div id="allevatoreHeaderMount"></div>
+    <script>
+      window.renderAllevatoreHeader({ showHomeLink: true });
+    </script>
+
+    <header class="content-header" style="margin-bottom: 2rem;">
+      <h1>Collega Nuovo Dispositivo IoT</h1>
+      <p class="subtitle">Registra un nuovo sensore per iniziare a ricevere la telemetria.</p>
+    </header>
+
+    <section class="section">
+      <div class="form-container">
+        <form id="formNuovoSensore" class="app-form" style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px;">
+          
+          <div class="form-group" style="display: flex; flex-direction: column;">
+            <label for="iotNome">Nome Identificativo Sensore</label>
+            <input type="text" id="iotNome" placeholder="Es. Collare Carolina, Temperatura Silos" required style="padding: 0.5rem; margin-top: 0.2rem;">
+          </div>
+
+          <div class="form-group" style="display: flex; flex-direction: column;">
+            <label for="iotTipoDispositivo">Tipo Dispositivo</label>
+            <select id="iotTipoDispositivo" required style="padding: 0.5rem; margin-top: 0.2rem;">
+              <option value="ambientale">Ambientale (Stalla / Silos)</option>
+              <option value="indossabile">Indossabile (Collare / Marca Auricolare)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="display: flex; flex-direction: column;">
+            <label for="iotTipoDato">Tipo Dato Raccolto</label>
+            <select id="iotTipoDato" required style="padding: 0.5rem; margin-top: 0.2rem;">
+              <option value="">-- Seleziona cosa misura --</option>
+              <option value="temperatura">Temperatura (Dato vitale)</option>
+              <option value="frequenza_cardiaca">Frequenza Cardiaca (Dato vitale)</option>
+              <option value="livello_passi">Contapassi (Attività)</option>
+              <option value="esposizione_solare">Esposizione Solare</option>
+              <option value="posizione_gps">Posizione GPS (Localizzazione)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="display: flex; flex-direction: column;">
+            <label for="iotUnita">Unità di Misura</label>
+            <select id="iotUnita" required style="padding: 0.5rem; margin-top: 0.2rem;">
+              <option value="">-- Seleziona unità --</option>
+              <option value="°C">Gradi Celsius (°C)</option>
+              <option value="bpm">Battiti per minuto (bpm)</option>
+              <option value="passi">Numero di Passi</option>
+              <option value="ore">Ore (h)</option>
+              <option value="coordinate">Coordinate (Lat/Lon)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="groupAnimaleId" style="display: none; flex-direction: column;">
+            <label for="iotAnimaleId">Animale Associato (Tag/ID)</label>
+            <select id="iotAnimaleId" style="padding: 0.5rem; margin-top: 0.2rem;">
+              <option value="">-- Caricamento aniamli in corso... --</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn-primary" style="padding: 0.7rem; margin-top: 1rem; cursor: pointer;">Registra e Attiva</button>
+        </form>
+        <p id="formSensoreStatus" class="status" style="margin-top: 0.5rem; font-weight: bold;"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/azienda-switcher.js"></script>
+  <script src="/add-sensore.js"></script>
+  <script src="/logout.js"></script>
+
+  <script>
+    document.getElementById('iotTipoDispositivo').addEventListener('change', (e) => {
+      const groupAnimale = document.getElementById('groupAnimaleId');
+      if (e.target.value === 'indossabile') {
+        groupAnimale.style.display = 'flex';
+      } else {
+        groupAnimale.style.display = 'none';
+        document.getElementById('iotAnimaleId').value = '';
+      }
+    });
+  </script>
+</body>
+</html>

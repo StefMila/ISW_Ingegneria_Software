@@ -51,6 +51,13 @@
             <li><a href="/documenti.html">Visualizza documenti</a></li>
           </ul>
         </div>
+        <div class="nav-dropdown">
+          <button class="nav-dropdown-toggle">Sensori IoT \u25be</button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/view-sensori.html" id="nav-sensori">Visualizza Telemetria</a></li>
+            <li><a href="/add-sensore.html">Aggiungi Sensore</a></li>
+          </ul>
+        </div>
       </div>
     `;
   };
