@@ -4,12 +4,14 @@ const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
 const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
 // Elementi DOM
 const statusMsg = document.getElementById('statusMsg');
+const templateTableBody = document.getElementById('templateTableBody');
+const lavorazioniStatus = document.getElementById('lavorazioniStatus');
 const lavorazioniTableBody = document.getElementById('lavorazioniTableBody');
 const currentAziendaBadge = document.getElementById('currentAziendaBadge');
 // Elementi filtro
-const filterNomeLavorazione = document.getElementById('filterNomeLavorazione');
-const filterInputLavorazione = document.getElementById('filterInputLavorazione');
-const filterOutputLavorazione = document.getElementById('filterOutputLavorazione');
+const filterNomeTemplate = document.getElementById('filterNomeTemplate');
+const filterInputTemplate = document.getElementById('filterInputTemplate');
+const filterOutputTemplate = document.getElementById('filterOutputTemplate');
 
 let allLavorazioni = [];
 const rowDataMap = new Map();
@@ -213,11 +215,11 @@ const rowHtml = (item) => `
 `;
 
 const renderEmptyState = (message) => {
-    if (!lavorazioniTableBody) {
+    if (!templateTableBody) {
         return;
     }
 
-    lavorazioniTableBody.innerHTML = `
+    templateTableBody.innerHTML = `
         <tr class="empty-row">
             <td colspan="4">${escapeHtml(message)}</td>
         </tr>
@@ -225,7 +227,7 @@ const renderEmptyState = (message) => {
 };
 
 const renderTable = (items) => {
-    if (!lavorazioniTableBody) {
+    if (!templateTableBody) {
         return;
     }
 
@@ -238,7 +240,7 @@ const renderTable = (items) => {
 
     items.forEach((item) => rowDataMap.set(String(item._id), item));
 
-    lavorazioniTableBody.innerHTML = items.map((item) => `
+    templateTableBody.innerHTML = items.map((item) => `
         <tr data-id="${escapeAttr(item._id)}" class="lavorazione-row" tabindex="0" role="button" aria-label="Apri dettaglio lavorazione">
             ${rowHtml(item)}
         </tr>
@@ -246,9 +248,9 @@ const renderTable = (items) => {
 };
 
 const applyFilters = () => {
-    const nomeValue = normalizeText(filterNomeLavorazione?.value);
-    const inputValue = normalizeText(filterInputLavorazione?.value);
-    const outputValue = normalizeText(filterOutputLavorazione?.value);
+    const nomeValue = normalizeText(filterNomeTemplate?.value);
+    const inputValue = normalizeText(filterInputTemplate?.value);
+    const outputValue = normalizeText(filterOutputTemplate?.value);
 
     const filteredItems = allLavorazioni.filter((item) => {
         const matchesNome = !nomeValue || normalizeText(getNomeLavorazione(item)).includes(nomeValue);
@@ -272,7 +274,7 @@ const applyFilters = () => {
     renderStatus(`${filteredItems.length} template visibile/i.`, 'green');
 };
 
-const fetchLavorazioni = async () => {
+const fetchLavorazioni = async (isTemplate) => {
     const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
     const token = localStorage.getItem('token');
 
@@ -296,7 +298,7 @@ const fetchLavorazioni = async () => {
     try {
         const params = new URLSearchParams({
             aziendaId,
-            isTemplate: 'true'
+            isTemplate: isTemplate
         });
 
         const response = await fetch(`/api/lavorazioni?${params.toString()}`, {
@@ -351,7 +353,7 @@ const deleteLavorazioneById = async (lavorazioneId) => {
             return;
         }
         renderStatus(data.message || 'Lavorazione eliminata con successo.', 'green');
-        await fetchLavorazioni();
+        await fetchLavorazioni(true);
     } catch (error) {
         console.error('Errore durante l\'eliminazione della lavorazione:', error);
         renderStatus('Errore di connessione durante l\'eliminazione.', 'red');
@@ -414,27 +416,27 @@ const saveInlineEdit = async (tr, lavorazioneId) => {
         }
 
         renderStatus(data.message || 'Lavorazione modificata con successo.', 'green');
-        await fetchLavorazioni();
+        await fetchLavorazioni(true);
     } catch (error) {
         console.error('Errore durante la modifica della lavorazione:', error);
         renderStatus('Errore di connessione durante la modifica.', 'red');
     }
 };
 
-if (filterNomeLavorazione) {
-    filterNomeLavorazione.addEventListener('input', applyFilters);
+if (filterNomeTemplate) {
+    filterNomeTemplate.addEventListener('input', applyFilters);
 }
 
-if (filterInputLavorazione) {
-    filterInputLavorazione.addEventListener('input', applyFilters);
+if (filterInputTemplate) {
+    filterInputTemplate.addEventListener('input', applyFilters);
 }
 
-if (filterOutputLavorazione) {
-    filterOutputLavorazione.addEventListener('input', applyFilters);
+if (filterOutputTemplate) {
+    filterOutputTemplate.addEventListener('input', applyFilters);
 }
 
-if (lavorazioniTableBody) {
-    lavorazioniTableBody.addEventListener('click', async (event) => {
+if (templateTableBody) {
+    templateTableBody.addEventListener('click', async (event) => {
         const clickedRow = event.target.closest('tr[data-id]');
         const editButton = event.target.closest('.edit-animal-btn');
         if (editButton) {
@@ -474,7 +476,7 @@ if (lavorazioniTableBody) {
         }
     });
 
-    lavorazioniTableBody.addEventListener('keydown', (event) => {
+    templateTableBody.addEventListener('keydown', (event) => {
         const row = event.target.closest('tr[data-id]');
         if (!row || row.classList.contains('editing')) {
             return;
@@ -488,4 +490,12 @@ if (lavorazioniTableBody) {
     });
 }
 
-fetchLavorazioni();
+fetchLavorazioni(true);
+//TODO: tabella lavorazioni non template --> campi startedAt, codiceLavorazione, outputQuantity, outputUnit, notes, azioni (completa/elimina)
+//Azioni: modifica --> outputQuantity, notes ; completa --> status: 'completata', inserimento outputQuantity (manuale/IoT), automatico endedAt ; elimina --> status: 'annullata'/eliminata dal DB
+if(lavorazioniTableBody){
+    lavorazioniTableBody.addEventListener('click', async (event) => { //TODO: event listener dedicato ai bottoni (completa (con outputQuantity), elimina(annulla))
+        event.preventDefault();
+    });
+}
+
