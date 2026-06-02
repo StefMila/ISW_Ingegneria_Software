@@ -124,7 +124,7 @@ const lavorazioneSchema = new Schema({
     },
     outputName: {
         type: String,
-        required: true,
+        required: false,
         trim: true
     },
     outputQuantity: {

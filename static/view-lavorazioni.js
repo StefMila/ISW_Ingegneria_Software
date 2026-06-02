@@ -260,16 +260,16 @@ const applyFilters = () => {
     renderTable(filteredItems);
 
     if (allLavorazioni.length === 0) {
-        renderStatus('Non hai ancora salvato lavorazioni.', '#b45309');
+        renderStatus('Non hai ancora salvato template.', '#b45309');
         return;
     }
 
     if (filteredItems.length === 0) {
-        renderStatus('Nessuna lavorazione trovata con i filtri selezionati.', '#b45309');
+        renderStatus('Nessun template trovato con i filtri selezionati.', '#b45309');
         return;
     }
 
-    renderStatus(`${filteredItems.length} lavorazione/i visibili.`, 'green');
+    renderStatus(`${filteredItems.length} template visibile/i.`, 'green');
 };
 
 const fetchLavorazioni = async () => {
@@ -368,7 +368,7 @@ const openInlineEdit = (tr, item) => {
         <td>${escapeHtml(getCodiceLavorazione(item))}</td>
         <td><input class="inline-input" data-field="nomeTemplate" value="${escapeAttr(item.nomeTemplate || '')}" placeholder="Nome lavorazione"></td>
         <td>${escapeHtml(getInputSummary(item))}</td>
-        <td><input class="inline-input" data-field="outputName" value="${escapeAttr(item.outputName || '')}" placeholder="Output principale"></td>
+        <td>${escapeHtml(getOutputSummary(item))}</td>
         <td>
             <button class="save-animal-btn" data-id="${escapeAttr(item._id)}" title="Salva" aria-label="Salva">✔</button>
             <button class="cancel-edit-btn" data-id="${escapeAttr(item._id)}" title="Annulla" aria-label="Annulla">✕</button>
@@ -392,21 +392,9 @@ const saveInlineEdit = async (tr, lavorazioneId) => {
     });
 
     if (!payload.nomeTemplate) {
-        renderStatus('Il nome lavorazione è obbligatorio.', 'red');
+        renderStatus('Il nome template è obbligatorio.', 'red');
         return;
     }
-
-    // Definisco i campi da ricalcolare in vista di eventuali modifiche eseguite
-    const tipoLavorazione = OUTPUT_TO_TIPO[payload.outputName] || 'altro';
-    const outputUnit = OUTPUT_TO_UNIT[payload.outputName] || 'pezzi';
-    const codiceTipoLav = TIPO_TO_CODICETIPO[tipoLavorazione] || 'D';
-
-    const updatedPayload = {
-        ...payload,
-        tipoLavorazione,
-        outputUnit,
-        codiceTipoLav
-    };
 
     try {
         const response = await fetch(`/api/lavorazioni/${lavorazioneId}`, {
@@ -415,7 +403,7 @@ const saveInlineEdit = async (tr, lavorazioneId) => {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updatedPayload)
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json().catch(() => ({}));
