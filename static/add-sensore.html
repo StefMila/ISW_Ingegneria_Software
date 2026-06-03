@@ -7,6 +7,8 @@
   <script src="/auth-control.js"></script> 
   <script>protectRoute(['allevatore']);</script>
   <script src="/menu-allevatore.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -39,33 +41,33 @@
           </div>
 
           <div class="form-group" style="display: flex; flex-direction: column;">
-            <label for="iotTipoDato">Tipo Dato Raccolto</label>
-            <select id="iotTipoDato" required style="padding: 0.5rem; margin-top: 0.2rem;">
-              <option value="">-- Seleziona cosa misura --</option>
-              <option value="temperatura">Temperatura (Dato vitale)</option>
-              <option value="frequenza_cardiaca">Frequenza Cardiaca (Dato vitale)</option>
-              <option value="livello_passi">Contapassi (Attività)</option>
-              <option value="esposizione_solare">Esposizione Solare</option>
-              <option value="posizione_gps">Posizione GPS (Localizzazione)</option>
-            </select>
-          </div>
-
-          <div class="form-group" style="display: flex; flex-direction: column;">
-            <label for="iotUnita">Unità di Misura</label>
-            <select id="iotUnita" required style="padding: 0.5rem; margin-top: 0.2rem;">
-              <option value="">-- Seleziona unità --</option>
-              <option value="°C">Gradi Celsius (°C)</option>
-              <option value="bpm">Battiti per minuto (bpm)</option>
-              <option value="passi">Numero di Passi</option>
-              <option value="ore">Ore (h)</option>
-              <option value="coordinate">Coordinate (Lat/Lon)</option>
-            </select>
+            <label>Capacità del Dispositivo (Seleziona una o più)</label>
+            <div id="iotCapacita" style="margin-top: 0.5rem; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; background: #fff;">
+              <label class="cap-option" data-devices="ambientale,indossabile,stoccaggio" style="display: block; margin-bottom: 0.5rem;">
+                <input type="checkbox" value="temperatura" data-unita="°C"> Termometro (°C)
+              </label>
+              
+              <label class="cap-option" data-devices="indossabile" style="display: block; margin-bottom: 0.5rem;">
+                <input type="checkbox" value="frequenza_cardiaca" data-unita="bpm"> Cardiofrequenzimetro (bpm)
+              </label>
+              
+              <label class="cap-option" data-devices="indossabile" style="display: block; margin-bottom: 0.5rem;">
+                <input type="checkbox" value="livello_passi" data-unita="passi"> Contapassi (Attività)
+              </label>
+              
+              <label class="cap-option" data-devices="ambientale,indossabile" style="display: block; margin-bottom: 0.5rem;">
+                <input type="checkbox" value="esposizione_solare" data-unita="ore"> Sensore Solare (ore)
+              </label>
+              
+              <label class="cap-option" data-devices="indossabile,ambientale,pesatura" style="display: block;">
+                <input type="checkbox" value="posizione_gps" data-unita="coordinate"> Modulo GPS (Coordinate)
+              </label>
+            </div>
           </div>
 
           <div class="form-group" id="groupAnimaleId" style="display: none; flex-direction: column;">
             <label for="iotAnimaleId">Animale Associato (Tag/ID)</label>
             <select id="iotAnimaleId" style="padding: 0.5rem; margin-top: 0.2rem;">
-              <option value="">-- Caricamento aniamli in corso... --</option>
             </select>
           </div>
 
@@ -81,14 +83,48 @@
   <script src="/logout.js"></script>
 
   <script>
-    document.getElementById('iotTipoDispositivo').addEventListener('change', (e) => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const tipoDispositivoSelect = document.getElementById('iotTipoDispositivo');
       const groupAnimale = document.getElementById('groupAnimaleId');
-      if (e.target.value === 'indossabile') {
-        groupAnimale.style.display = 'flex';
-      } else {
-        groupAnimale.style.display = 'none';
-        document.getElementById('iotAnimaleId').value = '';
+      const animaleSelect = document.getElementById('iotAnimaleId');
+      const opzioniCapacita = document.querySelectorAll('.cap-option');
+
+      // Funzione che applica le regole visive
+      function aggiornaFormInBaseAlTipo() {
+        const tipoSelezionato = tipoDispositivoSelect.value;
+
+        // 1. Gestione della tendina Animale (solo per indossabili)
+        if (tipoSelezionato === 'indossabile') {
+          groupAnimale.style.display = 'flex';
+        } else {
+          groupAnimale.style.display = 'none';
+          animaleSelect.value = ''; // Resettiamo la mucca se passiamo ad ambientale
+        }
+
+        // 2. Gestione dei filtri delle metriche (Checkbox)
+        opzioniCapacita.forEach(label => {
+          // Leggiamo per quali dispositivi è valido questo sensore
+          const dispositiviAmmessi = label.getAttribute('data-devices').split(',');
+          const checkbox = label.querySelector('input[type="checkbox"]');
+
+          if (dispositiviAmmessi.includes(tipoSelezionato)) {
+            // Se è compatibile, lo mostriamo
+            label.style.display = 'block';
+          } else {
+            // Se non è compatibile, lo nascondiamo e LO DESELEZIONIAMO
+            // (importante per evitare di inviare al backend dati fantasma nascosti)
+            label.style.display = 'none';
+            checkbox.checked = false; 
+          }
+        });
       }
+
+      // Ascoltiamo i cambiamenti del menu a tendina
+      tipoDispositivoSelect.addEventListener('change', aggiornaFormInBaseAlTipo);
+
+      // Lanciamo la funzione una volta al caricamento della pagina 
+      // per allineare l'interfaccia al valore di default della tendina
+      aggiornaFormInBaseAlTipo();
     });
   </script>
 </body>

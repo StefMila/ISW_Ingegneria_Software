@@ -1,5 +1,18 @@
 import mongoose from 'mongoose';
 
+const capacitaSchema = new mongoose.Schema({
+  tipoDato: {
+    type: String,
+    required: true,
+    enum: ['temperatura', 'frequenza_cardiaca', 'livello_passi', 'esposizione_solare', 'posizione_gps']
+  },
+  unitaMisura: {
+    type: String,
+    required: true,
+    enum: ['°C', 'bpm', 'passi', 'ore', 'coordinate']
+  }
+}, { _id: false }); // _id: false evita che Mongoose crei un ID per ogni singola capacità
+
 const sensoreSchema = new mongoose.Schema(
   {
     nome: {
@@ -15,21 +28,10 @@ const sensoreSchema = new mongoose.Schema(
         message: '{VALUE} non è un tipo di dispositivo valido'
       }
     },
-    tipoDatoRaccolto: {
-      type: String,
-      required: [true, 'Il tipo di dato raccolto è obbligatorio'],
-      enum: {
-        values: ['temperatura', 'frequenza_cardiaca', 'livello_passi', 'esposizione_solare', 'posizione_gps'],
-        message: '{VALUE} non è un tipo di dato valido'
-      }
-    },
-    unitaMisura: {
-      type: String,
-      required: [true, "L'unità di misura è obbligatoria"],
-      enum: {
-        values: ['°C', 'bpm', 'passi', 'ore', 'coordinate'],
-        message: '{VALUE} non è un\'unità di misura valida'
-      }
+    // Array di metriche supportate
+    capacita: {
+      type: [capacitaSchema],
+      validate: [v => v.length > 0, 'Il dispositivo deve avere almeno una capacità di misurazione']
     },
     stato: {
       type: String,

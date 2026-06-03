@@ -54,24 +54,37 @@ document.addEventListener('DOMContentLoaded', () => {
         
         sensori.forEach(sensore => {
             const icona = sensore.tipoDispositivo === 'indossabile' ? '🐄' : '📡';
-            const val = (sensore.valore !== null && sensore.valore !== undefined) ? sensore.valore : '--';
             
+            // Creiamo dinamicamente la lista delle metriche
+            let metricheHtml = '';
+            sensore.capacita.forEach(cap => {
+                // Cerchiamo se nel JSON arrivato da MQTT esiste il valore per questa metrica
+                const val = (sensore.valori && sensore.valori[cap.tipoDato] !== undefined) 
+                            ? sensore.valori[cap.tipoDato] 
+                            : '--';
+                
+                // Formattiamo il nome (es: "frequenza_cardiaca" diventa "Frequenza Cardiaca")
+                const label = cap.tipoDato.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                metricheHtml += `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px dashed #eee; padding-bottom: 0.2rem;">
+                        <span style="color: #7f8c8d; font-size: 0.9rem;">${label}</span>
+                        <span style="font-weight: bold; color: #2c3e50;">${val} <span style="font-size: 0.8rem;">${cap.unitaMisura}</span></span>
+                    </div>
+                `;
+            });
+
             html += `
-                <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; width: 250px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; width: 280px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                     <h3 style="margin-top: 0; font-size: 1.1rem;">${icona} ${sensore.nome}</h3>
                     <p style="margin: 0; font-size: 0.85rem; color: #666; text-transform: capitalize;">
                         Tipo: ${sensore.tipoDispositivo}
                     </p>
-                    ${sensore.animaleId ? `<p style="margin: 0.2rem 0 0 0; font-size: 0.8rem; color: #888;">Animale ID: ${sensore.animaleId.substring(0,6)}...</p>` : ''}
+                    ${sensore.animaleId ? `<p style="margin: 0.2rem 0 1rem 0; font-size: 0.8rem; color: #888;">Animale ID: ${sensore.animaleId.substring(0,6)}...</p>` : '<div style="margin-bottom: 1rem;"></div>'}
                     
-                    <div style="margin-top: 1.5rem; text-align: center;">
-                        <span style="font-size: 2.5rem; font-weight: bold; color: #2c3e50;">${val}</span>
-                        <span style="font-size: 1.2rem; color: #7f8c8d;">${sensore.unitaMisura}</span>
+                    <div style="background: #f9f9f9; padding: 1rem; border-radius: 6px;">
+                        ${metricheHtml}
                     </div>
-                    
-                    <p style="margin: 1rem 0 0 0; text-align: center; font-size: 0.9rem; color: #34495e; font-weight: 500; text-transform: uppercase;">
-                        ${sensore.tipoDatoRaccolto.replace('_', ' ')}
-                    </p>
                 </div>
             `;
         });

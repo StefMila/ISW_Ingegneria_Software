@@ -33,11 +33,23 @@ document.addEventListener('DOMContentLoaded', () => {
             animaleId = null;
         }
 
+        // Raccogliamo tutte le checkbox selezionate
+        const checkboxSelezionate = document.querySelectorAll('#iotCapacita input[type="checkbox"]:checked');
+        const capacitaArray = Array.from(checkboxSelezionate).map(cb => ({
+            tipoDato: cb.value,
+            unitaMisura: cb.getAttribute('data-unita')
+        }));
+
+        if (capacitaArray.length === 0) {
+            statusForm.style.color = 'red';
+            statusForm.textContent = 'Devi selezionare almeno una capacità per il dispositivo.';
+            return;
+        }
+
         const payload = {
             nome: document.getElementById('iotNome').value,
             tipoDispositivo: tipoDispositivo,
-            tipoDatoRaccolto: document.getElementById('iotTipoDato').value,
-            unitaMisura: document.getElementById('iotUnita').value,
+            capacita: capacitaArray, // Inviamo l'array al backend
             animaleId: animaleId,
             aziendaId: aziendaId 
         };
@@ -78,28 +90,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectAnimale = document.getElementById('iotAnimaleId');
     
     async function caricaAnimali() {
+        // Recuperiamo l'elemento HTML della select
+        const selectAnimale = document.getElementById('iotAnimaleId');
+        
+        // 1. Inizializziamo il componente Choices.js per la ricerca
+        const choicesAnimale = new Choices(selectAnimale, {
+            searchEnabled: true,
+            searchPlaceholderValue: 'Cerca matricola o nome...',
+            itemSelectText: 'Seleziona',
+            noResultsText: 'Nessuna mucca trovata',
+            placeholder: true,
+        });
+
         try {
-            const response = await fetch(`/api/animali?aziendaId=${aziendaId}`, {
+            // Mostriamo lo stato di caricamento nel menu a tendina
+            choicesAnimale.setChoices([{ value: '', label: 'Caricamento mucche in corso...', disabled: true }], 'value', 'label', true);
+
+            // Chiamata API al backend
+            const response = await fetch(`/api/aziende/${aziendaId}/animali`, {
+                method: 'GET',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            
+            if (!response.ok) throw new Error('Errore di rete o rotta non trovata');
+            
             const data = await response.json();
             
-            selectAnimale.innerHTML = '<option value="">-- Seleziona una mucca --</option>';
-            
+            // 2. Popoliamo i dati nel menu
             if (data.items && data.items.length > 0) {
-                data.items.forEach(animale => {
-                    const option = document.createElement('option');
-                    option.value = animale._id;
-                    // Mostra il nome della mucca, o la matricola, o una parte dell'ID se non ha nome
-                    option.textContent = animale.nome || `Matricola: ${animale.matricola}` || `ID: ${animale._id.substring(0,6)}`;
-                    selectAnimale.appendChild(option);
+                
+                // Mappiamo i dati restituiti dal DB nel formato richiesto da Choices.js
+                const opzioniMucche = data.items.map(animale => {
+                    // ATTENZIONE: Qui ho corretto "mucca" in "animale" per allinearmi alla variabile del ciclo!
+                    const matricola = animale.matricola ? animale.matricola : 'Senza matricola';
+                    const nome = animale.name ? animale.name : 'Senza nome';
+
+                    return {
+                        value: animale._id,
+                        label: `${matricola} - ${nome}`
+                    };
                 });
+                
+                // Aggiungiamo l'opzione vuota (placeholder) in cima alla lista
+                opzioniMucche.unshift({ value: '', label: '-- Seleziona una mucca --', placeholder: true });
+                
+                // Carichiamo tutte le opzioni nel componente visivo
+                choicesAnimale.setChoices(opzioniMucche, 'value', 'label', true);
+                
             } else {
-                selectAnimale.innerHTML = '<option value="">Nessuna mucca trovata in stalla</option>';
+                choicesAnimale.setChoices([{ value: '', label: 'Nessuna mucca trovata in stalla', disabled: true }], 'value', 'label', true);
             }
         } catch (error) {
             console.error("Errore nel caricamento delle mucche:", error);
-            selectAnimale.innerHTML = '<option value="">Errore nel caricamento</option>';
+            choicesAnimale.setChoices([{ value: '', label: 'Errore nel caricamento', disabled: true }], 'value', 'label', true);
         }
     }
     

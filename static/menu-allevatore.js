@@ -1,12 +1,7 @@
 (function () {
   const buildNavMenu = ({ showHomeLink }) => {
-    const homeLink = showHomeLink
-      ? '<a href="/home-allevatore.html" class="nav-home-btn">\u2190 Home</a>'
-      : '';
-
     return `
       <div class="nav-buttons">
-        ${homeLink}
         <div class="nav-dropdown">
           <button class="nav-dropdown-toggle">La tua attività \u25be</button>
           <ul class="nav-dropdown-menu">
@@ -81,6 +76,12 @@
     const displayStyle = currentId ? 'inline-block' : 'none';
     const infoUrl = currentId ? `/show-azienda.html?id=${currentId}` : '#';
 
+    const homeBarHTML = showHomeLink
+      ? `<div class="secondary-home-bar">
+           <a href="/home-allevatore.html" class="nav-home-btn">\u2190 Torna alla Home</a>
+         </div>`
+      : '';
+
     mount.innerHTML = `
       <header class="dashboard-header">
         ${buildNavMenu({ showHomeLink })}
@@ -96,6 +97,8 @@
           <button id="logoutButton">Logout</button>
         </div>
       </header>
+
+      ${homeBarHTML}
     `;
 
     // Listener globale: se l'azienda cambia, aggiorna all'istante il link del bottone info

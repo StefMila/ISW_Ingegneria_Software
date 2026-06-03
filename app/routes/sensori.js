@@ -41,11 +41,11 @@ router.get('/sensori', checkAuth, checkUserType(['allevatore']), async (req, res
 // Registra (collega) un nuovo sensore IoT
 router.post('/sensori', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
-        const { nome, tipoDispositivo, tipoDatoRaccolto, unitaMisura, aziendaId, animaleId } = req.body;
+        const { nome, tipoDispositivo, capacita, aziendaId, animaleId } = req.body;
 
-        if (!nome || !tipoDispositivo || !tipoDatoRaccolto || !unitaMisura || !aziendaId) {
+        if (!nome || !tipoDispositivo || !capacita || capacita.length === 0 || !aziendaId) {
             return res.status(400).json({
-                message: 'Nome, tipo dispositivo, tipo dato, unità di misura e aziendaId sono obbligatori'
+                message: 'Nome, tipo dispositivo, capacità (almeno una) e aziendaId sono obbligatori'
             });
         }
 
@@ -66,8 +66,7 @@ router.post('/sensori', checkAuth, checkUserType(['allevatore']), async (req, re
         const newSensore = new Sensore({
             nome: nome.trim(),
             tipoDispositivo,
-            tipoDatoRaccolto,
-            unitaMisura,
+            capacita, // Salviamo l'array
             aziendaId,
             animaleId: tipoDispositivo === 'indossabile' ? animaleId : null
         });
@@ -170,11 +169,10 @@ router.get('/sensori/dati', checkAuth, checkUserType(['allevatore']), async (req
                 sensoreId: sensore._id,
                 nome: sensore.nome,
                 tipoDispositivo: sensore.tipoDispositivo,
-                tipoDatoRaccolto: sensore.tipoDatoRaccolto,
+                capacita: sensore.capacita,
                 animaleId: sensore.animaleId,
-                // Se MQTT ha già ricevuto dati usiamo quelli, altrimenti diamo un valore iniziale di 0
-                valore: datiMqtt ? datiMqtt.valore : null,
-                unitaMisura: sensore.unitaMisura,
+                // MQTT restituisce un oggetto JSON intero, lo passiamo al frontend
+                valori: datiMqtt ? datiMqtt.dati : null, 
                 ultimoAggiornamento: datiMqtt ? datiMqtt.timestamp : null
             };
         });

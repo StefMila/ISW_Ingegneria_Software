@@ -17,6 +17,12 @@ import lavorazioniRoutes from './routes/lavorazioni.js';
 import './services/mqttService.js'; // Fa partire la connessione e la simulazione MQTT all'avvio
 import iotSensoriRoutes from './routes/sensori.js';
 
+import { avviaSimulatoreHardware } from './services/mqttService.js';
+
+if (process.env.NODE_ENV !== 'test') {
+    avviaSimulatoreHardware();
+}
+
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
