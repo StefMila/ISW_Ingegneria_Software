@@ -166,7 +166,7 @@ export const deleteAnimale = async (req, res) => {
 
         if (!id) {
             return res.status(400).json({
-                message: 'ID della mucca è obbligatorio'
+                message: 'ID dell\'animale è obbligatorio'
             });
         }
         
