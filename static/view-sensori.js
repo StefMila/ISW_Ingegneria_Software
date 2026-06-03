@@ -3,12 +3,33 @@ const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
 document.addEventListener('DOMContentLoaded', () => {
     // Recupero credenziali e contesto dal localStorage
     const token = localStorage.getItem('token');
-    
-    const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
-
+    let aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY); // Usa 'let' e mettilo qui dentro
     const gridSensori = document.getElementById('sensoriLiveGrid');
 
-    // Se manca il token o l'azienda, blocchiamo tutto subito
+    // --- ASCOLTO DEL CAMBIO AZIENDA (Messo qui dentro così vede caricaDatiSensori!) ---
+    window.addEventListener('aziendaChanged', (e) => {
+        aziendaId = e.detail.id; // Usa .id come da azienda-switcher.js
+
+        if (!aziendaId) {
+            gridSensori.innerHTML = '<p class="status" style="color: red;">Nessuna azienda selezionata.</p>';
+            return;
+        }
+
+        // Mostriamo un feedback visivo immediato di caricamento
+        gridSensori.innerHTML = `
+            <div style="overflow-x: auto;">
+                <p class="status" style="padding: 1rem; color: #666;">
+                    🔄 Caricamento sensori per la nuova azienda in corso...
+                </p>
+            </div>
+        `;
+        
+        // Forziamo subito il recupero dei nuovi dati senza aspettare il prossimo ciclo di 5 secondi
+        caricaDatiSensori();
+    });
+    // ----------------------------------------------------------------------------------
+
+    // Se manca il token o l'azienda all'avvio, blocchiamo tutto subito
     if (!token) {
         window.location.href = '/login.html';
         return;
@@ -16,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!aziendaId) {
         gridSensori.innerHTML = '<p class="status" style="color: red;">Nessuna azienda selezionata. Torna alla Home per selezionare su quale azienda operare.</p>';
-        formSensore.style.display = 'none'; // Nascondiamo il form se non c'è un'azienda a cui associare i sensori
         return;
     }
 
@@ -38,62 +58,118 @@ document.addEventListener('DOMContentLoaded', () => {
             renderSensori(data.items);
         } catch (error) {
             console.error('Errore fetch sensori:', error);
-            // Evitiamo di mostrare messaggi d'errore invasivi se salta un singolo ciclo di 5 secondi
+            // Evitiamo di mostrare messaggi d'errore invasivi se salta un singolo ciclo
         }
     }
 
-    // Render griglia sensori
+    // Render tabella sensori
     function renderSensori(sensori) {
         if (!sensori || sensori.length === 0) {
-            gridSensori.innerHTML = '<p class="status">Nessun sensore collegato a questa azienda. Registrane uno dal form sottostante.</p>';
+            gridSensori.innerHTML = '<p class="status">Nessun sensore collegato a questa azienda.</p>';
             return;
         }
 
-        // Creiamo una struttura a griglia elastica (flexbox)
-        let html = '<div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">';
-        
-        sensori.forEach(sensore => {
-            const icona = sensore.tipoDispositivo === 'indossabile' ? '🐄' : '📡';
-            
-            // Creiamo dinamicamente la lista delle metriche
-            let metricheHtml = '';
-            sensore.capacita.forEach(cap => {
-                // Cerchiamo se nel JSON arrivato da MQTT esiste il valore per questa metrica
-                const val = (sensore.valori && sensore.valori[cap.tipoDato] !== undefined) 
-                            ? sensore.valori[cap.tipoDato] 
-                            : '--';
-                
-                // Formattiamo il nome (es: "frequenza_cardiaca" diventa "Frequenza Cardiaca")
-                const label = cap.tipoDato.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        // Inizio struttura della tabella
+        let html = `
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: left;">
+                    <thead style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <tr>
+                            <th style="padding: 12px;">Sensore</th>
+                            <th style="padding: 12px;">Tipo</th>
+                            <th style="padding: 12px;">Animale ID</th>
+                            <th style="padding: 12px;">Parametro</th>
+                            <th style="padding: 12px; text-align: right;">Valore</th>
+                            <th style="padding: 12px; text-align: center;">Stato</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
 
-                metricheHtml += `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px dashed #eee; padding-bottom: 0.2rem;">
-                        <span style="color: #7f8c8d; font-size: 0.9rem;">${label}</span>
-                        <span style="font-weight: bold; color: #2c3e50;">${val} <span style="font-size: 0.8rem;">${cap.unitaMisura}</span></span>
-                    </div>
+        sensori.forEach((sensore, sIndex) => {
+            const icona = sensore.tipoDispositivo === 'indossabile' ? '🐄' : '📡';
+            const totaleCapacita = sensore.capacita.length || 1; // Gestiamo il rowspan
+            
+            // Colore di background alternato per raggruppare visivamente i sensori
+            const baseBgColor = sIndex % 2 === 0 ? '#ffffff' : '#fafbfc';
+
+            // Se il sensore non ha parametri configurati
+            if (sensore.capacita.length === 0) {
+                html += `
+                    <tr style="border-bottom: 1px solid #eee; background-color: ${baseBgColor};">
+                        <td style="padding: 12px;"><strong>${icona} ${sensore.nome}</strong></td>
+                        <td style="padding: 12px; text-transform: capitalize;">${sensore.tipoDispositivo}</td>
+                        <td style="padding: 12px; color: #666;">${sensore.animaleId ? sensore.animaleId.substring(0,6) + '...' : '-'}</td>
+                        <td colspan="3" style="padding: 12px; text-align: center; color: #999;">Nessun parametro monitorato</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Iteriamo su tutte le misurazioni di questo specifico sensore
+            sensore.capacita.forEach((cap, index) => {
+                const rawVal = (sensore.valori && sensore.valori[cap.tipoDato] !== undefined) ? sensore.valori[cap.tipoDato] : null;
+                const valDisplay = rawVal !== null ? rawVal : '--';
+                const label = cap.tipoDato.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                // Variabili di stato per la metrica corrente
+                let isAnomaly = false;
+                let rowBgColor = baseBgColor;
+                let statusBadge = `<span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">Normale</span>`;
+                let valColor = 'color: #2c3e50; font-weight: 500;';
+
+                // Anomalia: Temperatura su sensore indossabile
+                if (sensore.tipoDispositivo === 'indossabile' && cap.tipoDato === 'temperatura' && rawVal !== null) {
+                    // Range normale approssimativo per una bovina adulta: 38.0 - 39.5
+                    if (rawVal < 38.0 || rawVal > 39.5) {
+                        isAnomaly = true;
+                        rowBgColor = '#fff5f5'; // Sfondo rosso chiaro per evidenziare
+                        valColor = 'color: #c62828; font-weight: bold;';
+                        statusBadge = `<span style="background: #ffebee; color: #c62828; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">Anomalia</span>`;
+                    }
+                } else if (rawVal === null) {
+                    statusBadge = `<span style="background: #f5f5f5; color: #9e9e9e; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">In attesa</span>`;
+                }
+
+                html += `<tr style="border-bottom: 1px solid #eee; background-color: ${rowBgColor}; transition: background-color 0.3s;">`;
+                
+                // Le informazioni generali del sensore (Nome, Tipo, Animale) usano rowspan per apparire solo nella prima riga
+                if (index === 0) {
+                    html += `
+                        <td rowspan="${totaleCapacita}" style="padding: 12px; vertical-align: top; border-right: 1px solid #f0f0f0;">
+                            <strong>${icona} ${sensore.nome}</strong>
+                        </td>
+                        <td rowspan="${totaleCapacita}" style="padding: 12px; vertical-align: top; text-transform: capitalize; border-right: 1px solid #f0f0f0;">
+                            ${sensore.tipoDispositivo}
+                        </td>
+                        <td rowspan="${totaleCapacita}" style="padding: 12px; vertical-align: top; color: #666; border-right: 1px solid #f0f0f0;">
+                            ${sensore.animaleId ? sensore.animaleId.substring(0,6) + '...' : '-'}
+                        </td>
+                    `;
+                }
+
+                // Colonne specifiche per il singolo parametro
+                html += `
+                        <td style="padding: 12px;">${label}</td>
+                        <td style="padding: 12px; text-align: right; ${valColor}">
+                            ${valDisplay} <span style="font-size: 0.8rem; color: #7f8c8d;">${cap.unitaMisura}</span>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">${statusBadge}</td>
+                    </tr>
                 `;
             });
-
-            html += `
-                <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; width: 280px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <h3 style="margin-top: 0; font-size: 1.1rem;">${icona} ${sensore.nome}</h3>
-                    <p style="margin: 0; font-size: 0.85rem; color: #666; text-transform: capitalize;">
-                        Tipo: ${sensore.tipoDispositivo}
-                    </p>
-                    ${sensore.animaleId ? `<p style="margin: 0.2rem 0 1rem 0; font-size: 0.8rem; color: #888;">Animale ID: ${sensore.animaleId.substring(0,6)}...</p>` : '<div style="margin-bottom: 1rem;"></div>'}
-                    
-                    <div style="background: #f9f9f9; padding: 1rem; border-radius: 6px;">
-                        ${metricheHtml}
-                    </div>
-                </div>
-            `;
         });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
         
-        html += '</div>';
         gridSensori.innerHTML = html;
     }
 
-    // Avvio
+    // Avvio iniziale e impostazione del polling
     caricaDatiSensori();
     setInterval(caricaDatiSensori, 5000);
 });
