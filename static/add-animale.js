@@ -1,6 +1,10 @@
 const addAnimaleForm = document.getElementById('add-animale-form');
 const addAnimaleMessage = document.getElementById('addAnimaleMessage');
 const currentAziendaBadge = document.getElementById('currentAziendaBadge');
+const fotoInput = document.getElementById('fotoAnimale');
+const fotoPreview = document.getElementById('fotoAnimalePreview');
+
+let selectedFotoDataUrl = '';
 
 const selectedAziendaName = localStorage.getItem('selectedAziendaName') || 'non selezionata';
 if (currentAziendaBadge) {
@@ -16,6 +20,46 @@ const getTrimmedValue = (...ids) => {
     }
     return '';
 };
+
+if (fotoInput) {
+    fotoInput.addEventListener('change', () => {
+        const file = fotoInput.files && fotoInput.files[0];
+        selectedFotoDataUrl = '';
+
+        if (!file) {
+            if (fotoPreview) {
+                fotoPreview.style.display = 'none';
+                fotoPreview.removeAttribute('src');
+            }
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            if (addAnimaleMessage) {
+                addAnimaleMessage.style.color = 'red';
+                addAnimaleMessage.textContent = 'Seleziona un file immagine valido.';
+            }
+            fotoInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            selectedFotoDataUrl = typeof reader.result === 'string' ? reader.result : '';
+            if (fotoPreview && selectedFotoDataUrl) {
+                fotoPreview.src = selectedFotoDataUrl;
+                fotoPreview.style.display = 'block';
+            }
+        };
+        reader.onerror = () => {
+            if (addAnimaleMessage) {
+                addAnimaleMessage.style.color = 'red';
+                addAnimaleMessage.textContent = 'Impossibile leggere la foto selezionata.';
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
 // Handler per la registrazione di un nuovo animale
 if (addAnimaleForm) {
     addAnimaleForm.addEventListener('submit', async (event) => {
@@ -75,11 +119,12 @@ if (addAnimaleForm) {
                     razza,
                     figliaDi,
                     aziendaId,
-                    note
+                    note,
+                    foto: selectedFotoDataUrl || undefined
                 })
             });
 // Gestione della risposta del server
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
             if (!response.ok) {
                 addAnimaleMessage.textContent = data.message || 'Errore durante la registrazione dell\'animale';
                 return;
@@ -87,6 +132,11 @@ if (addAnimaleForm) {
             addAnimaleMessage.style.color = 'green';
             addAnimaleMessage.textContent = data.message || 'Animale registrato con successo';
             addAnimaleForm.reset();
+            selectedFotoDataUrl = '';
+            if (fotoPreview) {
+                fotoPreview.style.display = 'none';
+                fotoPreview.removeAttribute('src');
+            }
         } catch (error) {
             console.error('Errore durante la registrazione dell\'animale:', error);
             addAnimaleMessage.textContent = 'Errore di connessione al server';

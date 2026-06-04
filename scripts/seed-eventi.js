@@ -48,6 +48,21 @@ async function seedEventi() {
   await mongoose.connect(MONGO_URI);
   console.log('Connesso.');
 
+  // Compatibilita con vecchi DB: rimuove l'indice geospaziale legacy su `location`.
+  // Oggi `location` e' una stringa, quindi un 2dsphere causa errori in inserimento.
+  try {
+    const indexes = await Evento.collection.indexes();
+    const legacyGeoIndex = indexes.find(
+      (idx) => idx?.name === 'location_2dsphere' || idx?.key?.location === '2dsphere'
+    );
+    if (legacyGeoIndex?.name) {
+      await Evento.collection.dropIndex(legacyGeoIndex.name);
+      console.log(`Indice legacy rimosso: ${legacyGeoIndex.name}`);
+    }
+  } catch (indexError) {
+    console.warn('Impossibile verificare/rimuovere indice legacy su location:', indexError.message || indexError);
+  }
+
   const allevatore = await User.findOne({ email: 'allevatore@muccapp.it' }).select('_id email');
   if (!allevatore) {
     throw new Error('Utente allevatore@muccapp.it non trovato. Esegui prima: npm run seed');

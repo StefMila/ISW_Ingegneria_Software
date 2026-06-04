@@ -120,6 +120,16 @@ const animaliData = [
   { matricola: 'IT001CN002', name: 'Pallina',    species: 'mucca',    dataNascita: '2024-03-15', sesso: 'femmina', razza: 'Gigante Bianco',note: '' },
 ];
 
+const buildAnimaleFoto = ({ matricola, species }) => {
+  const normalizedSpecies = String(species || '').trim().toLowerCase();
+  if (normalizedSpecies !== 'mucca') {
+    return undefined;
+  }
+
+  const text = encodeURIComponent(`Mucca ${matricola}`);
+  return `https://placehold.co/640x480?text=${text}`;
+};
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function seed() {
@@ -193,19 +203,31 @@ async function seed() {
   // 3. Animali — salta quelli con matricola già presente
   let inseriti = 0;
   let saltati = 0;
+  let aggiornatiFoto = 0;
   for (const dati of animaliData) {
     const esiste = await Animale.findOne({ matricola: dati.matricola });
-    if (esiste) { saltati++; continue; }
+    if (esiste) {
+      const fotoSeed = dati.foto || buildAnimaleFoto({ matricola: dati.matricola, species: dati.species });
+      if (!esiste.foto && fotoSeed) {
+        esiste.foto = fotoSeed;
+        await esiste.save();
+        aggiornatiFoto++;
+      } else {
+        saltati++;
+      }
+      continue;
+    }
 
     await Animale.create({
       ...dati,
       aziendaId: aziendaMandria._id,
       note: dati.note || undefined,
       figliaDi: dati.figliaDi || undefined,
+      foto: dati.foto || buildAnimaleFoto({ matricola: dati.matricola, species: dati.species }),
     });
     inseriti++;
   }
-  console.log(`🐄  Animali inseriti: ${inseriti}  |  già presenti (saltati): ${saltati}`);
+  console.log(`🐄  Animali inseriti: ${inseriti}  |  foto aggiornate: ${aggiornatiFoto}  |  già presenti (saltati): ${saltati}`);
 
   // ── Riepilogo credenziali ──────────────────────────────────────────────────
   console.log('\n📋  Riepilogo dati di test:');

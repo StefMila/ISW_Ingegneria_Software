@@ -51,6 +51,12 @@ const animaleSchema = new Schema({
         type: String,
         required: false,
         trim: true
+    },
+    foto: {
+        type: String,
+        required: false,
+        trim: true,
+        default: undefined
     }
 }, { timestamps: true });
 

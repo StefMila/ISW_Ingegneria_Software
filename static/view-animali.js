@@ -80,7 +80,7 @@ const fetchAnimali = async () => {
 // Se non abbiamo id azienda o token, non possiamo caricare gli animali, mostriamo un messaggio e usciamo
   if (!aziendaId) {
     renderStatus('Nessuna azienda selezionata. Torna alla home e seleziona un\'azienda.', '#b45309');
-    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Seleziona prima un\'azienda dalla home.</td></tr>';
+    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="10">Seleziona prima un\'azienda dalla home.</td></tr>';
     return;
   }
 
@@ -105,7 +105,7 @@ const fetchAnimali = async () => {
 
     if (!response.ok) {
       renderStatus(data.message || 'Errore nel caricamento degli animali', 'red');
-      animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Errore nel caricamento.</td></tr>';
+      animaliBody.innerHTML = '<tr class="empty-row"><td colspan="10">Errore nel caricamento.</td></tr>';
       return;
     }
 
@@ -121,7 +121,7 @@ const fetchAnimali = async () => {
   } catch (err) {
     console.error('Errore durante il recupero degli animali:', err);
     renderStatus('Errore di connessione al server.', 'red');
-    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Errore di connessione.</td></tr>';
+    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="10">Errore di connessione.</td></tr>';
   }
 };
 
@@ -129,12 +129,18 @@ const fetchAnimali = async () => {
 const rowDataMap = new Map();
 // Sanitizza un valore per uso come attributo HTML
 const escAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+const renderFoto = (foto, name) => {
+  if (!foto) {
+    return '<span class="animal-photo-placeholder">—</span>';
+  }
+  return `<img class="animal-photo-thumb" src="${escAttr(foto)}" alt="Foto ${escAttr(name || 'animale')}">`;
+};
 
 //  Render della tabella degli animali
 const renderTable = (items) => {
   rowDataMap.clear();
   if (items.length === 0) {
-    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="9">Nessun animale trovato.</td></tr>';
+    animaliBody.innerHTML = '<tr class="empty-row"><td colspan="10">Nessun animale trovato.</td></tr>';
     return;
   }
 
@@ -142,6 +148,7 @@ const renderTable = (items) => {
 
   animaliBody.innerHTML = items.map((a) => `
     <tr data-id="${a._id || ''}">
+      <td>${renderFoto(a.foto, a.name)}</td>
       <td>${a.matricola || '—'}</td>
       <td>${a.name || '—'}</td>
       <td>${capitalize(a.species)}</td>
@@ -228,6 +235,7 @@ animaliBody.addEventListener('click', async (event) => {
 //  Funzioni per gestione inline edit e delete degli animali (la delete è confermata da un prompt, l'edit apre dei campi modificabili direttamente nella riga, con salvataggio o annullamento)
 
 const rowHtml = (a) => `
+  <td>${renderFoto(a.foto, a.name)}</td>
   <td>${a.matricola || '—'}</td>
   <td>${a.name || '—'}</td>
   <td>${capitalize(a.species)}</td>
@@ -249,6 +257,7 @@ const openInlineEdit = (tr, a) => {
   if (tr.classList.contains('editing')) return;
   tr.classList.add('editing');
   tr.innerHTML = `
+    <td>${renderFoto(a.foto, a.name)}</td>
     <td>${a.matricola || '—'}</td>
     <td><input class="inline-input" data-field="name" value="${escAttr(a.name)}"></td>
     <td>

@@ -7,7 +7,8 @@ import Evento from '../models/evento.js';
 import Azienda from '../models/azienda.js';
 import {
   createGoogleCalendarEvent,
-  getGoogleIntegrationForUserAzienda
+  getGoogleIntegrationForUserAzienda,
+  refreshAccessTokenIfNeeded
 } from './google-calendar.js';
 
 // Diviso in pubblico e privato. Router per eventi pubblici (accessibili a tutti, senza autenticazione)
@@ -535,6 +536,14 @@ const syncAllGoogleEventsHandler = async (req, res) => {
     const integration = await getGoogleIntegrationForUserAzienda({ userId: req.user.userId, aziendaId });
     if (!integration?.connected) {
       return res.status(400).json({ message: 'Google Calendar non connesso per questa azienda' });
+    }
+
+    try {
+      await refreshAccessTokenIfNeeded(integration);
+    } catch (tokenError) {
+      return res.status(400).json({
+        message: `Sincronizzazione con Google Calendar non disponibile: ${tokenError?.message || 'errore autenticazione Google'}`
+      });
     }
 
     const filter = {
