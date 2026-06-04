@@ -6,7 +6,7 @@ import Animale from '../app/models/animale.js';
 import Azienda from '../app/models/azienda.js';
 
 // Verifica che la pagina sia accessibile e che funzioni lo script.
-describe('US49 - View Animali - pagina e script', () => {
+describe('US49, 48, 50 - View Animali - pagina e script', () => {
 	test('GET /view-animali.html restituisce la tabella con filtri e paginazione', async () => {
 		const response = await request(app)
 			.get('/view-animali.html')
@@ -42,7 +42,7 @@ describe('US49 - View Animali - pagina e script', () => {
 	});
 });
 
-describe('US49 - View Animali - gestione animali', () => {
+describe('US49, 48, 50 - View Animali - gestione animali', () => {
 	const aziendaId = '665f8fd8ad8f8c0012f9c123';
 	const animaleId = '665f8fd8ad8f8c0012f9c456';
 	const ownerUserId = 'mocked_user_id';
