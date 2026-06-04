@@ -32,6 +32,7 @@
           <thead>
             <!-- Riga 1: etichette colonne -->
             <tr class="header-labels">
+              <th>Foto</th>
               <th data-sort="matricola">Matricola <span class="sort-icon"></span></th>
               <th data-sort="name">Nome <span class="sort-icon"></span></th>
               <th data-sort="species">Specie <span class="sort-icon"></span></th>
@@ -44,6 +45,7 @@
             </tr>
             <!-- Riga 2: filtri per colonna -->
             <tr class="header-filters">
+              <th></th>
               <th>
                 <input type="text" id="filter-matricola" placeholder="Filtra…" data-filter="matricola">
               </th>
@@ -88,7 +90,7 @@
           </thead>
           <tbody id="animaliBody">
             <tr class="empty-row">
-              <td colspan="9">Caricamento…</td>
+              <td colspan="10">Caricamento…</td>
             </tr>
           </tbody>
         </table>

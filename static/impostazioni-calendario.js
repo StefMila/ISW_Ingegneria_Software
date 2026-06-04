@@ -118,7 +118,14 @@ const showOAuthOutcomeFromQuery = () => {
 
   if (gcal === 'error') {
     const reason = params.get('reason') || 'Errore OAuth';
-    setMessage(`Connessione Google Calendar fallita: ${reason}`, 'red');
+    const reasonMap = {
+      google_calendar_not_enabled: 'L\'account Google usato non ha Google Calendar attivo. Apri calendar.google.com o usa un account con Calendar abilitato.',
+      missing_config: 'Configurazione OAuth Google mancante nel backend.',
+      missing_params: 'Parametri OAuth mancanti nel callback.',
+      ownership_failed: 'Utente non autorizzato per questa azienda.'
+    };
+    const readable = reasonMap[reason] || reason;
+    setMessage(`Connessione Google Calendar fallita: ${readable}`, 'red');
   }
 };
 // Gestione submit del form: in questo caso non abbiamo campi modificabili direttamente, quindi preveniamo il comportamento di default e non facciamo nulla. Tutta la gestione avviene tramite i pulsanti di connessione/disconnessione.

@@ -371,7 +371,10 @@ if (syncAllButton) {
 			syncAllButton.disabled = true;
 			const result = await syncAllEventsToGoogle(aziendaId);
 			const stats = result?.result || {};
-			setMessage(`Sincronizzazione completata: ${stats.synced ?? 0} ok, ${stats.failed ?? 0} falliti.`, stats.failed ? '#b45309' : 'green');
+			const firstFailureMessage = Array.isArray(stats.failures) && stats.failures.length > 0
+				? ` Primo errore: ${stats.failures[0].message || 'non disponibile'}`
+				: '';
+			setMessage(`Sincronizzazione completata: ${stats.synced ?? 0} ok, ${stats.failed ?? 0} falliti.${firstFailureMessage}`, stats.failed ? '#b45309' : 'green');
 			await loadEvents();
 		} catch (error) {
 			setMessage(error.message || 'Errore sincronizzazione massiva Google Calendar.', 'red');

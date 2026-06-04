@@ -30,7 +30,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const swaggerDocument = YAML.load(path.join(projectRoot, 'oas3.yaml'));
 
 // Middleware base
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(projectRoot, 'static')));
 
 // Routing API

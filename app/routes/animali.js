@@ -22,7 +22,7 @@ const resolveAziendaIdFromRequest = (req) => {
 // handler per la registrazione di un nuovo animale --> risponde a POST su /api/aziende/{aziendaId}/animali
 export const registerAnimale = async (req, res) => {
     try {
-        const { matricola, name, species, dataNascita, sesso, razza, figliaDi, note } = req.body;
+        const { matricola, name, species, dataNascita, sesso, razza, figliaDi, note, foto } = req.body;
         const aziendaId = resolveAziendaIdFromRequest(req);
 
         if (req.user.userType !== 'allevatore') {
@@ -38,10 +38,17 @@ export const registerAnimale = async (req, res) => {
         const normalizedRazza = typeof razza === 'string' ? razza.trim() : '';
         const normalizedFigliaDi = typeof figliaDi === 'string' ? figliaDi.trim() : '';
         const normalizedNote = typeof note === 'string' ? note.trim() : '';
+        const normalizedFoto = typeof foto === 'string' ? foto.trim() : '';
         // Controllo che tutti i campi obbligatori siano presenti
         if (!normalizedMatricola || !normalizedName || !normalizedSpecies || !dataNascita || !normalizedSesso || !aziendaId) {
             return res.status(400).json({
                 message: 'Matricola, name, species, dataNascita, sesso e aziendaId sono obbligatori'
+            });
+        }
+
+        if (normalizedFoto && normalizedFoto.length > 2_000_000) {
+            return res.status(400).json({
+                message: 'Foto troppo grande'
             });
         }
         // Controllo unicità matricola
@@ -68,7 +75,8 @@ export const registerAnimale = async (req, res) => {
             razza: normalizedRazza || undefined,
             figliaDi: normalizedFigliaDi || undefined,
             aziendaId,
-            note: normalizedNote || undefined
+            note: normalizedNote || undefined,
+            foto: normalizedFoto || undefined
         });
         // Salvataggio del nuovo animale nel database
         await newAnimale.save();
@@ -239,7 +247,7 @@ export const updateAnimale = async (req, res) => {
         }
 
         // Whitelist dei campi modificabili: matricola, aziendaId e _id non sono modificabili
-        const { name, species, dataNascita, sesso, razza, figliaDi, note } = req.body;
+        const { name, species, dataNascita, sesso, razza, figliaDi, note, foto } = req.body;
         let hasUpdate = false;
 
         if ('name' in req.body) { existingAnimale.name = typeof name === 'string' ? name.trim() : name; hasUpdate = true; }
@@ -249,6 +257,14 @@ export const updateAnimale = async (req, res) => {
         if ('razza' in req.body) { existingAnimale.razza = typeof razza === 'string' ? razza.trim() : razza; hasUpdate = true; }
         if ('figliaDi' in req.body) { existingAnimale.figliaDi = typeof figliaDi === 'string' ? figliaDi.trim() || undefined : figliaDi; hasUpdate = true; }
         if ('note' in req.body) { existingAnimale.note = typeof note === 'string' ? note.trim() || undefined : note; hasUpdate = true; }
+        if ('foto' in req.body) {
+            const normalizedFoto = typeof foto === 'string' ? foto.trim() : '';
+            if (normalizedFoto && normalizedFoto.length > 2_000_000) {
+                return res.status(400).json({ message: 'Foto troppo grande' });
+            }
+            existingAnimale.foto = normalizedFoto || undefined;
+            hasUpdate = true;
+        }
 
         if (!hasUpdate) {
             return res.status(400).json({ message: 'Nessun campo valido da aggiornare' });

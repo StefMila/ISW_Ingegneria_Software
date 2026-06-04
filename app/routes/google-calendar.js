@@ -19,9 +19,9 @@ const GOOGLE_OAUTH_SCOPES = [
 ];
 
 const getGoogleConfig = () => {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI;
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
 
   if (!clientId || !clientSecret || !redirectUri) return null;
   return { clientId, clientSecret, redirectUri };
@@ -32,7 +32,7 @@ const requireGoogleConfig = (res) => {
 
   if (!config) {
     res.status(500).json({
-      message: 'Configurazione Google OAuth incompleta. Imposta GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET e GOOGLE_OAUTH_REDIRECT_URI.'
+      message: 'Configurazione Google OAuth incompleta. Imposta GOOGLE_OAUTH_CLIENT_ID/GOOGLE_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET/GOOGLE_CLIENT_SECRET e GOOGLE_OAUTH_REDIRECT_URI/GOOGLE_REDIRECT_URI.'
     });
     return null;
   }
@@ -138,6 +138,16 @@ const setCalendarPublicReadAccess = async ({ accessToken, calendarId }) => {
       scope: { type: 'default' }
     }
   });
+};
+
+const normalizeOAuthErrorReason = (message) => {
+  const normalized = String(message || '').toLowerCase();
+
+  if (normalized.includes('must be signed up for google calendar')) {
+    return 'google_calendar_not_enabled';
+  }
+
+  return message || 'unknown';
 };
 
 const calendarExists = async ({ accessToken, calendarId }) => {
@@ -262,7 +272,7 @@ router.get('/oauth/callback', async (req, res) => {
       },
       {
         upsert: true,
-        new: true,
+        returnDocument: 'after',
         runValidators: true
       }
     );
@@ -270,7 +280,8 @@ router.get('/oauth/callback', async (req, res) => {
     return res.redirect(`${frontendRedirect}?gcal=connected`);
   } catch (error) {
     console.error('Errore callback OAuth Google Calendar:', error);
-    return res.redirect(`${frontendRedirect}?gcal=error&reason=${encodeURIComponent(error.message || 'unknown')}`);
+    const normalizedReason = normalizeOAuthErrorReason(error?.message);
+    return res.redirect(`${frontendRedirect}?gcal=error&reason=${encodeURIComponent(normalizedReason)}`);
   }
 });
 
