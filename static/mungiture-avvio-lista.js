@@ -6,7 +6,13 @@
     tableBody: null,
     statusMsg: null,
     currentAziendaBadge: null,
-    animaliMap: new Map()
+    animaliMap: new Map(),
+    mungiture: [],
+    sort: {
+      key: 'startedAt',
+      direction: 'desc'
+    },
+    sortBound: false
   };
 
   const getToken = () => (localStorage.getItem('token') || '').trim();
@@ -107,6 +113,126 @@
     `;
   };
 
+  const getSortValue = (item, key) => {
+    if (key === 'startedAt') {
+      const parsed = new Date(item?.startedAt || '');
+      return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    }
+
+    if (key === 'animale') {
+      const animaleId = String(item?.animaleId || '').trim();
+      return (state.animaliMap.get(animaleId) || animaleId || '').toLowerCase();
+    }
+
+    if (key === 'semiLavoratoId') {
+      return String(item?.semiLavoratoId || '').trim().toLowerCase();
+    }
+
+    if (key === 'quantity') {
+      return typeof item?.quantity === 'number' ? item.quantity : -1;
+    }
+
+    if (key === 'status') {
+      return String(item?.status || '').trim().toLowerCase();
+    }
+
+    if (key === 'notes') {
+      return String(item?.notes || '').trim().toLowerCase();
+    }
+
+    return '';
+  };
+
+  const sortMungiture = (items) => {
+    const { key, direction } = state.sort;
+    const multiplier = direction === 'asc' ? 1 : -1;
+
+    return [...items].sort((left, right) => {
+      const leftValue = getSortValue(left, key);
+      const rightValue = getSortValue(right, key);
+
+      if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+        return (leftValue - rightValue) * multiplier;
+      }
+
+      return String(leftValue).localeCompare(String(rightValue), 'it', { numeric: true, sensitivity: 'base' }) * multiplier;
+    });
+  };
+
+  const updateSortHeaders = () => {
+    const table = state.tableBody?.closest('table');
+    if (!table) {
+      return;
+    }
+
+    const headers = table.querySelectorAll('th[data-sort-key]');
+    headers.forEach((header) => {
+      const key = header.getAttribute('data-sort-key') || '';
+      if (!header.dataset.sortLabel) {
+        header.dataset.sortLabel = header.textContent.trim();
+      }
+
+      const isActive = key === state.sort.key;
+      const arrow = isActive ? (state.sort.direction === 'asc' ? ' ▲' : ' ▼') : '';
+      header.textContent = `${header.dataset.sortLabel}${arrow}`;
+      header.setAttribute('aria-sort', isActive ? (state.sort.direction === 'asc' ? 'ascending' : 'descending') : 'none');
+      header.style.cursor = 'pointer';
+      header.style.userSelect = 'none';
+    });
+  };
+
+  const renderTable = () => {
+    const ordered = sortMungiture(state.mungiture);
+
+    if (ordered.length === 0) {
+      renderStatus('Nessuna mungitura registrata.', '#b45309');
+      renderEmptyState('Nessuna mungitura disponibile.');
+      updateSortHeaders();
+      return;
+    }
+
+    state.tableBody.innerHTML = ordered.map(buildRow).join('');
+    renderStatus(`${ordered.length} mungitura/e caricate.`, 'green');
+    updateSortHeaders();
+  };
+
+  const handleSortClick = (event) => {
+    const header = event.target.closest('th[data-sort-key]');
+    if (!header) {
+      return;
+    }
+
+    const key = header.getAttribute('data-sort-key');
+    if (!key) {
+      return;
+    }
+
+    if (state.sort.key === key) {
+      state.sort.direction = state.sort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.sort.key = key;
+      state.sort.direction = key === 'startedAt' ? 'desc' : 'asc';
+    }
+
+    renderTable();
+  };
+
+  const ensureSortBinding = () => {
+    if (state.sortBound) {
+      return;
+    }
+
+    const table = state.tableBody?.closest('table');
+    const tableHead = table?.querySelector('thead');
+    if (!tableHead) {
+      return;
+    }
+
+    tableHead.addEventListener('click', handleSortClick);
+    state.sortBound = true;
+    updateSortHeaders();
+  };
+
   const fetchMungiture = async () => {
     const aziendaId = getAziendaId();
     const token = getToken();
@@ -142,14 +268,9 @@
       }
 
       const items = Array.isArray(data) ? data : [];
-      if (items.length === 0) {
-        renderStatus('Nessuna mungitura registrata.', '#b45309');
-        renderEmptyState('Nessuna mungitura disponibile.');
-        return;
-      }
-
-      state.tableBody.innerHTML = items.map(buildRow).join('');
-      renderStatus(`${items.length} mungitura/e caricate.`, 'green');
+      state.mungiture = items;
+      ensureSortBinding();
+      renderTable();
     } catch (error) {
       console.error('Errore durante il recupero mungiture:', error);
       renderStatus('Errore di connessione al server.', 'red');

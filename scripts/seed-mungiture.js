@@ -19,7 +19,7 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
-const buildMungitureForYear = ({ year, animaleIds }) => {
+const buildMungitureForYear = ({ year, animaleIds, maxDate }) => {
   const records = [];
 
   for (let month = 0; month < 12; month += 1) {
@@ -29,6 +29,10 @@ const buildMungitureForYear = ({ year, animaleIds }) => {
       const startedAt = new Date(Date.UTC(year, month, day, hour, 10, 0));
       const endedAt = new Date(startedAt.getTime() + (75 + animalIndex * 10) * 60000);
       const quantity = Number((17.5 + ((month + 1) * 0.85) + animalIndex * 2.15 + (year - 2023) * 0.9).toFixed(2));
+
+      if (startedAt > maxDate) {
+        return;
+      }
 
       records.push({
         animaleId,
@@ -42,6 +46,10 @@ const buildMungitureForYear = ({ year, animaleIds }) => {
 
     if (month % 3 === 0 && animaleIds[0]) {
       const extraStartedAt = new Date(Date.UTC(year, month, 20, 16, 30, 0));
+      if (extraStartedAt > maxDate) {
+        continue;
+      }
+
       records.push({
         animaleId: animaleIds[0],
         startedAt: extraStartedAt,
@@ -81,11 +89,16 @@ async function seedMungiture() {
   const deleteResult = await Mungitura.deleteMany({ notes: { $regex: `^${SEED_MARKER}` } });
   console.log(`Mungiture seed precedenti rimosse: ${deleteResult.deletedCount}`);
 
-  const seedRecords = [
-    ...buildMungitureForYear({ year: 2024, animaleIds }),
-    ...buildMungitureForYear({ year: 2025, animaleIds }),
-    ...buildMungitureForYear({ year: 2026, animaleIds })
-  ];
+  const now = new Date();
+  const currentYear = now.getUTCFullYear();
+  const yearsToSeed = [];
+  for (let year = 2024; year <= currentYear; year += 1) {
+    yearsToSeed.push(year);
+  }
+
+  const seedRecords = yearsToSeed.flatMap((year) =>
+    buildMungitureForYear({ year, animaleIds, maxDate: now })
+  );
 
   const docs = seedRecords.map((record, index) => ({
     aziendaId: azienda._id,
