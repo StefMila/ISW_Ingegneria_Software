@@ -103,3 +103,31 @@ describe('Routes - Google Calendar', () => {
   });
 });
 
+describe('Routes - IoT Sensori', () => {
+  // Test POST: Verifica che non si possa registrare un sensore senza token
+  test('POST /api/iot/sensori senza token restituisce 401', async () => {
+    await request(app)
+      .post('/api/iot/sensori')
+      .send({
+        nome: "Collare Test",
+        tipoDispositivo: "indossabile",
+        capacita: [{ tipoDato: "temperatura", unitaMisura: "°C" }],
+        aziendaId: "665f8fd8ad8f8c0012f9c123"
+      })
+      .expect(401);
+  });
+
+  // Test GET (Lista): Verifica che non si possa vedere la lista senza token
+  test('GET /api/iot/sensori senza token restituisce 401', async () => {
+    await request(app)
+      .get('/api/iot/sensori?aziendaId=665f8fd8ad8f8c0012f9c123')
+      .expect(401);
+  });
+
+  // Test GET (Dati live): Verifica che non si possano vedere i dati senza token
+  test('GET /api/iot/sensori/dati senza token restituisce 401', async () => {
+    await request(app)
+      .get('/api/iot/sensori/dati?aziendaId=665f8fd8ad8f8c0012f9c123')
+      .expect(401);
+  });
+});

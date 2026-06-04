@@ -847,10 +847,10 @@ components:
               type: string
               example: frisona
             figliaDi:
-              type: string
+              
               example: ITA00099
             aziendaId:
-              type: string
+              
               example: 665f8fd8ad8f8c0012f9c123
             note:
               type: string

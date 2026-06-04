@@ -191,4 +191,12 @@ export default {
 
   // Whether to use watchman for file crawling
   // watchman: true,
+  transform: {
+    "^.+\\.(js|jsx|mjs|cjs|ts|tsx)$": "babel-jest",
+  },
+  
+  // Assicurati che node_modules sia trasformato se necessario
+  transformIgnorePatterns: [
+    "/node_modules/(?!@babel|jest-runtime)"
+  ],
 };

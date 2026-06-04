@@ -2,7 +2,7 @@ import request from 'supertest';
 import app from '../app/app.js';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server'; // <-- Database in memoria
+import { MongoMemoryServer } from 'mongodb-memory-server'; // Database in memoria
 
 const JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 process.env.JWT_SECRET = JWT_SECRET;
@@ -19,7 +19,7 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
 
-  // 2. Connetti Mongoose a questo database temporaneo
+  // Connetti Mongoose a questo database temporaneo
   if (mongoose.connection.readyState === 0) {
     await mongoose.connect(uri);
   }
@@ -57,9 +57,6 @@ afterAll(async () => {
   await mongoose.connection.close();
   await mongoServer.stop();
 });
-
-
-
 
 // Genera un header di autorizzazione valido con un payload reale.
 // Permette di differenziare l'utente per testare i permessi di ownership.
