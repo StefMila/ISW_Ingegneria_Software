@@ -420,5 +420,68 @@ describe('US109-110-111 routes Mungitura', () => {
         expect(res.body.message).toBe('Mungitura non trovata');
       });
   });
+
+  test('PATCH /api/mungiture/:id completa manualmente e salva quantity/endedAt/status', async () => {
+    const saveMock = jest.fn().mockResolvedValue(undefined);
+    const mungituraDoc = {
+      _id: '665f8fd8ad8f8c0012f9c333',
+      aziendaId: '665f8fd8ad8f8c0012f9c111',
+      status: 'in_corso',
+      quantity: undefined,
+      unit: 'litri',
+      save: saveMock
+    };
+
+    jest.spyOn(Mungitura, 'findById').mockResolvedValue(mungituraDoc);
+    jest.spyOn(Azienda, 'findById').mockReturnValue(selectable({
+      _id: '665f8fd8ad8f8c0012f9c111',
+      ownerUserId: '665f8fd8ad8f8c0012f9c999'
+    }));
+
+    const response = await request(app)
+      .patch('/api/mungiture/665f8fd8ad8f8c0012f9c333')
+      .set('Authorization', authHeader)
+      .send({
+        status: 'completata',
+        endedAt: '2026-06-04T10:00:00.000Z',
+        quantity: '14.75',
+        unit: 'litri',
+        notes: 'chiusura manuale'
+      })
+      .expect(200)
+      .expect(res => {
+        expect(res.body.message).toBe('Mungitura aggiornata con successo');
+      });
+
+    expect(saveMock).toHaveBeenCalledTimes(1);
+    expect(mungituraDoc.status).toBe('completata');
+    expect(mungituraDoc.quantity).toBe(14.75);
+    expect(mungituraDoc.unit).toBe('litri');
+    expect(mungituraDoc.notes).toBe('chiusura manuale');
+    expect(response.body.mungitura).toBeDefined();
+  });
+
+  test('GET /api/mungiture/:id/iot-litri restituisce misurazione valida', async () => {
+    jest.spyOn(Mungitura, 'findById').mockResolvedValue({
+      _id: '665f8fd8ad8f8c0012f9c333',
+      aziendaId: '665f8fd8ad8f8c0012f9c111'
+    });
+    jest.spyOn(Azienda, 'findById').mockReturnValue(selectable({
+      _id: '665f8fd8ad8f8c0012f9c111',
+      ownerUserId: '665f8fd8ad8f8c0012f9c999'
+    }));
+
+    await request(app)
+      .get('/api/mungiture/665f8fd8ad8f8c0012f9c333/iot-litri')
+      .set('Authorization', authHeader)
+      .expect(200)
+      .expect(res => {
+        expect(res.body.source).toBe('iot');
+        expect(res.body.unit).toBe('litri');
+        expect(typeof res.body.quantity).toBe('number');
+        expect(res.body.quantity).toBeGreaterThanOrEqual(8);
+        expect(res.body.quantity).toBeLessThanOrEqual(38);
+      });
+  });
 });
 

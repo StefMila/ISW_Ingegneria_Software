@@ -11,6 +11,39 @@ router.use(checkAuth);
 router.use(checkUserType(['allevatore']));
 // helper per validare ObjectId di MongoDB
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const parseLiters = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+
+    if (typeof value === 'number') {
+        return Number.isFinite(value) && value >= 0 ? Number(value.toFixed(2)) : null;
+    }
+
+    if (typeof value === 'string') {
+        const normalized = value.trim().replace(',', '.');
+        if (!normalized) {
+            return null;
+        }
+
+        if (!/^\d+(\.\d+)?$/.test(normalized)) {
+            return null;
+        }
+
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) && parsed >= 0 ? Number(parsed.toFixed(2)) : null;
+    }
+
+    return null;
+};
+
+const getSimulatedIotLiters = () => {
+    const min = 8;
+    const max = 38;
+    const raw = Math.random() * (max - min) + min;
+    return Number(raw.toFixed(2));
+};
 // router per gestire le mungiture degli animali, con operazioni CRUD e filtri di ricerca
 export const createMungitura = async (req, res) => {
     try {
