@@ -192,7 +192,7 @@ const populateAnimali = async () => {
     if (items.length === 0) {
       animaleSelect.innerHTML = '<option value="">Nessuna mucca registrata</option>';
       animaleSelect.disabled = true;
-      renderStatus('Registra prima almeno una mucca nella mandria.', '#b45309');
+    renderStatus('Registra prima almeno una mucca nella mandria.', '#b45309');
       return;
     }
 

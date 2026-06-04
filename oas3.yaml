@@ -3304,7 +3304,7 @@ paths:
   /api/mungiture/{id}/iot-litri:
     get:
       summary: Lettura litri IoT
-      description: Recupera la lettura litri reale dai sensori MQTT di tipo mungitura attivi associati all'azienda della mungitura. Priorita ai sensori associati allo stesso animale; fallback a sensori aziendali non associati a un animale specifico.
+      description: Recupera la lettura litri reale dai sensori MQTT di tipo mungitura attivi associati all'azienda della mungitura, selezionando la lettura valida piu recente disponibile.
       tags:
         - Mungitura
       security:

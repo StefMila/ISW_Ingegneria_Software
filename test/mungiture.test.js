@@ -464,6 +464,19 @@ describe('US109-110-111 routes Mungitura', () => {
     expect(response.body.mungitura).toBeDefined();
   });
 
+  test('PATCH /api/mungiture/:id rifiuta aggiornamento animaleId', async () => {
+    await request(app)
+      .patch('/api/mungiture/665f8fd8ad8f8c0012f9c333')
+      .set('Authorization', authHeader)
+      .send({
+        animaleId: '665f8fd8ad8f8c0012f9c444'
+      })
+      .expect(400)
+      .expect(res => {
+        expect(res.body.message).toBe('Sono aggiornabili solo endedAt, status, quantity, unit e notes');
+      });
+  });
+
   test('GET /api/mungiture/:id/iot-litri restituisce misurazione valida da sensore MQTT', async () => {
     jest.spyOn(Mungitura, 'findById').mockResolvedValue({
       _id: '665f8fd8ad8f8c0012f9c333',

@@ -228,6 +228,7 @@ body.elenco-collapsed #elencoAziende {
 :root {
   --green-dark:    #0f2704;   /* verde foresta */
   --green-mid:     #4a7c1f;   /* verde prato */
+  --green-hover:   #5a8f2c;   /* hover leggermente piu chiaro */
   --green-light:   #a8d55e;   /* verde tenero */
   --yellow-gold:   #e6a817;   /* giallo grano */
   --bg-from:       #eaf5d3;   /* sfondo verde chiaro */
@@ -307,9 +308,10 @@ button {
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
-/* Stato hover con cambio colore più scuro */
+/* Stato hover con colore leggermente piu chiaro */
 button:hover {
-  background-color: var(--green-dark);
+  background-color: var(--green-hover);
+  color: white;
 }
 /* Stato disabilitato con colore più chiaro e cursore non-allowed */
 button:disabled {
@@ -333,7 +335,7 @@ button:disabled {
 }
 
 .button-link:hover {
-  background-color: var(--green-dark);
+  background-color: var(--green-hover);
   color: white;
 }
 
