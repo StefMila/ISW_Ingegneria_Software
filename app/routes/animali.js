@@ -93,6 +93,13 @@ export const registerAnimale = async (req, res) => {
 // si poteva fare anche inline come handler della rotta, ma per mantenere il codice più pulito e leggibile ho deciso di estrarlo in una funzione a parte
 export const getAnimali = async (req, res) => {
     try {
+        const ownershipCheck = await assertAziendaOwnedByUser(req.params.aziendaId, req.user.userId);
+        if (!ownershipCheck.ok) {
+            return res.status(ownershipCheck.status).json({
+                message: ownershipCheck.message
+            });
+        }
+
         const {
             matricola,
             sortBy = 'createdAt',
@@ -166,7 +173,7 @@ export const deleteAnimale = async (req, res) => {
 
         if (!id) {
             return res.status(400).json({
-                message: 'ID della mucca è obbligatorio'
+                message: 'ID dell\'animale è obbligatorio'
             });
         }
         

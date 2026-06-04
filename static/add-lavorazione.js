@@ -247,7 +247,7 @@ if(templatePreviewForm) {
         templatePreviewMessage.style.color = 'red';
         templatePreviewMessage.textContent = '';
 
-        const addedNotes = '\nNote sulla lavorazione:\n' + getTrimmedValue('addedNotes');
+        const addedNotes = `\nNote sulla lavorazione:\n` + getTrimmedValue('addedNotes');
 
         try{
             // Recupero le informazioni sul template dal form 'template-preview-form'

@@ -234,7 +234,7 @@ const rowLavorazioneHtml = (item) => `
     <td>${escapeHtml(getNotes(item))}</td>
     <td>
         ${item.status === 'in_corso' 
-            ? '<button class="terminate-scale-btn" data-id="${escapeAtt(item._id)}" title="Termina con bilancia" aria-label="Termina con bilancia" data-action="close-iot"><span class="terminate-scale-icon" aria-hidden="true">🌐</span></button> <button class="terminate-manual-btn" data-id="${escapeAttr(item._id)}" title="Termina manuale" aria-label="Termina manuale" data-action="close-manual"><span class="terminate-manual-icon" aria-hidden="true">📏</span></button>' 
+            ? `<button class="terminate-scale-btn" data-id="${escapeAttr(item._id)}" title="Termina con bilancia" aria-label="Termina con bilancia" data-action="close-iot"><span class="terminate-scale-icon" aria-hidden="true">🌐</span></button> <button class="terminate-manual-btn" data-id="${escapeAttr(item._id)}" title="Termina manuale" aria-label="Termina manuale" data-action="close-manual"><span class="terminate-manual-icon" aria-hidden="true">📏</span></button>` 
             : '<span>—</span>'
         }
         <button class="delete-animal-btn" data-id="${escapeAttr(item._id)}" title="Elimina lavorazione" aria-label="Elimina lavorazione">
@@ -548,7 +548,7 @@ const patchCloseLavorazione = async (id, quantity, notes, source) => {
 
     const parsedQuantity = Number(quantity);
     if (!Number.isFinite(parsedQuantity) || parsedQuantity < 0) {
-      renderStatus(lavorazioniStatus, 'Valore litri non valido.', 'red');
+      renderStatus(lavorazioniStatus, 'Valore non valido.', 'red');
       return;
     }
 
@@ -580,11 +580,11 @@ const patchCloseLavorazione = async (id, quantity, notes, source) => {
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        renderStatus(data.message || 'Errore durante la chiusura della lavorazione.', 'red');
+        renderStatus(lavorazioniStatus, data.message || 'Errore durante la chiusura della lavorazione.', 'red');
         return;
       }
 
-      renderStatus(data.message || 'Lavorazione aggiornata con successo.', 'green');
+      renderStatus(lavorazioniStatus, data.message || 'Lavorazione aggiornata con successo.', 'green');
       await fetchLavorazioni();
     } catch (error) {
       console.error('Errore durante la chiusura lavorazione:', error);
@@ -592,8 +592,8 @@ const patchCloseLavorazione = async (id, quantity, notes, source) => {
     }
   };
 
-const closeLavorazioneManual = async (id) => { //TODO: aggiungere UM al pop-up
-    const quantityInput = window.prompt('Inserisci la quantità rilevata manualmente:', '0');
+const closeLavorazioneManual = async (id) => {
+    const quantityInput = window.prompt(`Inserisci la quantità rilevata manualmente:`, '0');
     if (quantityInput === null) {
       return;
     }
@@ -601,6 +601,33 @@ const closeLavorazioneManual = async (id) => { //TODO: aggiungere UM al pop-up
     const notes = window.prompt('Note di chiusura (facoltative):', '');
     await patchCloseLavorazione(id, quantityInput, notes, 'manuale');
 };
+
+// const closeLavorazioneIot = async (id) => {
+//     const token = localStorage.getItem('token');
+//     if (!id || !token) {
+//       renderStatus(lavorazioniStatus, 'Dati mancanti per leggere dalla bilancia IoT.', 'red');
+//       return;
+//     }
+
+//     try {
+//       const iotResponse = await fetch(`/api/mungiture/${id}/iot-litri`, { //cambiare
+//         headers: { Authorization: `Bearer ${token}` }
+//       });
+
+//       const iotData = await iotResponse.json().catch(() => ({}));
+//       if (!iotResponse.ok) {
+//         renderStatus(lavorazioniStatus, iotData.message || 'Errore durante la lettura dalla bilancia IoT.', 'red');
+//         return;
+//       }
+
+//       const quantity = iotData?.quantity;
+//       const notes = window.prompt('Note di chiusura (facoltative):', '');
+//       await patchCloseMungitura(id, quantity, notes, 'iot');
+//     } catch (error) {
+//       console.error('Errore durante lettura IoT:', error);
+//       renderStatus(lavorazioniStatus, 'Errore di connessione durante lettura IoT.', 'red');
+//     }
+// };
 
 if (filterNomeTemplate) {
     filterNomeTemplate.addEventListener('input', applyFilters);
@@ -679,12 +706,25 @@ if (templateTableBody) {
 
 fetchLavorazioni();
 
-//TODO: tabella lavorazioni non template --> campi startedAt, codiceLavorazione, outputQuantity, outputUnit, notes, azioni (completa/elimina)
-//Azioni: completa --> status: 'completata', inserimento outputQuantity (manuale/IoT), automatico endedAt ; elimina --> status: 'annullata'/eliminata dal DB
+// Funzionalità della tabella dedicata alle lavorazioni 
 if(lavorazioniTableBody){
     lavorazioniTableBody.addEventListener('click', async (event) => {
-        //const editManualButton; //finire configurazione evento manuale + fare evento IoT
+        // const closeScaleButton = event.target.closest('.terminate-scale-btn');
+        const closeManualButton = event.target.closest('.terminate-manual-btn');
         const deleteButton = event.target.closest('.delete-animal-btn');
+
+        // if (closeScaleButton) {
+        //     const lavorazioneId = editScaleButton.getAttribute('data-id') || '';
+        //     await closeLavorazioneIot(lavorazioneId);
+        //     return;
+        // }
+        
+        if (closeManualButton) {
+            const lavorazioneId = editManualButton.getAttribute('data-id') || '';
+            await closeLavorazioneManual(lavorazioneId);
+            return;
+        }
+
         if (deleteButton) {
             await deleteLavorazioneById(lavorazioniStatus, deleteButton.dataset.id);
             return;
