@@ -539,6 +539,69 @@ const saveInlineEdit = async (tr, lavorazioneId) => {
     }
 };
 
+const patchCloseLavorazione = async (id, quantity, notes, source) => {
+    const token = localStorage.getItem('token');
+    if (!id || !token) {
+      renderStatus(lavorazioniStatus, 'Dati mancanti per chiudere la lavorazione.', 'red');
+      return;
+    }
+
+    const parsedQuantity = Number(quantity);
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity < 0) {
+      renderStatus(lavorazioniStatus, 'Valore litri non valido.', 'red');
+      return;
+    }
+
+    const sourceLabel = source === 'iot' ? 'IoT' : 'manuale';
+    const composedNotes = [
+      typeof notes === 'string' ? notes.trim() : '',
+      `Rilevazione litri: ${sourceLabel}`
+    ].filter(Boolean).join(' | ');
+
+    const payload = {
+      status: 'completata',
+      endedAt: new Date().toISOString(),
+      outputQuantity: Number(parsedQuantity.toFixed(2)),
+    };
+
+    if (composedNotes) {
+      payload.notes = composedNotes;
+    }
+
+    try {
+      const response = await fetch(`/api/lavorazioni/${id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        renderStatus(data.message || 'Errore durante la chiusura della lavorazione.', 'red');
+        return;
+      }
+
+      renderStatus(data.message || 'Lavorazione aggiornata con successo.', 'green');
+      await fetchLavorazioni();
+    } catch (error) {
+      console.error('Errore durante la chiusura lavorazione:', error);
+      renderStatus(lavorazioniStatus, 'Errore di connessione durante l\'aggiornamento.', 'red');
+    }
+  };
+
+const closeLavorazioneManual = async (id) => { //TODO: aggiungere UM al pop-up
+    const quantityInput = window.prompt('Inserisci la quantità rilevata manualmente:', '0');
+    if (quantityInput === null) {
+      return;
+    }
+
+    const notes = window.prompt('Note di chiusura (facoltative):', '');
+    await patchCloseLavorazione(id, quantityInput, notes, 'manuale');
+};
+
 if (filterNomeTemplate) {
     filterNomeTemplate.addEventListener('input', applyFilters);
 }
@@ -618,9 +681,14 @@ fetchLavorazioni();
 
 //TODO: tabella lavorazioni non template --> campi startedAt, codiceLavorazione, outputQuantity, outputUnit, notes, azioni (completa/elimina)
 //Azioni: completa --> status: 'completata', inserimento outputQuantity (manuale/IoT), automatico endedAt ; elimina --> status: 'annullata'/eliminata dal DB
-// if(lavorazioniTableBody){
-//     lavorazioniTableBody.addEventListener('click', async (event) => { //TODO: event listener dedicato ai bottoni (completa (con outputQuantity), elimina(annulla))
-//         event.preventDefault();
-//     });
-// }
+if(lavorazioniTableBody){
+    lavorazioniTableBody.addEventListener('click', async (event) => {
+        //const editManualButton; //finire configurazione evento manuale + fare evento IoT
+        const deleteButton = event.target.closest('.delete-animal-btn');
+        if (deleteButton) {
+            await deleteLavorazioneById(lavorazioniStatus, deleteButton.dataset.id);
+            return;
+        }
+    });
+}
 
