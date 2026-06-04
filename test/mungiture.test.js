@@ -5,6 +5,8 @@ import { jest, describe, beforeAll, beforeEach, afterEach, expect } from '@jest/
 import Azienda from '../app/models/azienda.js';
 import Animale from '../app/models/animale.js';
 import Mungitura from '../app/models/munigitura.js';
+import Sensore from '../app/models/sensore.js';
+import { ultimeLettureIot } from '../app/services/mqttService.js';
 // test sulla pagina e script.
 describe('US109-110-111 - Mungiture pages - pagina e script', () => {
   test('GET /avvia-mungitura.html restituisce la pagina con form di avvio', async () => {
@@ -126,6 +128,7 @@ describe('US109-110-111 routes Mungitura', () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
+    ultimeLettureIot.clear();
   });
 
   test('POST /api/mungiture senza token restituisce 401', async () => {
@@ -461,15 +464,28 @@ describe('US109-110-111 routes Mungitura', () => {
     expect(response.body.mungitura).toBeDefined();
   });
 
-  test('GET /api/mungiture/:id/iot-litri restituisce misurazione valida', async () => {
+  test('GET /api/mungiture/:id/iot-litri restituisce misurazione valida da sensore MQTT', async () => {
     jest.spyOn(Mungitura, 'findById').mockResolvedValue({
       _id: '665f8fd8ad8f8c0012f9c333',
-      aziendaId: '665f8fd8ad8f8c0012f9c111'
+      aziendaId: '665f8fd8ad8f8c0012f9c111',
+      animaleId: '665f8fd8ad8f8c0012f9c444'
     });
     jest.spyOn(Azienda, 'findById').mockReturnValue(selectable({
       _id: '665f8fd8ad8f8c0012f9c111',
       ownerUserId: '665f8fd8ad8f8c0012f9c999'
     }));
+    jest.spyOn(Sensore, 'find').mockReturnValue({
+      sort: jest.fn().mockResolvedValue([
+        {
+          _id: '665f8fd8ad8f8c0012f9c777',
+          animaleId: '665f8fd8ad8f8c0012f9c444'
+        }
+      ])
+    });
+    ultimeLettureIot.set('665f8fd8ad8f8c0012f9c777', {
+      dati: { litri: 12.34 },
+      timestamp: new Date('2026-06-04T10:00:00.000Z')
+    });
 
     await request(app)
       .get('/api/mungiture/665f8fd8ad8f8c0012f9c333/iot-litri')
@@ -478,9 +494,31 @@ describe('US109-110-111 routes Mungitura', () => {
       .expect(res => {
         expect(res.body.source).toBe('iot');
         expect(res.body.unit).toBe('litri');
-        expect(typeof res.body.quantity).toBe('number');
-        expect(res.body.quantity).toBeGreaterThanOrEqual(8);
-        expect(res.body.quantity).toBeLessThanOrEqual(38);
+        expect(res.body.quantity).toBe(12.34);
+        expect(res.body.sensoreId).toBe('665f8fd8ad8f8c0012f9c777');
+      });
+  });
+
+  test('GET /api/mungiture/:id/iot-litri senza sensori di mungitura attivi restituisce 409', async () => {
+    jest.spyOn(Mungitura, 'findById').mockResolvedValue({
+      _id: '665f8fd8ad8f8c0012f9c333',
+      aziendaId: '665f8fd8ad8f8c0012f9c111',
+      animaleId: '665f8fd8ad8f8c0012f9c444'
+    });
+    jest.spyOn(Azienda, 'findById').mockReturnValue(selectable({
+      _id: '665f8fd8ad8f8c0012f9c111',
+      ownerUserId: '665f8fd8ad8f8c0012f9c999'
+    }));
+    jest.spyOn(Sensore, 'find').mockReturnValue({
+      sort: jest.fn().mockResolvedValue([])
+    });
+
+    await request(app)
+      .get('/api/mungiture/665f8fd8ad8f8c0012f9c333/iot-litri')
+      .set('Authorization', authHeader)
+      .expect(409)
+      .expect(res => {
+        expect(res.body.message).toBe('Nessun sensore di mungitura attivo associato all\'azienda');
       });
   });
 });

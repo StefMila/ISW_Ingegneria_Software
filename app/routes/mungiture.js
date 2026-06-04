@@ -5,6 +5,8 @@ import { assertAziendaOwnedByUser } from './aziende.js';
 import Azienda from '../models/azienda.js';
 import Animale from '../models/animale.js';
 import Mungitura from '../models/munigitura.js';
+import Sensore from '../models/sensore.js';
+import { ultimeLettureIot } from '../services/mqttService.js';
 
 const router = express.Router();
 router.use(checkAuth);
@@ -38,11 +40,20 @@ const parseLiters = (value) => {
     return null;
 };
 
-const getSimulatedIotLiters = () => {
-    const min = 8;
-    const max = 38;
-    const raw = Math.random() * (max - min) + min;
-    return Number(raw.toFixed(2));
+const readQuantityFromMqttPayload = (payload) => {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+
+    const candidates = [payload.litri_latte, payload.litri, payload.peso];
+    for (const candidate of candidates) {
+        const parsed = parseLiters(candidate);
+        if (parsed !== null) {
+            return parsed;
+        }
+    }
+
+    return null;
 };
 // router per gestire le mungiture degli animali, con operazioni CRUD e filtri di ricerca
 export const createMungitura = async (req, res) => {
@@ -184,7 +195,7 @@ export const updateMungitura = async (req, res) => {
     }
 };
 
-// GET /api/mungiture/:id/iot-litri - simula la lettura litri da bilancia IoT
+// GET /api/mungiture/:id/iot-litri - legge litri da sensore MQTT associato alla mungitura
 export const getIotLitersReading = async (req, res) => {
     try {
         const { id } = req.params;
@@ -203,12 +214,44 @@ export const getIotLitersReading = async (req, res) => {
             return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
         }
 
-        const measuredQuantity = getSimulatedIotLiters();
+        const sensoriMungitura = await Sensore.find({
+            aziendaId: existingMungitura.aziendaId,
+            stato: 'attivo',
+            tipoDispositivo: 'mungitura'
+        }).sort({ createdAt: -1 });
+
+        if (!sensoriMungitura.length) {
+            return res.status(409).json({
+                message: 'Nessun sensore di mungitura attivo associato all\'azienda'
+            });
+        }
+
+        const animaleId = String(existingMungitura.animaleId || '');
+        const prioritisedSensori = [
+            ...sensoriMungitura.filter((sensor) => String(sensor.animaleId || '') === animaleId),
+            ...sensoriMungitura.filter((sensor) => !sensor.animaleId)
+        ];
+
+        const selectedSensore = prioritisedSensori.find((sensor) => {
+            const mqttData = ultimeLettureIot.get(String(sensor._id));
+            const quantity = readQuantityFromMqttPayload(mqttData?.dati);
+            return quantity !== null;
+        });
+
+        if (!selectedSensore) {
+            return res.status(409).json({
+                message: 'Nessuna lettura MQTT valida disponibile per i sensori di mungitura attivi'
+            });
+        }
+
+        const mqttData = ultimeLettureIot.get(String(selectedSensore._id));
+        const measuredQuantity = readQuantityFromMqttPayload(mqttData?.dati);
         return res.status(200).json({
             source: 'iot',
             quantity: measuredQuantity,
             unit: 'litri',
-            measuredAt: new Date().toISOString()
+            measuredAt: mqttData?.timestamp ? new Date(mqttData.timestamp).toISOString() : new Date().toISOString(),
+            sensoreId: selectedSensore._id
         });
     } catch (error) {
         return res.status(500).json({ message: 'Errore del server' });
