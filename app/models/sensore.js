@@ -4,12 +4,12 @@ const capacitaSchema = new mongoose.Schema({
   tipoDato: {
     type: String,
     required: true,
-    enum: ['temperatura', 'frequenza_cardiaca', 'livello_passi', 'esposizione_solare', 'posizione_gps']
+    enum: ['temperatura', 'frequenza_cardiaca', 'livello_passi', 'esposizione_solare', 'posizione_gps', 'peso']
   },
   unitaMisura: {
     type: String,
     required: true,
-    enum: ['°C', 'bpm', 'passi', 'ore', 'coordinate']
+    enum: ['°C', 'bpm', 'passi', 'ore', 'coordinate', 'litri']
   }
 }, { _id: false }); // _id: false evita che Mongoose crei un ID per ogni singola capacità
 
@@ -24,7 +24,7 @@ const sensoreSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Il tipo di dispositivo è obbligatorio'],
       enum: {
-        values: ['ambientale', 'indossabile', 'stoccaggio', 'pesatura'],
+        values: ['ambientale', 'indossabile', 'stoccaggio', 'mungitura'],
         message: '{VALUE} non è un tipo di dispositivo valido'
       }
     },

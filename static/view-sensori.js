@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY); // Usa 'let' e mettilo qui dentro
     const gridSensori = document.getElementById('sensoriLiveGrid');
 
-    // --- ASCOLTO DEL CAMBIO AZIENDA (Messo qui dentro così vede caricaDatiSensori!) ---
     window.addEventListener('aziendaChanged', (e) => {
         aziendaId = e.detail.id; // Usa .id come da azienda-switcher.js
 
@@ -27,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Forziamo subito il recupero dei nuovi dati senza aspettare il prossimo ciclo di 5 secondi
         caricaDatiSensori();
     });
-    // ----------------------------------------------------------------------------------
 
     // Se manca il token o l'azienda all'avvio, blocchiamo tutto subito
     if (!token) {

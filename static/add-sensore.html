@@ -35,7 +35,9 @@
           <div class="form-group" style="display: flex; flex-direction: column;">
             <label for="iotTipoDispositivo">Tipo Dispositivo</label>
             <select id="iotTipoDispositivo" required style="padding: 0.5rem; margin-top: 0.2rem;">
-              <option value="ambientale">Ambientale (Stalla / Silos)</option>
+              <option value="ambientale">Ambientale (Stalla)</option>
+              <option value="stoccaggio">Stoccaggio (Silos e Fienili)</option>
+              <option value="mungitura">Mungitura (Litri latte)</option>
               <option value="indossabile">Indossabile (Collare / Marca Auricolare)</option>
             </select>
           </div>
@@ -55,12 +57,16 @@
                 <input type="checkbox" value="livello_passi" data-unita="passi"> Contapassi (Attività)
               </label>
               
-              <label class="cap-option" data-devices="ambientale,indossabile" style="display: block; margin-bottom: 0.5rem;">
+              <label class="cap-option" data-devices="indossabile" style="display: block; margin-bottom: 0.5rem;">
                 <input type="checkbox" value="esposizione_solare" data-unita="ore"> Sensore Solare (ore)
               </label>
               
-              <label class="cap-option" data-devices="indossabile,ambientale,pesatura" style="display: block;">
+              <label class="cap-option" data-devices="indossabile" style="display: block;">
                 <input type="checkbox" value="posizione_gps" data-unita="coordinate"> Modulo GPS (Coordinate)
+              </label>
+
+              <label class="cap-option" data-devices="mungitura" style="display: block;">
+                <input type="checkbox" value="peso" data-unita="litri"> Pesatura (litri)
               </label>
             </div>
           </div>

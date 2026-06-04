@@ -87,9 +87,6 @@
         ${buildNavMenu({ showHomeLink })}
         ${title}
         <div class="header-right-actions" style="display: flex; align-items: center; gap: 10px;">
-          
-          <a id="headerShowAziendaBtn" href="${infoUrl}" class="button-link" style="display: ${displayStyle}; margin-left: 12px; padding: 6px 12px; font-size: 0.9rem; text-decoration: none; background-color: #ffffff; color: #000000; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold;">👁️ Info</a>
-          
           <div class="nav-dropdown" id="aziendaSwitcherDropdown">
             <button id="currentAziendaBadge" class="dashboard-header-pill dashboard-header-pill-button" type="button">Azienda attiva: non selezionata \u25be</button>
             <ul class="nav-dropdown-menu azienda-switcher-menu" id="aziendaSwitcherMenu"></ul>

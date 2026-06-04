@@ -190,7 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'frequenza_cardiaca': 'bpm',
                 'livello_passi': 'passi',
                 'esposizione_solare': 'ore',
-                'posizione_gps': 'coordinate'
+                'posizione_gps': 'coordinate',
+                'peso': 'kg'
             };
             const unitaCorretta = mappaUnita[e.target.value];
             if (unitaCorretta) {

@@ -2,23 +2,18 @@ import mqtt from 'mqtt';
 import Sensore from '../models/sensore.js';
 
 // Connessione a un broker MQTT pubblico di test
-// Only connect if we are NOT in a test environment
 const client = process.env.NODE_ENV !== 'test' 
   ? mqtt.connect('mqtt://broker.hivemq.com:1883') 
-  : { on: () => {}, subscribe: () => {}, publish: () => {}, end: () => {} }; // Dummy client for tests
+  : { on: () => {}, subscribe: () => {}, publish: () => {}, end: () => {} };
 
 // Cache in memoria per memorizzare l'ultima lettura reale arrivata via MQTT
-// Struttura: { "ID_SENSORE": { valore: 23, unitaMisura: "°C", timestamp: Date } }
 export const ultimeLettureIot = new Map();
 
-// Topic base del progetto (cambia 'allevamento_smart' con un nome unico per evitare conflitti sul broker pubblico)
 const TOPIC_BASE = 'unitn/muccapp/allevamento_smart/sensori';
 
 client.on('connect', () => {
     console.log('=== Connesso con successo al Broker MQTT ===');
     
-    // Il server si iscrive al canale di ascolto di TUTTI i sensori dell'applicazione
-    // Il simbolo '+' è una wildcard MQTT: intercetta qualsiasi ID sensore arrivi su quel path
     client.subscribe(`${TOPIC_BASE}/+/data`, (err) => {
         if (!err) {
             console.log(`Sottoscritto al topic MQTT: ${TOPIC_BASE}/+/data`);
@@ -26,24 +21,19 @@ client.on('connect', () => {
     });
 
     if (process.env.NODE_ENV !== 'test') {
-        // Avviamo il simulatore hardware una volta connessi
         avviaSimulatoreHardware();
     }
-
-    
 });
 
 // Ricezione e parsing dati MQTT
 client.on('message', (topic, message) => {
     try {
         const partiTopic = topic.split('/');
-        const sensoreId = partiTopic[4]; // Estrae l'ID dal topic
-        
-        // Decodifica il JSON industriale
+        const sensoreId = partiTopic[4];
         const misurazioni = JSON.parse(message.toString());
 
         ultimeLettureIot.set(sensoreId, {
-            dati: misurazioni, // Es: { temperatura: 38.5, frequenza_cardiaca: 60 }
+            dati: misurazioni,
             timestamp: new Date()
         });
     } catch (error) {
@@ -51,16 +41,13 @@ client.on('message', (topic, message) => {
     }
 });
 
-// Funzione helper per decidere se generare un'anomalia (probabilità del 5%)
 function deveGenerareAnomalia() {
     return Math.random() < 0.05; 
 }
 
-// Simulatore hardware fisico multi-metrica
 let intervalId;
 
 export const avviaSimulatoreHardware = () => {
-    // Aggiungi il controllo per evitare partenze multiple
     if (process.env.NODE_ENV === 'test') return;
     if (intervalId) return; 
     
@@ -70,20 +57,22 @@ export const avviaSimulatoreHardware = () => {
 
             sensoriAttivi.forEach(sensore => {
                 const payloadJSON = {};
+                
+                // Recuperiamo l'ultima lettura inviata da QUESTO sensore per fare i calcoli cumulativi
+                const ultimaLettura = ultimeLettureIot.get(sensore._id.toString());
+                const datiPrecedenti = ultimaLettura ? ultimaLettura.dati : {};
 
                 sensore.capacita.forEach(cap => {
                     switch (cap.tipoDato) {
                         case 'temperatura':
                             if (sensore.tipoDispositivo === 'indossabile') {
                                 if (deveGenerareAnomalia()) {
-                                    // Febbre (40.5°C - 42.0°C)
                                     payloadJSON.temperatura = parseFloat((Math.random() * (42.0 - 40.5) + 40.5).toFixed(1));
                                 } else {
-                                    // Temperatura normale
                                     payloadJSON.temperatura = parseFloat((Math.random() * (39.5 - 38.0) + 38.0).toFixed(1));
                                 }
                             } else if (sensore.tipoDispositivo === 'stoccaggio') {
-                                payloadJSON.temperatura = parseFloat((Math.random() * (6.0 - 2.0) + 2.0).toFixed(1));
+                                payloadJSON.temperatura = parseFloat((Math.random() * (15.0 - 5.0) + 5.0).toFixed(1));
                             } else {
                                 payloadJSON.temperatura = parseFloat((Math.random() * (28.0 - 15.0) + 15.0).toFixed(1));
                             }
@@ -92,30 +81,54 @@ export const avviaSimulatoreHardware = () => {
                         case 'frequenza_cardiaca':
                             if (sensore.tipoDispositivo === 'indossabile') {
                                 if (deveGenerareAnomalia()) {
-                                    // Tachicardia / Stress (110 - 140 bpm)
                                     payloadJSON.frequenza_cardiaca = Math.floor(Math.random() * (140 - 110) + 110);
                                 } else {
-                                    // Battiti normali
                                     payloadJSON.frequenza_cardiaca = Math.floor(Math.random() * (84 - 48) + 48);
                                 }
                             }
                             break;
 
                         case 'livello_passi':
-                            // I passi hanno senso solo per animali in movimento
                             if (sensore.tipoDispositivo === 'indossabile') {
-                                payloadJSON.livello_passi = Math.floor(Math.random() * (12000 - 2000) + 2000);
+                                const passiAttuali = datiPrecedenti.livello_passi || 2000;
+                                const incrementoPassi = Math.floor(Math.random() * 5); 
+                                payloadJSON.livello_passi = passiAttuali + incrementoPassi;
                             }
                             break;
 
+                        case 'peso':
+                            // Parte da una base di 300 (es. 300 litri/kg nel tank) o dal valore precedente
+                            const pesoAttuale = datiPrecedenti.peso || 300;
+                            // Incremento decimale positivo ad ogni ciclo (es. da 0.1 a 0.5 kg/litri alla volta)
+                            const incrementoPeso = parseFloat((Math.random() * (0.5 - 0.1) + 0.1).toFixed(2));
+                            payloadJSON.peso = parseFloat((pesoAttuale + incrementoPeso).toFixed(2));
+                            break;
+
+                        case 'litri':
+                        case 'litri_latte':
+                            const latteAttuale = datiPrecedenti.litri || datiPrecedenti.litri_latte || 0.0;
+                            const incrementoLatte = parseFloat((Math.random() * (0.10 - 0.02) + 0.02).toFixed(2));
+                            const totaleLatte = parseFloat((latteAttuale + incrementoLatte).toFixed(2));
+                            
+                            // Assegna il valore alla chiave corretta che hai nel DB
+                            if (cap.tipoDato === 'litri') payloadJSON.litri = totaleLatte;
+                            else payloadJSON.litri_latte = totaleLatte;
+                            break;
+
                         case 'esposizione_solare':
-                            // Ore di sole: varia casualmente (es. nuvole/sole)
-                            payloadJSON.esposizione_solare = parseFloat((Math.random() * 8.0).toFixed(1));
+                            // Parte da una base di 0.0 ore o recupera il valore accumulato in precedenza
+                            const esposizioneAttuale = datiPrecedenti.esposizione_solare || 0.0;
+                            
+                            // Simuliamo un incremento di tempo (es. tra 0.0 e 0.2 ore di sole in più ogni 5 secondi)
+                            // Se vuoi simulare il passaggio di una nuvola o la sera, l'incremento potrebbe essere spesso 0
+                            const incrementoSole = Math.random() < 0.7 
+                                ? parseFloat((Math.random() * 0.2).toFixed(1)) 
+                                : 0.0; // 30% di possibilità che l'accumulo si fermi temporaneamente
+                                
+                            payloadJSON.esposizione_solare = parseFloat((esposizioneAttuale + incrementoSole).toFixed(1));
                             break;
 
                         case 'posizione_gps':
-                            // Le coordinate variano di pochissimo (simula un recinto o la stalla)
-                            // Coordinate di base fittizie:
                             const latBase = 45.40; 
                             const lonBase = 10.98;
                             const lat = (latBase + (Math.random() * 0.005 - 0.0025)).toFixed(5);
@@ -141,11 +154,12 @@ export const avviaSimulatoreHardware = () => {
 const SCADENZA_DATI_MS = 5 * 60 * 1000; 
 let ttlIntervalId;
 
-// Avvia l'intervallo di pulizia solo se non ci troviamo in un ambiente di test
 if (process.env.NODE_ENV !== 'test') {
     ttlIntervalId = setInterval(() => {
         const oraAttuale = Date.now();
         for (const [id, dati] of ultimeLettureIot.entries()) {
+            // Modifica cautelativa: non cancelliamo i dati se contengono metriche cumulative importanti
+            // o se il simulatore è attivo per evitare reset improvvisi dei contatori
             if (oraAttuale - dati.timestamp.getTime() > SCADENZA_DATI_MS) {
                 ultimeLettureIot.delete(id);
             }
@@ -153,18 +167,15 @@ if (process.env.NODE_ENV !== 'test') {
     }, 60 * 1000);
 }
 
-
 export const fermaSimulatore = () => {
     if (intervalId) {
         clearInterval(intervalId);
         intervalId = null;
     }
-    // Cancella anche l'intervallo TTL se è stato avviato
     if (ttlIntervalId) {
         clearInterval(ttlIntervalId);
         ttlIntervalId = null;
     }
-    // Chiudiamo il client per evitare errori di import dopo il teardown
     if (client && typeof client.end === 'function') {
         client.end();
     }

@@ -49,7 +49,6 @@ describe('Router Sensori', () => {
         jest.restoreAllMocks();
     });
 
-    // --- TEST PER: GET /sensori ---
     describe('GET /sensori', () => {
         test('Restituisce 400 se manca aziendaId', async () => {
             const res = await request(app).get('/api/sensori');
