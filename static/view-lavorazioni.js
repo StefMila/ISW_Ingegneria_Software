@@ -234,7 +234,13 @@ const rowLavorazioneHtml = (item) => `
     <td>${escapeHtml(getNotes(item))}</td>
     <td>
         ${item.status === 'in_corso' 
-            ? `<button class="terminate-scale-btn" data-id="${escapeAttr(item._id)}" title="Termina con bilancia" aria-label="Termina con bilancia" data-action="close-iot"><span class="terminate-scale-icon" aria-hidden="true">🌐</span></button> <button class="terminate-manual-btn" data-id="${escapeAttr(item._id)}" title="Termina manuale" aria-label="Termina manuale" data-action="close-manual"><span class="terminate-manual-icon" aria-hidden="true">📏</span></button>` 
+            ? `
+            ${item.outputUnit !== 'pezzi' 
+                ? `<button class="terminate-scale-btn" data-id="${escapeAttr(item._id)}" title="Termina con bilancia" aria-label="Termina con bilancia" data-action="close-iot"><span class="terminate-scale-icon" aria-hidden="true">🌐</span></button>` 
+                : ''
+            }
+                <button class="terminate-manual-btn" data-id="${escapeAttr(item._id)}" title="Termina manuale" aria-label="Termina manuale" data-action="close-manual"><span class="terminate-manual-icon" aria-hidden="true">📏</span></button>
+            ` 
             : '<span>—</span>'
         }
         <button class="delete-animal-btn" data-id="${escapeAttr(item._id)}" title="Elimina lavorazione" aria-label="Elimina lavorazione">
@@ -602,32 +608,32 @@ const closeLavorazioneManual = async (id) => {
     await patchCloseLavorazione(id, quantityInput, notes, 'manuale');
 };
 
-// const closeLavorazioneIot = async (id) => {
-//     const token = localStorage.getItem('token');
-//     if (!id || !token) {
-//       renderStatus(lavorazioniStatus, 'Dati mancanti per leggere dalla bilancia IoT.', 'red');
-//       return;
-//     }
+const closeLavorazioneIot = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!id || !token) {
+      renderStatus(lavorazioniStatus, 'Dati mancanti per leggere dalla bilancia IoT.', 'red');
+      return;
+    }
 
-//     try {
-//       const iotResponse = await fetch(`/api/mungiture/${id}/iot-litri`, { //cambiare
-//         headers: { Authorization: `Bearer ${token}` }
-//       });
+    try {
+      const iotResponse = await fetch(`/api/lavorazioni/${id}/iot`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-//       const iotData = await iotResponse.json().catch(() => ({}));
-//       if (!iotResponse.ok) {
-//         renderStatus(lavorazioniStatus, iotData.message || 'Errore durante la lettura dalla bilancia IoT.', 'red');
-//         return;
-//       }
+      const iotData = await iotResponse.json().catch(() => ({}));
+      if (!iotResponse.ok) {
+        renderStatus(lavorazioniStatus, iotData.message || 'Errore durante la lettura dalla bilancia IoT.', 'red');
+        return;
+      }
 
-//       const quantity = iotData?.quantity;
-//       const notes = window.prompt('Note di chiusura (facoltative):', '');
-//       await patchCloseMungitura(id, quantity, notes, 'iot');
-//     } catch (error) {
-//       console.error('Errore durante lettura IoT:', error);
-//       renderStatus(lavorazioniStatus, 'Errore di connessione durante lettura IoT.', 'red');
-//     }
-// };
+      const quantity = iotData?.quantity;
+      const notes = window.prompt('Note di chiusura (facoltative):', '');
+      await patchCloseMungitura(id, quantity, notes, 'iot');
+    } catch (error) {
+      console.error('Errore durante lettura IoT:', error);
+      renderStatus(lavorazioniStatus, 'Errore di connessione durante lettura IoT.', 'red');
+    }
+};
 
 if (filterNomeTemplate) {
     filterNomeTemplate.addEventListener('input', applyFilters);
@@ -709,18 +715,18 @@ fetchLavorazioni();
 // Funzionalità della tabella dedicata alle lavorazioni 
 if(lavorazioniTableBody){
     lavorazioniTableBody.addEventListener('click', async (event) => {
-        // const closeScaleButton = event.target.closest('.terminate-scale-btn');
+        const closeScaleButton = event.target.closest('.terminate-scale-btn');
         const closeManualButton = event.target.closest('.terminate-manual-btn');
         const deleteButton = event.target.closest('.delete-animal-btn');
 
-        // if (closeScaleButton) {
-        //     const lavorazioneId = editScaleButton.getAttribute('data-id') || '';
-        //     await closeLavorazioneIot(lavorazioneId);
-        //     return;
-        // }
+        if (closeScaleButton) {
+            const lavorazioneId = closeScaleButton.getAttribute('data-id') || '';
+            await closeLavorazioneIot(lavorazioneId);
+            return;
+        }
         
         if (closeManualButton) {
-            const lavorazioneId = editManualButton.getAttribute('data-id') || '';
+            const lavorazioneId = closeManualButton.getAttribute('data-id') || '';
             await closeLavorazioneManual(lavorazioneId);
             return;
         }

@@ -4,6 +4,8 @@ import { checkAuth, checkUserType } from './auth.js';
 import { assertAziendaOwnedByUser } from './aziende.js';
 import Azienda from '../models/azienda.js';
 import Lavorazione from '../models/lavorazione.js';
+import Sensore from '../models/sensore.js';
+import { ultimeLettureIot } from '../services/mqttService.js';
 
 const router = express.Router();
 router.use(checkAuth);
@@ -24,6 +26,11 @@ const ALLOWED_FASI = [
 	'Zangolatura',
 	'Confezionamento'
 ];
+
+const UNIT_TO_SENSORE = {
+	'L': 'litri',
+	'Kg': 'chilogrammi'
+};
 
 const ALLOWED_FASI_SET = new Set(ALLOWED_FASI);
 //valida ObjectId di MongoDB
@@ -252,6 +259,66 @@ export const updateLavorazione = async (req, res) => {
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
+
+export const getIotReading = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ message: 'ID lavorazione non valido' });
+		}
+
+		const existingLavorazione = await Lavorazione.findById(id);
+		if (!existingLavorazione) {
+			return res.status(404).json({ message: 'Lavorazione non trovata' });
+		}
+
+		const ownershipCheck = await assertAziendaOwnedByUser(existingLavorazione.aziendaId, req.user.userId);
+		if (!ownershipCheck.ok) {
+			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
+		}
+
+		const sensoriLavorazione = await Sensore.find({ //TODO: crea sensore/i tipo 'lavorazione'
+			aziendaId: existingLavorazione.aziendaId,
+			stato: 'attivo',
+			tipoDispositivo: 'lavorazione',
+			capacita: {
+				tipoDato: 'peso',
+				unitaMisura: UNIT_TO_SENSORE[(existingLavorazione.outputUnit).trim()] || 'chilogrammi'
+			}
+		}).sort({ createdAt: -1 });
+
+		if (!sensoriLavorazione.length) {
+			return res.status(409).json({
+				message: 'Nessun sensore di lavorazione attivo associato all\'azienda'
+			});
+		}
+
+		const selectedSensore = sensoriLavorazione.find((sensor) => {
+			const mqttData = ultimeLettureIot.get(String(sensor._id));
+			const quantity = readQuantityFromMqttPayload(mqttData?.dati);
+			return quantity !== null;
+		});
+
+		if (!selectedSensore) {
+			return res.status(409).json({
+				message: 'Nessuna lettura MQTT valida disponibile per i sensori di mungitura attivi'
+			});
+		}
+
+		const mqttData = ultimeLettureIot.get(String(selectedSensore._id));
+		const measuredQuantity = readQuantityFromMqttPayload(mqttData?.dati);
+		return res.status(200).json({
+			source: 'iot',
+			quantity: measuredQuantity,
+			unit: existingLavorazione.outputUnit || 'Kg', 
+			measuredAt: mqttData?.timestamp ? new Date(mqttData.timestamp).toISOString() : new Date().toISOString(),
+			sensoreId: selectedSensore._id
+		});
+	} catch (error) {
+		return res.status(500).json({ message: 'Errore del server' });
+	}
+};
 // GET /api/lavorazioni - recupera le lavorazioni dell'azienda con filtri opzionali per tipo di lavorazione e stato
 export const getLavorazioni = async (req, res) => {
 	try {
@@ -293,7 +360,7 @@ export const getLavorazioni = async (req, res) => {
 	}
 };
 
-//GET /api/lavorazioni/search?codiceLavorazione=... - visualizzazione del singolo template a partire dal suo codiceLavorazione
+//GET /api/lavorazioni/search - visualizzazione del singolo template a partire dal suo codiceLavorazione
 export const getTemplateByCodiceLavorazione = async (req, res) => {
 	try {
 		const { codiceLavorazione } = req.query;
@@ -356,6 +423,7 @@ export const deleteLavorazione = async (req, res) => {
 
 router.post('/', createLavorazione);
 router.patch('/:id', updateLavorazione);
+//router.get('/:id/iot', getIotReading);
 router.get('/', getLavorazioni);
 router.get('/search', getTemplateByCodiceLavorazione);
 router.delete('/:id', deleteLavorazione);

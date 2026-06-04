@@ -1,5 +1,11 @@
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
+// serve per la generazione di codiceLavorazione
+const counterSchema = new mongoose.Schema({
+    _id: { type: String, required: true }, 
+    seq: { type: Number, default: 0 }
+});
+
 // definisce l'input di una lavorazione
 const lavorazioneInputSchema = new Schema({
     type: {
@@ -162,8 +168,13 @@ lavorazioneSchema.pre('validate', async function (next) {
                 // Genera codiceLavorazione univoco basato su codiceTipoProd, codiceTipoLav e numero progressivo
                 const codiceTipoProd = 'A'; // per ora tutte le lavorazioni sono di tipo 'A' (latticini), ma in futuro si può estendere con altri tipi di prodotto
                 const codiceTipoLav = this.codiceTipoLav; // es. 'A' per 'primo-sale'
-                const counter = await mongoose.model('Lavorazione').countDocuments({ codiceTipoLav, isTemplate: true });
-                const numeroProgressivo = String(counter + 1).padStart(3, '0');
+                const counterDoc = await mongoose.model('Counter').findOneAndUpdate(
+                    { _id: `counter_${codiceTipoLav}` }, 
+                    { $inc: { seq: 1 } }, 
+                    { new: true, upsert: true }
+                );
+                const numeroProgressivo = String(counterDoc.seq).padStart(3, '0');
+
                 this.codiceLavorazione = `${codiceTipoProd}${codiceTipoLav}${numeroProgressivo}`;
 
             } catch (error) {
@@ -196,5 +207,6 @@ lavorazioneSchema.path('outputQuantity').validate(function (value) {
 }, 'outputQuantity deve essere un numero maggiore o uguale a 0 quando lo status è completata');
 
 const Lavorazione = mongoose.model('Lavorazione', lavorazioneSchema);
+const Counter = mongoose.model('Counter', counterSchema);
 
 export default Lavorazione;

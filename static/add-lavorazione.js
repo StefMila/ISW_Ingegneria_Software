@@ -41,9 +41,9 @@ const INPUT_TO_UNIT = {
 
 export const OUTPUT_TO_UNIT = {
     'Latte alimentare confezionato': 'L',
-    'Formaggi stagionati o freschi strutturati': 'pezzi/forme',
-    'Vasetti di yogurt': 'vasetti',
-    'Panetti di burro': 'panetti',
+    'Formaggi stagionati o freschi strutturati': 'Kg',
+    'Vasetti di yogurt': 'pezzi',
+    'Panetti di burro': 'pezzi',
     'Siero di latte residuo': 'L',
     'Latticello': 'L',
     'Acque di lavaggio e reflui autolavanti': 'L'
