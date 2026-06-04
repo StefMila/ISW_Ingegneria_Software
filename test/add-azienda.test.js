@@ -277,13 +277,46 @@ describe('US11 - Aggiungi Azienda', () => {
       });
   });
 
-  test('GET /api/aziende/mine senza token restituisce 401', async () => {
+  test('GET /api/aziende/mine - errore: token mancante (401)', async () => {
     await request(app)
       .get('/api/aziende/mine')
       .expect(401);
   });
 
-  test('PATCH /api/aziende/:id/categories senza token restituisce 401', async () => {
+  test('GET /api/aziende/mine - errore: token scaduto (401)', async () => {
+    const expiredToken = jwt.sign(
+          { userId: 'mocked_user_id', userType: 'allevatore' },
+          process.env.JWT_SECRET,
+          { expiresIn: '-1s' }
+        );
+    
+    await request(app)
+      .get('/api/aziende/mine')
+      .set('Authorization', `Bearer ${expiredToken}`)
+      .expect(401);
+  });
+
+  test('GET /api/aziende/mine - errore: token non valido (403)', async () => {
+    await request(app)
+      .get('/api/aziende/mine')
+      .set('Authorization', 'Bearer token_non_valido')
+      .expect(403);
+  });
+
+  test('GET /api/aziende/mine - errore: ruolo non autorizzato (403)', async () => {
+      const tokenConsumatore = jwt.sign(
+        { userId: 'mocked_user_id', userType: 'consumatore' },
+        process.env.JWT_SECRET,
+        { expiresIn: '30m' }
+      );
+  
+      await request(app)
+        .get('/api/aziende/mine')
+        .set('Authorization', `Bearer ${tokenConsumatore}`)
+        .expect(403);
+    });
+
+  test('PATCH /api/aziende/:id/categories - errore: token mancante (401)', async () => {
     await request(app)
       .patch('/api/aziende/665f8fd8ad8f8c0012f9c123/categories')
       .send({ categories: ['latte'] })
