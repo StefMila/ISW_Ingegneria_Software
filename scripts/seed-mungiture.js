@@ -86,8 +86,8 @@ async function seedMungiture() {
 
   const animaleIds = animali.map((item) => item._id);
 
-  const deleteResult = await Mungitura.deleteMany({ notes: { $regex: `^${SEED_MARKER}` } });
-  console.log(`Mungiture seed precedenti rimosse: ${deleteResult.deletedCount}`);
+  const deleteResult = await Mungitura.deleteMany({ aziendaId: azienda._id });
+  console.log(`Mungiture esistenti rimosse per l'azienda: ${deleteResult.deletedCount}`);
 
   const now = new Date();
   const currentYear = now.getUTCFullYear();
@@ -100,17 +100,19 @@ async function seedMungiture() {
     buildMungitureForYear({ year, animaleIds, maxDate: now })
   );
 
-  const docs = seedRecords.map((record, index) => ({
-    aziendaId: azienda._id,
-    animaleId: record.animaleId,
-    startedAt: record.startedAt,
-    endedAt: record.endedAt,
-    quantity: record.quantity,
-    unit: record.unit,
-    status: record.status,
-    semiLavoratoId: `SL-SEED-${record.startedAt.getUTCFullYear()}-${String(record.startedAt.getUTCMonth() + 1).padStart(2, '0')}-${String(index + 1).padStart(3, '0')}`,
-    notes: `${SEED_MARKER} Dato demo per grafici stats mungiture`
-  }));
+  const docs = seedRecords
+    .filter((record) => record.startedAt <= now && record.endedAt <= now)
+    .map((record, index) => ({
+      aziendaId: azienda._id,
+      animaleId: record.animaleId,
+      startedAt: record.startedAt,
+      endedAt: record.endedAt,
+      quantity: record.quantity,
+      unit: record.unit,
+      status: record.status,
+      semiLavoratoId: `SL-SEED-${record.startedAt.getUTCFullYear()}-${String(record.startedAt.getUTCMonth() + 1).padStart(2, '0')}-${String(index + 1).padStart(3, '0')}`,
+      notes: `${SEED_MARKER} Dato demo per grafici stats mungiture`
+    }));
 
   const inserted = await Mungitura.insertMany(docs, { ordered: true });
 

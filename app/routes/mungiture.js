@@ -226,17 +226,27 @@ export const getIotLitersReading = async (req, res) => {
             });
         }
 
-        const animaleId = String(existingMungitura.animaleId || '');
-        const prioritisedSensori = [
-            ...sensoriMungitura.filter((sensor) => String(sensor.animaleId || '') === animaleId),
-            ...sensoriMungitura.filter((sensor) => !sensor.animaleId)
-        ];
+        const validReadings = sensoriMungitura
+            .map((sensor) => {
+                const mqttData = ultimeLettureIot.get(String(sensor._id));
+                const quantity = readQuantityFromMqttPayload(mqttData?.dati);
+                if (quantity === null) {
+                    return null;
+                }
 
-        const selectedSensore = prioritisedSensori.find((sensor) => {
-            const mqttData = ultimeLettureIot.get(String(sensor._id));
-            const quantity = readQuantityFromMqttPayload(mqttData?.dati);
-            return quantity !== null;
-        });
+                const ts = mqttData?.timestamp ? new Date(mqttData.timestamp).getTime() : 0;
+                return {
+                    sensor,
+                    quantity,
+                    timestampMs: Number.isFinite(ts) ? ts : 0,
+                    timestampRaw: mqttData?.timestamp
+                };
+            })
+            .filter(Boolean)
+            .sort((left, right) => right.timestampMs - left.timestampMs);
+
+        const selectedReading = validReadings[0];
+        const selectedSensore = selectedReading?.sensor;
 
         if (!selectedSensore) {
             return res.status(409).json({
@@ -244,13 +254,13 @@ export const getIotLitersReading = async (req, res) => {
             });
         }
 
-        const mqttData = ultimeLettureIot.get(String(selectedSensore._id));
-        const measuredQuantity = readQuantityFromMqttPayload(mqttData?.dati);
         return res.status(200).json({
             source: 'iot',
-            quantity: measuredQuantity,
+            quantity: selectedReading.quantity,
             unit: 'litri',
-            measuredAt: mqttData?.timestamp ? new Date(mqttData.timestamp).toISOString() : new Date().toISOString(),
+            measuredAt: selectedReading.timestampRaw
+                ? new Date(selectedReading.timestampRaw).toISOString()
+                : new Date().toISOString(),
             sensoreId: selectedSensore._id
         });
     } catch (error) {
