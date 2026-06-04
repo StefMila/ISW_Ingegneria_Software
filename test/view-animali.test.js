@@ -6,7 +6,7 @@ import Animale from '../app/models/animale.js';
 import Azienda from '../app/models/azienda.js';
 
 // Verifica che la pagina sia accessibile e che funzioni lo script.
-describe('US14 - View Animali - pagina e script', () => {
+describe('US49 - View Animali - pagina e script', () => {
 	test('GET /view-animali.html restituisce la tabella con filtri e paginazione', async () => {
 		const response = await request(app)
 			.get('/view-animali.html')
@@ -42,7 +42,7 @@ describe('US14 - View Animali - pagina e script', () => {
 	});
 });
 
-describe('US14 - View Animali - gestione animali', () => {
+describe('US49 - View Animali - gestione animali', () => {
 	const aziendaId = '665f8fd8ad8f8c0012f9c123';
 	const animaleId = '665f8fd8ad8f8c0012f9c456';
 	const ownerUserId = 'mocked_user_id';
@@ -121,6 +121,47 @@ describe('US14 - View Animali - gestione animali', () => {
 			.expect(403)
 			.expect((res) => {
 				expect(res.body.message).toBe('Token non valido: Accesso negato');
+			});
+	});
+
+	test('GET /api/aziende/:aziendaId/animali - errore: aziendaId non valido (400)', async () => {
+		await request(app)
+			.get('/api/aziende/id-non-valido/animali')
+			.set('Authorization', `Bearer ${token}`)
+			.expect(400)
+			.expect((res) => {
+				expect(res.body.message).toBe('aziendaId non è un ObjectId valido');
+			});
+	});
+
+	test('GET /api/aziende/:aziendaId/animali - errore: azienda non trovata (404)', async () => {
+		jest.spyOn(Azienda, 'findById').mockReturnValue({
+			select: jest.fn().mockResolvedValue(null)
+		});
+
+		await request(app)
+			.get(`/api/aziende/${aziendaId}/animali`)
+			.set('Authorization', `Bearer ${token}`)
+			.expect(404)
+			.expect((res) => {
+				expect(res.body.message).toBe('Azienda non trovata');
+			});
+	});
+
+	test('GET /api/aziende/:aziendaId/animali - errore: azienda non di proprieta (403)', async () => {
+		jest.spyOn(Azienda, 'findById').mockReturnValue({
+			select: jest.fn().mockResolvedValue({
+				_id: aziendaId,
+				ownerUserId: 'altro_user_id'
+			})
+		});
+
+		await request(app)
+			.get(`/api/aziende/${aziendaId}/animali`)
+			.set('Authorization', `Bearer ${token}`)
+			.expect(403)
+			.expect((res) => {
+				expect(res.body.message).toBe('Non hai i permessi per questa azienda');
 			});
 	});
 
