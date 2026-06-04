@@ -14,6 +14,15 @@ import mungitureRoutes from './routes/mungiture.js';
 import lottiProdottoRoutes from './routes/lottiProdotto.js';
 import lavorazioniRoutes from './routes/lavorazioni.js';
 
+import './services/mqttService.js'; // Fa partire la connessione e la simulazione MQTT all'avvio
+import iotSensoriRoutes from './routes/sensori.js';
+
+import { avviaSimulatoreHardware } from './services/mqttService.js';
+
+if (process.env.NODE_ENV !== 'test') {
+    avviaSimulatoreHardware();
+}
+
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +41,7 @@ app.use('/api/punti-vendita', puntiVenditaRoutes);
 app.use('/api/mungiture', mungitureRoutes);
 app.use('/api/lotti-prodotto', lottiProdottoRoutes);
 app.use('/api/lavorazioni', lavorazioniRoutes);
+app.use('/api/iot', iotSensoriRoutes);
 app.use('/api/aziende/:aziendaId/eventi', publicEventiRoutes);
 app.use('/api/aziende/:aziendaId/eventi', aziendeEventiRoutes);
 app.use('/api/eventi', publicEventiRoutes);

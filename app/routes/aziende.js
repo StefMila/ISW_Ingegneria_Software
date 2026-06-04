@@ -234,11 +234,6 @@ router.patch('/:id', checkAuth, checkUserType(['allevatore']), async (req, res) 
     try {
         const {id} = req.params;
 
-        // DEBUG: Vediamo cosa manda il frontend nel terminale del server
-        console.log("=== RICEVUTA RICHIESTA DI MODIFICA ===");
-        console.log("ID Azienda:", id);
-        console.log("Dati ricevuti (req.body):", req.body);
-
         const ownership = await assertAziendaOwnedByUser(id, req.user.userId);
         if(!ownership.ok) {
             return res.status(ownership.status).json({message: ownership.message });
@@ -252,15 +247,11 @@ router.patch('/:id', checkAuth, checkUserType(['allevatore']), async (req, res) 
         if (emailAzienda !== undefined) updateData.emailAzienda = emailAzienda.trim().toLowerCase();
         if (address !== undefined) updateData.address = address.trim();
 
-        console.log("Dati pronti per il database ($set):", updateData);
-
         const updatedAzienda = await azienda.findByIdAndUpdate(
             id,
             { $set: updateData },
             { new: true, runValidators: true }
         );
-
-        console.log("Oggetto memorizzato nel DB dopo la modifica:", updatedAzienda);
 
         return res.status(200).json({
             message: 'Azienda aggiornata con successo',
@@ -333,7 +324,7 @@ router.delete('/:id', checkAuth, checkUserType(['allevatore']), async (req, res)
             return res.status(ownership.status).json({ message: ownership.message });
         }
 
-        // TODO (relations): Prima di eliminare l'azienda, verificare che non ci siano mandrie o documenti associati ad essa, o implementare una cancellazione a cascata
+        // Prima di eliminare l'azienda, verificare che non ci siano mandrie o documenti associati ad essa, o implementare una cancellazione a cascata
         try {
             const conteggioAnimali = await mongoose.model('Animale').countDocuments({ aziendaId: id });
             if (conteggioAnimali > 0) {
