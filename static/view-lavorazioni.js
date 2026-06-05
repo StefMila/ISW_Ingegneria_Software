@@ -66,6 +66,25 @@ const getOutputName = (item) => item.outputName || '—';
 const getOutputQuantity = (item) => item.outputQuantity || '—';
 const getOutputUnit = (item) => item.outputUnit || '—';
 const canEditFasi = (item) => !item?.isTemplate && item?.status === 'in_corso';
+const hasSequentialCompletedFasi = (fasi = []) => {
+    let foundIncomplete = false;
+
+    for (const fase of fasi) {
+        const completed = Boolean(fase?.completed);
+        if (!completed) {
+            foundIncomplete = true;
+            continue;
+        }
+
+        if (foundIncomplete) {
+            return false;
+        }
+    }
+
+    return true;
+};
+
+const areAllFasiCompleted = (fasi = []) => Array.isArray(fasi) && fasi.length > 0 && fasi.every((fase) => Boolean(fase?.completed));
 // riquadro di dettaglio con tutte le fasi e note
 const formatDateTime = (value) => {
     if (!value) {
@@ -355,6 +374,11 @@ const saveFasiFromDetails = async (lavorazioneId) => {
         };
     });
 
+    if (!hasSequentialCompletedFasi(updatedFasi)) {
+        renderStatus(lavorazioniStatus, 'Le fasi devono essere completate in ordine: non puoi flaggare una fase se la precedente non è completata.', '#b45309');
+        return;
+    }
+
     try {
         const response = await fetch(`/api/lavorazioni/${lavorazioneId}`, {
             method: 'PATCH',
@@ -383,6 +407,67 @@ const saveFasiFromDetails = async (lavorazioneId) => {
         console.error('Errore durante salvataggio fasi lavorazione:', error);
         renderStatus(lavorazioniStatus, 'Errore di connessione durante il salvataggio delle fasi.', 'red');
     }
+};
+
+const syncSequentialPhaseInputs = (overlay) => {
+    if (!overlay) {
+        return;
+    }
+
+    const phaseInputs = Array.from(overlay.querySelectorAll('[data-phase-index]'))
+        .sort((left, right) => Number(left.dataset.phaseIndex) - Number(right.dataset.phaseIndex));
+
+    if (phaseInputs.length === 0) {
+        return;
+    }
+
+    phaseInputs.forEach((input, index) => {
+        if (index === 0) {
+            input.disabled = false;
+            return;
+        }
+
+        const previous = phaseInputs[index - 1];
+        const enabled = Boolean(previous?.checked);
+        input.disabled = !enabled;
+
+        if (!enabled && input.checked) {
+            input.checked = false;
+        }
+    });
+};
+
+const bindSequentialPhaseInputs = (overlay) => {
+    if (!overlay) {
+        return;
+    }
+
+    const phaseInputs = Array.from(overlay.querySelectorAll('[data-phase-index]'));
+    if (phaseInputs.length === 0) {
+        return;
+    }
+
+    syncSequentialPhaseInputs(overlay);
+    phaseInputs.forEach((input) => {
+        input.addEventListener('change', () => {
+            syncSequentialPhaseInputs(overlay);
+        });
+    });
+};
+
+const ensureLavorazioneCanBeClosed = (lavorazioneId) => {
+    const item = rowLavorazioniMap.get(String(lavorazioneId));
+    if (!item) {
+        renderStatus(lavorazioniStatus, 'Lavorazione non trovata.', 'red');
+        return false;
+    }
+
+    if (!areAllFasiCompleted(item.fasi)) {
+        renderStatus(lavorazioniStatus, 'Non puoi terminare la lavorazione finché tutte le fasi non sono completate.', '#b45309');
+        return false;
+    }
+
+    return true;
 };
 
 const applyFilters = () => {
@@ -679,6 +764,10 @@ const patchCloseLavorazione = async (id, quantity, notes, source) => {
   };
 
 const closeLavorazioneManual = async (id) => {
+        if (!ensureLavorazioneCanBeClosed(id)) {
+            return;
+        }
+
     const quantityInput = window.prompt(`Inserisci la quantità rilevata manualmente:`, '0');
     if (quantityInput === null) {
       return;
@@ -689,6 +778,10 @@ const closeLavorazioneManual = async (id) => {
 };
 
 const closeLavorazioneIot = async (id) => {
+        if (!ensureLavorazioneCanBeClosed(id)) {
+            return;
+        }
+
     const token = localStorage.getItem('token');
     if (!id || !token) {
       renderStatus(lavorazioniStatus, 'Dati mancanti per leggere dalla bilancia IoT.', 'red');
@@ -799,6 +892,14 @@ overlay.addEventListener('click', async (event) => {
     await saveFasiFromDetails(saveButton.dataset.id);
 });
 
+overlay.addEventListener('change', (event) => {
+    const phaseInput = event.target.closest('[data-phase-index]');
+    if (!phaseInput) {
+        return;
+    }
+    syncSequentialPhaseInputs(overlay);
+});
+
 fetchLavorazioni();
 
 // Funzionalità della tabella dedicata alle lavorazioni 
@@ -829,6 +930,7 @@ if(lavorazioniTableBody){
         if (clickedRow) {
             const item = rowLavorazioniMap.get(clickedRow.dataset.id);
             openDetails(item);
+            bindSequentialPhaseInputs(overlay);
         }
     });
 
@@ -842,6 +944,7 @@ if(lavorazioniTableBody){
             event.preventDefault();
             const item = rowLavorazioniMap.get(row.dataset.id);
             openDetails(item);
+            bindSequentialPhaseInputs(overlay);
         }
     });
 }

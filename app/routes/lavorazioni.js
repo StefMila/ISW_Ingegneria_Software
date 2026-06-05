@@ -115,6 +115,26 @@ const parseQuantity = (value) => {
     return null;
 };
 
+const hasNonSequentialCompletedFasi = (fasi = []) => {
+	let foundIncomplete = false;
+
+	for (const fase of fasi) {
+		const completed = Boolean(fase?.completed);
+		if (!completed) {
+			foundIncomplete = true;
+			continue;
+		}
+
+		if (foundIncomplete) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
+const areAllFasiCompleted = (fasi = []) => Array.isArray(fasi) && fasi.length > 0 && fasi.every((fase) => Boolean(fase?.completed));
+
 const readQuantityFromMqttPayload = (lavorazione, payload) => {
     if (!payload || typeof payload !== 'object') {
         return null;
@@ -297,6 +317,15 @@ export const updateLavorazione = async (req, res) => {
 		const normalizedFasi = normalizeFasi(fasi);
 		if (!normalizedFasi.ok) {
 			return res.status(normalizedFasi.status || 400).json({ message: normalizedFasi.message });
+		}
+
+		const fasiToValidate = normalizedFasi.value !== undefined ? normalizedFasi.value : existingLavorazione.fasi;
+		if (!existingLavorazione.isTemplate && Array.isArray(fasiToValidate) && hasNonSequentialCompletedFasi(fasiToValidate)) {
+			return res.status(422).json({ message: 'Le fasi devono essere completate in ordine sequenziale' });
+		}
+
+		if (!existingLavorazione.isTemplate && status === 'completata' && !areAllFasiCompleted(fasiToValidate)) {
+			return res.status(422).json({ message: 'Non puoi terminare la lavorazione finché tutte le fasi non sono completate' });
 		}
 
 		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;

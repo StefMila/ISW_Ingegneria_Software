@@ -549,6 +549,60 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
+  test('PATCH /api/lavorazioni/:id - errore: fasi non sequenziali (422)', async () => {
+    const payload = basePayload();
+    delete payload.isTemplate;
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue({
+      _id: lavorazioneId,
+      ...payload,
+      status: 'in_corso',
+      fasi: [
+        { name: 'Ricevimento', completed: true },
+        { name: 'Centrifugazione', completed: false },
+        { name: 'Omogeneizzazione', completed: false }
+      ],
+      save: jest.fn().mockResolvedValue(undefined)
+    });
+
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ fasi: [
+        { name: 'Ricevimento', completed: true },
+        { name: 'Centrifugazione', completed: false },
+        { name: 'Omogeneizzazione', completed: true }
+      ] })
+      .expect(422)
+      .expect((res) => {
+        expect(res.body.message).toBe('Le fasi devono essere completate in ordine sequenziale');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: chiusura non consentita se fasi incomplete (422)', async () => {
+    const payload = basePayload();
+    delete payload.isTemplate;
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue({
+      _id: lavorazioneId,
+      ...payload,
+      status: 'in_corso',
+      fasi: [
+        { name: 'Ricevimento', completed: true },
+        { name: 'Centrifugazione', completed: true },
+        { name: 'Omogeneizzazione', completed: false }
+      ],
+      save: jest.fn().mockResolvedValue(undefined)
+    });
+
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'completata' })
+      .expect(422)
+      .expect((res) => {
+        expect(res.body.message).toBe('Non puoi terminare la lavorazione finché tutte le fasi non sono completate');
+      });
+  });
+
   test('GET /api/lavorazioni ritorna le informazioni sulle lavorazioni interessate (200)', async () => {
     jest.spyOn(Lavorazione, 'find').mockReturnValue({
       sort: jest.fn().mockResolvedValue([

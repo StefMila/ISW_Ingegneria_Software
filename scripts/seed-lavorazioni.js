@@ -57,19 +57,12 @@ async function seedLavorazioni() {
     throw new Error('Nessuna azienda trovata per l\'allevatore di test. Esegui prima: npm run seed');
   }
 
-  const deleteResult = await Lavorazione.deleteMany({
-    aziendaId: azienda._id,
-    notes: { $regex: `^${SEED_MARKER}` }
-  });
-
-  console.log(`Lavorazioni seed precedenti rimosse: ${deleteResult.deletedCount}`);
-
   const templateSeeds = [
     {
       nomeTemplate: 'Produzione formaggio Riserva',
       tipoLavorazione: 'formaggio',
       codiceTipoLav: 'B',
-      outputName: 'Formaggi stagionati o freschi strutturati',
+      outputName: 'Forma stagionata Riserva',
       outputUnit: 'Kg',
       inputs: [
         { type: 'latte', name: 'Latte crudo', quantity: 420, unit: 'L' },
@@ -89,40 +82,44 @@ async function seedLavorazioni() {
       notes: `${SEED_MARKER} Template formaggio stagionato tipo riserva`
     },
     {
-      nomeTemplate: 'Produzione Caciotta',
-      tipoLavorazione: 'formaggio',
-      codiceTipoLav: 'B',
-      outputName: 'Formaggi stagionati o freschi strutturati',
+      nomeTemplate: 'Primo sale fresco',
+      tipoLavorazione: 'primo-sale',
+      codiceTipoLav: 'A',
+      outputName: 'Primo sale fresco porzionato',
       outputUnit: 'Kg',
       inputs: [
-        { type: 'latte', name: 'Latte crudo', quantity: 360, unit: 'L' },
-        { type: 'ingrediente', name: 'Acqua', quantity: 18, unit: 'L' },
-        { type: 'additivo', name: 'Fermenti lattici', quantity: 1.3, unit: 'Kg' }
-      ],
-      fasi: [
-        { name: 'Ricevimento', completed: false },
-        { name: 'Centrifugazione', completed: false },
-        { name: 'Inoculo', completed: false },
-        { name: 'Rottura cagliata', completed: false },
-        { name: 'Concentrazione', completed: false },
-        { name: 'Formatura', completed: false }
-      ],
-      notes: `${SEED_MARKER} Template caciotta fresca`
-    },
-    {
-      nomeTemplate: 'Produzione Crescenza',
-      tipoLavorazione: 'formaggio',
-      codiceTipoLav: 'B',
-      outputName: 'Formaggi stagionati o freschi strutturati',
-      outputUnit: 'Kg',
-      inputs: [
-        { type: 'latte', name: 'Latte crudo', quantity: 300, unit: 'L' },
-        { type: 'ingrediente', name: 'Acqua', quantity: 12, unit: 'L' }
+        { type: 'latte', name: 'Latte crudo', quantity: 280, unit: 'L' },
+        { type: 'additivo', name: 'Fermenti lattici', quantity: 1.1, unit: 'Kg' }
       ],
       fasi: [
         { name: 'Ricevimento', completed: false },
         { name: 'Omogeneizzazione', completed: false },
         { name: 'Trattamento termico', completed: false },
+        { name: 'Inoculo', completed: false },
+        { name: 'Coagulazione', completed: false },
+        { name: 'Rottura cagliata', completed: false },
+        { name: 'Formatura', completed: false },
+        { name: 'Confezionamento', completed: false }
+      ],
+      notes: `${SEED_MARKER} Template primo sale pronto vendita`
+    },
+    {
+      nomeTemplate: 'Produzione Crescenza',
+      tipoLavorazione: 'formaggio',
+      codiceTipoLav: 'B',
+      outputName: 'Crescenza fresca vaschetta',
+      outputUnit: 'Kg',
+      inputs: [
+        { type: 'latte', name: 'Latte crudo', quantity: 300, unit: 'L' },
+        { type: 'ingrediente', name: 'Acqua', quantity: 12, unit: 'L' },
+        { type: 'additivo', name: 'Fermenti lattici', quantity: 0.8, unit: 'Kg' }
+      ],
+      fasi: [
+        { name: 'Ricevimento', completed: false },
+        { name: 'Centrifugazione', completed: false },
+        { name: 'Omogeneizzazione', completed: false },
+        { name: 'Trattamento termico', completed: false },
+        { name: 'Inoculo', completed: false },
         { name: 'Coagulazione', completed: false },
         { name: 'Formatura', completed: false },
         { name: 'Confezionamento', completed: false }
@@ -133,11 +130,12 @@ async function seedLavorazioni() {
       nomeTemplate: 'Produzione yogurt vaniglia',
       tipoLavorazione: 'yogurt',
       codiceTipoLav: 'C',
-      outputName: 'Vasetti di yogurt',
+      outputName: 'Yogurt vaniglia in vasetti',
       outputUnit: 'pezzi',
       inputs: [
         { type: 'latte', name: 'Latte scremato liquido o crema di latte', quantity: 260, unit: 'L' },
-        { type: 'additivo', name: 'Fermenti lattici', quantity: 0.9, unit: 'Kg' }
+        { type: 'additivo', name: 'Fermenti lattici', quantity: 0.9, unit: 'Kg' },
+        { type: 'ingrediente', name: 'Acqua', quantity: 8, unit: 'L' }
       ],
       fasi: [
         { name: 'Ricevimento', completed: false },
@@ -150,6 +148,27 @@ async function seedLavorazioni() {
         { name: 'Confezionamento', completed: false }
       ],
       notes: `${SEED_MARKER} Template yogurt gusto vaniglia`
+    },
+    {
+      nomeTemplate: 'Produzione yogurt greco',
+      tipoLavorazione: 'yogurt',
+      codiceTipoLav: 'C',
+      outputName: 'Yogurt greco colato',
+      outputUnit: 'Kg',
+      inputs: [
+        { type: 'latte', name: 'Latte crudo', quantity: 340, unit: 'L' },
+        { type: 'additivo', name: 'Fermenti lattici', quantity: 1.0, unit: 'Kg' }
+      ],
+      fasi: [
+        { name: 'Ricevimento', completed: false },
+        { name: 'Omogeneizzazione', completed: false },
+        { name: 'Trattamento termico', completed: false },
+        { name: 'Inoculo', completed: false },
+        { name: 'Coagulazione', completed: false },
+        { name: 'Concentrazione', completed: false },
+        { name: 'Confezionamento', completed: false }
+      ],
+      notes: `${SEED_MARKER} Template yogurt greco colato`
     },
     {
       nomeTemplate: 'Latte alimentare',
@@ -190,8 +209,63 @@ async function seedLavorazioni() {
         { name: 'Confezionamento', completed: false }
       ],
       notes: `${SEED_MARKER} Template burro in panetti`
+    },
+    {
+      nomeTemplate: 'Recupero siero di latte',
+      tipoLavorazione: 'altro',
+      codiceTipoLav: 'D',
+      outputName: 'Siero di latte residuo',
+      outputUnit: 'L',
+      inputs: [
+        { type: 'latte', name: 'Latte crudo', quantity: 180, unit: 'L' },
+        { type: 'ingrediente', name: 'Acqua', quantity: 20, unit: 'L' }
+      ],
+      fasi: [
+        { name: 'Ricevimento', completed: false },
+        { name: 'Centrifugazione', completed: false },
+        { name: 'Concentrazione', completed: false },
+        { name: 'Confezionamento', completed: false }
+      ],
+      notes: `${SEED_MARKER} Template recupero siero tecnico`
+    },
+    {
+      nomeTemplate: 'Produzione latticello',
+      tipoLavorazione: 'altro',
+      codiceTipoLav: 'D',
+      outputName: 'Latticello',
+      outputUnit: 'L',
+      inputs: [
+        { type: 'latte', name: 'Latte scremato liquido o crema di latte', quantity: 240, unit: 'L' },
+        { type: 'ingrediente', name: 'Acqua', quantity: 10, unit: 'L' }
+      ],
+      fasi: [
+        { name: 'Ricevimento', completed: false },
+        { name: 'Centrifugazione', completed: false },
+        { name: 'Zangolatura', completed: false },
+        { name: 'Confezionamento', completed: false }
+      ],
+      notes: `${SEED_MARKER} Template latticello per industria alimentare`
     }
   ];
+
+  const templateNames = templateSeeds.map((item) => item.nomeTemplate);
+  const existingNamedTemplates = await Lavorazione.find({
+    aziendaId: azienda._id,
+    isTemplate: true,
+    nomeTemplate: { $in: templateNames }
+  }).select('_id');
+
+  const existingTemplateIds = existingNamedTemplates.map((item) => item._id);
+  const deleteResult = await Lavorazione.deleteMany({
+    aziendaId: azienda._id,
+    $or: [
+      { notes: { $regex: `^${SEED_MARKER}` } },
+      { _id: { $in: existingTemplateIds } },
+      { templateId: { $in: existingTemplateIds } }
+    ]
+  });
+
+  console.log(`Lavorazioni seed precedenti rimosse: ${deleteResult.deletedCount}`);
 
   const createdTemplates = [];
   for (const seedItem of templateSeeds) {
@@ -235,16 +309,16 @@ async function seedLavorazioni() {
       fasiCompleted: 9
     },
     {
-      templateName: 'Produzione Caciotta',
+      templateName: 'Primo sale fresco',
       startedAt: daysAgo(5, 8, 10),
       status: 'completata',
       endedAt: daysAgo(4, 13, 40),
-      outputQuantity: 300.71,
+      outputQuantity: 212.5,
       notes: `${SEED_MARKER} Lotto stabile e conforme`,
-      fasiCompleted: 6
+      fasiCompleted: 7
     },
     {
-      templateName: 'Produzione Caciotta',
+      templateName: 'Primo sale fresco',
       startedAt: daysAgo(1, 9, 0),
       status: 'in_corso',
       notes: `${SEED_MARKER} Inoculo avviato, attesa controllo pH`,
@@ -262,7 +336,7 @@ async function seedLavorazioni() {
       startedAt: daysAgo(4, 6, 40),
       status: 'completata',
       endedAt: daysAgo(3, 10, 25),
-      outputQuantity: 1280,
+      outputQuantity: 1180,
       notes: `${SEED_MARKER} Vasetti confezionati e pronti distribuzione`,
       fasiCompleted: 8
     },
@@ -272,6 +346,15 @@ async function seedLavorazioni() {
       status: 'in_corso',
       notes: `${SEED_MARKER} Fermentazione in corso`,
       fasiCompleted: 4
+    },
+    {
+      templateName: 'Produzione yogurt greco',
+      startedAt: daysAgo(7, 7, 15),
+      status: 'completata',
+      endedAt: daysAgo(6, 16, 5),
+      outputQuantity: 260.8,
+      notes: `${SEED_MARKER} Colatura completata e confezionamento finale`,
+      fasiCompleted: 7
     },
     {
       templateName: 'Latte alimentare',
@@ -297,6 +380,15 @@ async function seedLavorazioni() {
       status: 'in_corso',
       notes: `${SEED_MARKER} Zangolatura avviata`,
       fasiCompleted: 5
+    },
+    {
+      templateName: 'Recupero siero di latte',
+      startedAt: daysAgo(3, 11, 5),
+      status: 'completata',
+      endedAt: daysAgo(3, 14, 10),
+      outputQuantity: 154.2,
+      notes: `${SEED_MARKER} Siero recuperato e stoccato`,
+      fasiCompleted: 4
     }
   ];
 
