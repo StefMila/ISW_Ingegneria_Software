@@ -2423,11 +2423,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Azienda non trovata
           content:
@@ -2527,11 +2531,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '500':
           description: Errore interno del server
           content:
@@ -2597,11 +2605,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Template non trovato
           content:
@@ -2646,7 +2658,12 @@ paths:
                   notes: Aggiornamento nome template
               updateOperativa:
                 value:    
-                  notes: Aggiornamento quantità di prodotto finale              
+                  notes: Aggiornamento fasi e quantità prodotto finale 
+                  fasi:
+                    - name: Ricevimento
+                      completed: true
+                    - name: Confezionamento
+                      completed: true             
                   status: completata
                   outputQuantity: 45
       responses:
@@ -2668,6 +2685,11 @@ paths:
                       nomeTemplate: Template Yogurt Bianco Premium
                       isTemplate: true
                       notes: Aggiornamento nome template
+                      fasi:
+                        - name: Ricevimento
+                          completed: false
+                        - name: Confezionamento
+                          completed: false
                       status: in_corso
                       outputName: Vasetti di yogurt
                       outputUnit: vasetti
@@ -2682,7 +2704,12 @@ paths:
                       codiceTipoLav: B
                       isTemplate: false
                       templateId: 665fa8d8ad8f8c0012f9d117
-                      notes: Aggiornamento quantità di prodotto finale              
+                      notes: Aggiornamento fasi e quantità prodotto finale 
+                      fasi:
+                        - name: Ricevimento
+                          completed: true
+                        - name: Confezionamento
+                          completed: true
                       status: completata
                       outputName: Formaggi freschi
                       outputQuantity: 45
@@ -2697,13 +2724,16 @@ paths:
               examples:
                 nonModifiableFields:
                   value:
-                    message: I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili
+                    message: I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili
                 noFieldFound:
                   value:
                     message: Nessun campo aggiornabile fornito
                 invalidId:
                   value:
                     message: ID lavorazione non valido
+                invalidFasi:
+                  value:
+                    message: fasi deve essere un array
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -2711,11 +2741,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Lavorazione non trovata
           content:
@@ -2736,6 +2770,9 @@ paths:
                 invalidStatusTransition:
                   value:
                     message: Lo status di un template di lavorazione non può essere modificato
+                invalidFasiTransition:
+                  value: 
+                    message: Le fasi di un template di lavorazione non possono essere modificate
                 invalidNomeTemplateTransition:
                   value:
                     message: Il nome di un template non può essere modificato da una lavorazione non template
@@ -2787,11 +2824,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Lavorazione non trovata
           content:
@@ -2808,6 +2849,93 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /api/lavorazioni/{id}/iot:
+    get:
+      summary: Misurazioni IoT lavorazione
+      description: Recupera le misurazioni IoT associate a una lavorazione per completarla.
+      tags:
+        - Lavorazione
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: 665fa8d8ad8f8c0012f9d112
+      responses:
+        '200':
+          description: Misurazioni IoT recuperate con successo
+          content:
+            application/json:
+              #type: object
+              schema:
+                $ref: '#/components/schemas/LavorazioneIoTResponse'
+              examples:
+                success:
+                  value: 
+                    source: iot
+                    quantity: 70.5
+                    unit: Kg
+                    measuredAt: 2026-05-26T10:30:00.000Z
+                    sensoreId: 665f8fd8ad8f8c0012f9c777
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID lavorazione non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Lavorazione non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Lavorazione non trovata
+        '409':
+          description: Nessun sensore o misurazione MQTT validi disponibili
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noValidSensore:
+                  value:
+                    message: Nessun sensore di lavorazione attivo associato all'azienda
+                noValidMisurazione:
+                  value:
+                    message: Nessuna lettura MQTT valida disponibile per i sensori di lavorazione attivi
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'                       
 
   /api/lotti-prodotto:
     post:
@@ -3544,7 +3672,7 @@ paths:
                   example: "Collare Mucca Carolina"
                 tipoDispositivo:
                   type: string
-                  enum: [ambientale, indossabile, stoccaggio, mungitura]
+                  enum: [ambientale, indossabile, stoccaggio, mungitura, lavorazione]
                   example: "indossabile"
                 capacita:
                   type: array
@@ -3554,10 +3682,10 @@ paths:
                     properties:
                       tipoDato:
                         type: string
-                        enum: [temperatura, frequenza_cardiaca, livello_passi, esposizione_solare, posizione_gps]
+                        enum: [temperatura, frequenza_cardiaca, livello_passi, esposizione_solare, posizione_gps, peso]
                       unitaMisura:
                         type: string
-                        enum: ['°C', 'bpm', 'passi', 'ore', 'coordinate']
+                        enum: ['°C', 'bpm', 'passi', 'ore', 'coordinate', 'litri', 'chilogrammi']
                 aziendaId:
                   type: string
                   example: "654321abc123456def789012"
@@ -3574,10 +3702,47 @@ paths:
                 properties:
                   message:
                     type: string
-                  
                   item:
                     type: object
                    # Ritorna il sensore creato con l'array capacita
+        '400':
+          description: Campi non validi o mancanti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingValues:
+                  value:
+                    message: Nome, tipo dispositivo, capacità (almeno una) e aziendaId sono obbligatori
+                invalidAziendaId:
+                  value:
+                    message: aziendaId non è un ObjectId valido
+                invalidAnimaleId:
+                  value:
+                    message: animaleId non è un ObjectId valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     get:
       summary: Visualizza i dispositivi collegati
@@ -3603,6 +3768,51 @@ paths:
                     type: array
                     items:
                       type: object # Ora include l'array "capacita"
+        '400':
+          description: Campi non validi o mancanti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingValues:
+                  value:
+                    message: Il parametro query aziendaId è obbligatorio
+                invalidAziendaId:
+                  value:
+                    message: aziendaId non è un ObjectId valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Azienda non trovata
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/iot/sensori/dati:
     get:
@@ -3651,7 +3861,42 @@ paths:
                         ultimoAggiornamento: 
                           type: string 
                           format: date-time 
-                        
+        '400':
+          description: Campi non validi o mancanti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingValues:
+                  value:
+                    message: Il parametro query aziendaId è obbligatorio
+                invalidAziendaId:
+                  value:
+                    message: aziendaId non è un ObjectId valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -4249,6 +4494,30 @@ components:
           example: 
             createTemplate: AC001
             createLavorazione: AB002
+
+    LavorazioneIoTResponse:
+      type: object
+      description: Risposta per lettura dati IoT in una lavorazione.
+      properties:
+        source:
+          type: string
+          enum: [iot, manuale]
+          example: iot
+        quantity:
+          type: number
+          minimum: 0
+          example: 75.42
+        unit:
+          type: string
+          enum: [Kg, litri, pezzi]
+          example: Kg
+        measuredAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T08:10:00.000Z
+        sensoreId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c777
 
     CreateLavorazioneRequest:
       type: object

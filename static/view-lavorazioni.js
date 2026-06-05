@@ -628,7 +628,7 @@ const closeLavorazioneIot = async (id) => {
 
       const quantity = iotData?.quantity;
       const notes = window.prompt('Note di chiusura (facoltative):', '');
-      await patchCloseMungitura(id, quantity, notes, 'iot');
+      await patchCloseLavorazione(id, quantity, notes, 'iot');
     } catch (error) {
       console.error('Errore durante lettura IoT:', error);
       renderStatus(lavorazioniStatus, 'Errore di connessione durante lettura IoT.', 'red');

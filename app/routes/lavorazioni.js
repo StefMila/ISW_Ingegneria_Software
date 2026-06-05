@@ -88,6 +88,55 @@ export const parseBooleanLike = (value) => {
 	if (normalized === 'false') return false;
 	return null;
 };
+
+const parseQuantity = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+
+    if (typeof value === 'number') {
+        return Number.isFinite(value) && value >= 0 ? Number(value.toFixed(2)) : null;
+    }
+
+    if (typeof value === 'string') {
+        const normalized = value.trim().replace(',', '.');
+        if (!normalized) {
+            return null;
+        }
+
+        if (!/^\d+(\.\d+)?$/.test(normalized)) {
+            return null;
+        }
+
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) && parsed >= 0 ? Number(parsed.toFixed(2)) : null;
+    }
+
+    return null;
+};
+
+const readQuantityFromMqttPayload = (lavorazione, payload) => {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+
+    let candidates = [payload.litri_latte, payload.litri, payload.peso];
+	if (lavorazione && lavorazione.outputUnit === 'L'){
+		candidates = [payload.litri_latte, payload.litri, payload.peso];
+	} else if (lavorazione && lavorazione.outputUnit === 'Kg') {
+		candidates = [payload.peso, payload.litri_latte, payload.litri];
+	}
+	
+    for (const candidate of candidates) {
+        const parsed = parseQuantity(candidate);
+        if (parsed !== null) {
+            return parsed;
+        }
+    }
+
+    return null;
+};
+
 // POST /api/lavorazioni - crea una nuova lavorazione, con validazione dei campi e controllo di proprietà
 export const createLavorazione = async (req, res) => {
 	try {
@@ -209,14 +258,13 @@ export const updateLavorazione = async (req, res) => {
 			templateId !== undefined ||
 			startedAt !== undefined ||
 			inputs !== undefined ||
-			fasi !== undefined ||
 			outputName !== undefined ||
 			outputUnit !== undefined
 		) {
-			return res.status(400).json({ message: 'I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili' });
+			return res.status(400).json({ message: 'I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili' });
 		}
 
-		if (nomeTemplate === undefined && endedAt === undefined && notes === undefined && status === undefined && outputQuantity === undefined) {
+		if (nomeTemplate === undefined && endedAt === undefined && notes === undefined && status === undefined && fasi === undefined && outputQuantity === undefined) {
             return res.status(400).json({ message: 'Nessun campo aggiornabile fornito' });
         }
 
@@ -234,8 +282,17 @@ export const updateLavorazione = async (req, res) => {
 			return res.status(422).json({ message: 'Lo status di un template di lavorazione non può essere modificato' });
 		}
 
+		if (existingLavorazione.isTemplate && fasi !== undefined) {
+			return res.status(422).json({ message: 'Le fasi di un template di lavorazione non possono essere modificate' });
+		}
+
 		if(!existingLavorazione.isTemplate && nomeTemplate !== undefined) {
 			return res.status(422).json({ message: 'Il nome di un template non può essere modificato da una lavorazione non template' });
+		}
+
+		const normalizedFasi = normalizeFasi(fasi);
+		if (!normalizedFasi.ok) {
+			return res.status(normalizedFasi.status || 400).json({ message: normalizedFasi.message });
 		}
 
 		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;
@@ -243,6 +300,7 @@ export const updateLavorazione = async (req, res) => {
 		if (endedAt !== undefined) existingLavorazione.endedAt = endedAt;
 		if (status !== undefined) existingLavorazione.status = status;
 		if (notes !== undefined) existingLavorazione.notes = typeof notes === 'string' ? notes.trim() : undefined;
+		if (normalizedFasi.value !== undefined) existingLavorazione.fasi = normalizedFasi.value;
 		if (outputQuantity !== undefined) existingLavorazione.outputQuantity = outputQuantity;
 
 		await existingLavorazione.save();
@@ -259,7 +317,7 @@ export const updateLavorazione = async (req, res) => {
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
-
+// GET /api/lavorazioni/:id/iot - legge la quantità (in Kg o litri) misurata da sensore MQTT associato alla lavorazione
 export const getIotReading = async (req, res) => {
 	try {
 		const { id } = req.params;
@@ -278,7 +336,7 @@ export const getIotReading = async (req, res) => {
 			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
 		}
 
-		const sensoriLavorazione = await Sensore.find({ //TODO: crea sensore/i tipo 'lavorazione'
+		const sensoriLavorazione = await Sensore.find({ 
 			aziendaId: existingLavorazione.aziendaId,
 			stato: 'attivo',
 			tipoDispositivo: 'lavorazione',
@@ -295,19 +353,19 @@ export const getIotReading = async (req, res) => {
 		}
 
 		const selectedSensore = sensoriLavorazione.find((sensor) => {
-			const mqttData = ultimeLettureIot.get(String(sensor._id));
-			const quantity = readQuantityFromMqttPayload(mqttData?.dati);
+			const mqttData = ultimeLettureIot.get(String(sensor._id));	
+			const quantity = readQuantityFromMqttPayload(existingLavorazione, mqttData?.dati);
 			return quantity !== null;
 		});
 
 		if (!selectedSensore) {
 			return res.status(409).json({
-				message: 'Nessuna lettura MQTT valida disponibile per i sensori di mungitura attivi'
+				message: 'Nessuna lettura MQTT valida disponibile per i sensori di lavorazione attivi'
 			});
 		}
 
 		const mqttData = ultimeLettureIot.get(String(selectedSensore._id));
-		const measuredQuantity = readQuantityFromMqttPayload(mqttData?.dati);
+		const measuredQuantity = readQuantityFromMqttPayload(existingLavorazione, mqttData?.dati);
 		return res.status(200).json({
 			source: 'iot',
 			quantity: measuredQuantity,
@@ -316,6 +374,7 @@ export const getIotReading = async (req, res) => {
 			sensoreId: selectedSensore._id
 		});
 	} catch (error) {
+		console.error('Errore del server:', error);
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
@@ -423,7 +482,7 @@ export const deleteLavorazione = async (req, res) => {
 
 router.post('/', createLavorazione);
 router.patch('/:id', updateLavorazione);
-//router.get('/:id/iot', getIotReading);
+router.get('/:id/iot', getIotReading);
 router.get('/', getLavorazioni);
 router.get('/search', getTemplateByCodiceLavorazione);
 router.delete('/:id', deleteLavorazione);

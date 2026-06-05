@@ -171,7 +171,7 @@ lavorazioneSchema.pre('validate', async function (next) {
                 const counterDoc = await mongoose.model('Counter').findOneAndUpdate(
                     { _id: `counter_${codiceTipoLav}` }, 
                     { $inc: { seq: 1 } }, 
-                    { new: true, upsert: true }
+                    { returnDocument: 'after', upsert: true }
                 );
                 const numeroProgressivo = String(counterDoc.seq).padStart(3, '0');
 

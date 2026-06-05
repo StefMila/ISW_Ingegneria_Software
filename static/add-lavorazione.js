@@ -40,7 +40,7 @@ const INPUT_TO_UNIT = {
 };
 
 export const OUTPUT_TO_UNIT = {
-    'Latte alimentare confezionato': 'L',
+    'Latte alimentare confezionato': 'pezzi',
     'Formaggi stagionati o freschi strutturati': 'Kg',
     'Vasetti di yogurt': 'pezzi',
     'Panetti di burro': 'pezzi',
