@@ -4,6 +4,8 @@ import { checkAuth, checkUserType } from './auth.js';
 import { assertAziendaOwnedByUser } from './aziende.js';
 import Azienda from '../models/azienda.js';
 import Lavorazione from '../models/lavorazione.js';
+import Sensore from '../models/sensore.js';
+import { ultimeLettureIot } from '../services/mqttService.js';
 
 const router = express.Router();
 router.use(checkAuth);
@@ -24,6 +26,11 @@ const ALLOWED_FASI = [
 	'Zangolatura',
 	'Confezionamento'
 ];
+
+const UNIT_TO_SENSORE = {
+	'L': 'litri',
+	'Kg': 'chilogrammi'
+};
 
 const ALLOWED_FASI_SET = new Set(ALLOWED_FASI);
 //valida ObjectId di MongoDB
@@ -81,6 +88,75 @@ export const parseBooleanLike = (value) => {
 	if (normalized === 'false') return false;
 	return null;
 };
+
+const parseQuantity = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+
+    if (typeof value === 'number') {
+        return Number.isFinite(value) && value >= 0 ? Number(value.toFixed(2)) : null;
+    }
+
+    if (typeof value === 'string') {
+        const normalized = value.trim().replace(',', '.');
+        if (!normalized) {
+            return null;
+        }
+
+        if (!/^\d+(\.\d+)?$/.test(normalized)) {
+            return null;
+        }
+
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) && parsed >= 0 ? Number(parsed.toFixed(2)) : null;
+    }
+
+    return null;
+};
+
+const hasNonSequentialCompletedFasi = (fasi = []) => {
+	let foundIncomplete = false;
+
+	for (const fase of fasi) {
+		const completed = Boolean(fase?.completed);
+		if (!completed) {
+			foundIncomplete = true;
+			continue;
+		}
+
+		if (foundIncomplete) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
+const areAllFasiCompleted = (fasi = []) => Array.isArray(fasi) && fasi.length > 0 && fasi.every((fase) => Boolean(fase?.completed));
+
+const readQuantityFromMqttPayload = (lavorazione, payload) => {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+
+    let candidates = [payload.litri_latte, payload.litri, payload.peso];
+	if (lavorazione && lavorazione.outputUnit === 'L'){
+		candidates = [payload.litri_latte, payload.litri, payload.peso];
+	} else if (lavorazione && lavorazione.outputUnit === 'Kg') {
+		candidates = [payload.peso, payload.litri_latte, payload.litri];
+	}
+	
+    for (const candidate of candidates) {
+        const parsed = parseQuantity(candidate);
+        if (parsed !== null) {
+            return parsed;
+        }
+    }
+
+    return null;
+};
+
 // POST /api/lavorazioni - crea una nuova lavorazione, con validazione dei campi e controllo di proprietà
 export const createLavorazione = async (req, res) => {
 	try {
@@ -90,6 +166,7 @@ export const createLavorazione = async (req, res) => {
 			codiceTipoLav,
 			nomeTemplate,
 			isTemplate,
+			templateId,
 			startedAt,
 			endedAt,
 			status,
@@ -125,12 +202,17 @@ export const createLavorazione = async (req, res) => {
 			return res.status(400).json({ message: 'isTemplate deve essere true o false' });
 		}
 
+		if(!parsedIsTemplate && !templateId) {
+			return res.status(400).json({ message: 'Se la lavorazione non è un template, deve riferirsi ad un template esistente' });
+		}
+
 		const newLavorazione = new Lavorazione({
 			aziendaId,
 			tipoLavorazione: String(tipoLavorazione).trim(),
 			codiceTipoLav: String(codiceTipoLav).trim(),
 			nomeTemplate: typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined,
 			isTemplate: parsedIsTemplate ?? false,
+			templateId: templateId || undefined,
 			startedAt: startedAt || undefined,
 			endedAt: endedAt || undefined,
 			status: status || 'in_corso',
@@ -165,10 +247,13 @@ export const updateLavorazione = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const {
+			aziendaId,
 			tipoLavorazione,
 			codiceTipoLav,
+			codiceLavorazione,
 			nomeTemplate,
 			isTemplate,
+			templateId,
 			startedAt,
 			endedAt,
 			status,
@@ -179,6 +264,96 @@ export const updateLavorazione = async (req, res) => {
 			outputQuantity,
 			outputUnit
 		} = req.body;
+
+		if (!isValidObjectId(id)) {
+			return res.status(400).json({ message: 'ID lavorazione non valido' });
+		}
+		// escludo tutti i campi che non possono essere modificati, a prescindere dal fatto che la lavorazione interessata sia un template o meno
+		if (
+			aziendaId !== undefined ||
+			tipoLavorazione !== undefined ||
+			codiceTipoLav !== undefined ||
+			codiceLavorazione !== undefined ||
+			isTemplate !== undefined ||
+			templateId !== undefined ||
+			startedAt !== undefined ||
+			inputs !== undefined ||
+			outputName !== undefined ||
+			outputUnit !== undefined
+		) {
+			return res.status(400).json({ message: 'I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili' });
+		}
+
+		if (nomeTemplate === undefined && endedAt === undefined && notes === undefined && status === undefined && fasi === undefined && outputQuantity === undefined) {
+            return res.status(400).json({ message: 'Nessun campo aggiornabile fornito' });
+        }
+
+		const existingLavorazione = await Lavorazione.findById(id);
+		if (!existingLavorazione) {
+			return res.status(404).json({ message: 'Lavorazione non trovata' });
+		}
+
+		const ownershipCheck = await assertAziendaOwnedByUser(existingLavorazione.aziendaId, req.user.userId);
+		if (!ownershipCheck.ok) {
+			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
+		}
+
+		if (existingLavorazione.isTemplate && status !== undefined) {
+			return res.status(422).json({ message: 'Lo status di un template di lavorazione non può essere modificato' });
+		}
+
+		if (existingLavorazione.isTemplate && fasi !== undefined) {
+			return res.status(422).json({ message: 'Le fasi di un template di lavorazione non possono essere modificate' });
+		}
+
+		if (!existingLavorazione.isTemplate && fasi !== undefined && existingLavorazione.status !== 'in_corso') {
+			return res.status(422).json({ message: 'Le fasi di una lavorazione non in corso non possono essere modificate' });
+		}
+
+		if(!existingLavorazione.isTemplate && nomeTemplate !== undefined) {
+			return res.status(422).json({ message: 'Il nome di un template non può essere modificato da una lavorazione non template' });
+		}
+
+		const normalizedFasi = normalizeFasi(fasi);
+		if (!normalizedFasi.ok) {
+			return res.status(normalizedFasi.status || 400).json({ message: normalizedFasi.message });
+		}
+
+		const fasiToValidate = normalizedFasi.value !== undefined ? normalizedFasi.value : existingLavorazione.fasi;
+		if (!existingLavorazione.isTemplate && Array.isArray(fasiToValidate) && hasNonSequentialCompletedFasi(fasiToValidate)) {
+			return res.status(422).json({ message: 'Le fasi devono essere completate in ordine sequenziale' });
+		}
+
+		if (!existingLavorazione.isTemplate && status === 'completata' && !areAllFasiCompleted(fasiToValidate)) {
+			return res.status(422).json({ message: 'Non puoi terminare la lavorazione finché tutte le fasi non sono completate' });
+		}
+
+		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;
+		if (templateId !== undefined) existingLavorazione.templateId = templateId;
+		if (endedAt !== undefined) existingLavorazione.endedAt = endedAt;
+		if (status !== undefined) existingLavorazione.status = status;
+		if (notes !== undefined) existingLavorazione.notes = typeof notes === 'string' ? notes.trim() : undefined;
+		if (normalizedFasi.value !== undefined) existingLavorazione.fasi = normalizedFasi.value;
+		if (outputQuantity !== undefined) existingLavorazione.outputQuantity = outputQuantity;
+
+		await existingLavorazione.save();
+
+		return res.status(200).json({
+			message: 'Lavorazione aggiornata con successo',
+			lavorazione: existingLavorazione
+		});
+	} catch (error) {
+		if (error.name === 'ValidationError') {
+			return res.status(400).json({ message: 'dati lavorazione non validi' });
+		}
+		console.error('Errore del server:', error);
+		return res.status(500).json({ message: 'Errore del server' });
+	}
+};
+// GET /api/lavorazioni/:id/iot - legge la quantità (in Kg o litri) misurata da sensore MQTT associato alla lavorazione
+export const getIotReading = async (req, res) => {
+	try {
+		const { id } = req.params;
 
 		if (!isValidObjectId(id)) {
 			return res.status(400).json({ message: 'ID lavorazione non valido' });
@@ -194,45 +369,45 @@ export const updateLavorazione = async (req, res) => {
 			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
 		}
 
-		const normalizedInputs = normalizeInputs(inputs);
-		if (!normalizedInputs.ok) {
-			return res.status(normalizedInputs.status || 400).json({ message: normalizedInputs.message });
+		const sensoriLavorazione = await Sensore.find({ 
+			aziendaId: existingLavorazione.aziendaId,
+			stato: 'attivo',
+			tipoDispositivo: 'lavorazione',
+			capacita: {
+				tipoDato: 'peso',
+				unitaMisura: UNIT_TO_SENSORE[(existingLavorazione.outputUnit).trim()] || 'chilogrammi'
+			}
+		}).sort({ createdAt: -1 });
+
+		if (!sensoriLavorazione.length) {
+			return res.status(409).json({
+				message: 'Nessun sensore di lavorazione attivo associato all\'azienda'
+			});
 		}
 
-		const normalizedFasi = normalizeFasi(fasi);
-		if (!normalizedFasi.ok) {
-			return res.status(normalizedFasi.status || 400).json({ message: normalizedFasi.message });
+		const selectedSensore = sensoriLavorazione.find((sensor) => {
+			const mqttData = ultimeLettureIot.get(String(sensor._id));	
+			const quantity = readQuantityFromMqttPayload(existingLavorazione, mqttData?.dati);
+			return quantity !== null;
+		});
+
+		if (!selectedSensore) {
+			return res.status(409).json({
+				message: 'Nessuna lettura MQTT valida disponibile per i sensori di lavorazione attivi'
+			});
 		}
 
-		const parsedIsTemplate = parseBooleanLike(isTemplate);
-		if (isTemplate !== undefined && parsedIsTemplate === null) {
-			return res.status(400).json({ message: 'isTemplate deve essere true o false' });
-		}
-
-		if (tipoLavorazione !== undefined) existingLavorazione.tipoLavorazione = String(tipoLavorazione).trim();
-		if (codiceTipoLav !== undefined) existingLavorazione.codiceTipoLav = String(codiceTipoLav).trim();
-		if (nomeTemplate !== undefined) existingLavorazione.nomeTemplate = typeof nomeTemplate === 'string' ? nomeTemplate.trim() : undefined;
-		if (parsedIsTemplate !== null) existingLavorazione.isTemplate = parsedIsTemplate;
-		if (startedAt !== undefined) existingLavorazione.startedAt = startedAt;
-		if (endedAt !== undefined) existingLavorazione.endedAt = endedAt;
-		if (status !== undefined) existingLavorazione.status = status;
-		if (notes !== undefined) existingLavorazione.notes = typeof notes === 'string' ? notes.trim() : undefined;
-		if (normalizedInputs.value !== undefined) existingLavorazione.inputs = normalizedInputs.value;
-		if (normalizedFasi.value !== undefined) existingLavorazione.fasi = normalizedFasi.value;
-		if (outputName !== undefined) existingLavorazione.outputName = typeof outputName === 'string' ? outputName.trim() : undefined;
-		if (outputQuantity !== undefined) existingLavorazione.outputQuantity = outputQuantity;
-		if (outputUnit !== undefined) existingLavorazione.outputUnit = typeof outputUnit === 'string' ? outputUnit.trim() : undefined;
-
-		await existingLavorazione.save();
-
+		const mqttData = ultimeLettureIot.get(String(selectedSensore._id));
+		const measuredQuantity = readQuantityFromMqttPayload(existingLavorazione, mqttData?.dati);
 		return res.status(200).json({
-			message: 'Lavorazione aggiornata con successo',
-			lavorazione: existingLavorazione
+			source: 'iot',
+			quantity: measuredQuantity,
+			unit: existingLavorazione.outputUnit || 'Kg', 
+			measuredAt: mqttData?.timestamp ? new Date(mqttData.timestamp).toISOString() : new Date().toISOString(),
+			sensoreId: selectedSensore._id
 		});
 	} catch (error) {
-		if (error.name === 'ValidationError') {
-			return res.status(400).json({ message: 'dati lavorazione non validi' });
-		}
+		console.error('Errore del server:', error);
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
@@ -277,7 +452,67 @@ export const getLavorazioni = async (req, res) => {
 	}
 };
 
-//TODO US75: GET /api/lavorazioni/:id - visualizzazione del singolo template a partire dal codiceLavorazione
+//GET /api/lavorazioni/search - visualizzazione del singolo template a partire dal suo codiceLavorazione
+export const getTemplateByCodiceLavorazione = async (req, res) => {
+	try {
+		const { queryTemplate, codiceLavorazione, descrizioneTemplate } = req.query;
+		const queryValue = typeof queryTemplate === 'string' ? queryTemplate.trim() : '';
+		const codiceValue = typeof codiceLavorazione === 'string' ? codiceLavorazione.trim() : '';
+		const descrizioneValue = typeof descrizioneTemplate === 'string' ? descrizioneTemplate.trim() : '';
+
+		if (!queryValue && !codiceValue && !descrizioneValue) {
+			return res.status(400).json({ message: 'Inserisci codiceLavorazione o descrizioneTemplate' });
+		}
+
+		const standardCodiceLavorazione = /^[A][A-D]\d{3}$/;
+		if(!queryValue && codiceValue && !standardCodiceLavorazione.test(codiceValue)){
+			return res.status(400).json({ message: 'Codice template non valido'});
+		}
+
+		const filter = {
+			isTemplate: true
+		};
+
+		if (queryValue) {
+			const escaped = queryValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			filter.$or = [
+				{ codiceLavorazione: { $regex: escaped, $options: 'i' } },
+				{ notes: { $regex: escaped, $options: 'i' } },
+				{ nomeTemplate: { $regex: escaped, $options: 'i' } }
+			];
+		} else if (codiceValue && descrizioneValue) {
+			const escaped = descrizioneValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			filter.codiceLavorazione = codiceValue;
+			filter.$or = [
+				{ notes: { $regex: escaped, $options: 'i' } },
+				{ nomeTemplate: { $regex: escaped, $options: 'i' } }
+			];
+		} else if (codiceValue) {
+			filter.codiceLavorazione = codiceValue;
+		} else if (descrizioneValue) {
+			const escaped = descrizioneValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			filter.$or = [
+				{ notes: { $regex: escaped, $options: 'i' } },
+				{ nomeTemplate: { $regex: escaped, $options: 'i' } }
+			];
+		}
+
+		const existingTemplate = await Lavorazione.findOne(filter);
+		if (!existingTemplate || !existingTemplate.isTemplate) {
+			return res.status(404).json({ message: 'Nessun template corrispondente trovato'});
+		}
+
+		const ownershipCheck = await assertAziendaOwnedByUser(existingTemplate.aziendaId, req.user.userId);
+		if (!ownershipCheck.ok) {
+			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
+		}
+
+		return res.status(200).json(existingTemplate);
+	} catch (error) {
+		console.error('Errore del server:', error);
+		return res.status(500).json({ message: 'Errore del server' });
+	}
+};
 
 // DELETE /api/lavorazioni/:id - elimina una lavorazione esistente, con controllo di proprietà
 export const deleteLavorazione = async (req, res) => {
@@ -308,7 +543,9 @@ export const deleteLavorazione = async (req, res) => {
 
 router.post('/', createLavorazione);
 router.patch('/:id', updateLavorazione);
+router.get('/:id/iot', getIotReading);
 router.get('/', getLavorazioni);
+router.get('/search', getTemplateByCodiceLavorazione);
 router.delete('/:id', deleteLavorazione);
 
 export default router;

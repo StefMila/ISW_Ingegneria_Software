@@ -107,7 +107,20 @@ export const avviaSimulatoreHardware = () => {
                         case 'litri':
                         case 'litri_latte':
                             const latteAttuale = datiPrecedenti.litri || datiPrecedenti.litri_latte || 0.0;
-                            const incrementoLatte = parseFloat((Math.random() * (0.10 - 0.02) + 0.02).toFixed(2));
+
+                            // Incremento default
+                            let minIncremento = 0.0;
+                            let maxIncremento = 0.0;
+
+                            if (sensore.tipoDispositivo === 'mungitura') {
+                                minIncremento = 0.1; 
+                                maxIncremento = 1.5;
+                            } else if (sensore.tipoDispositivo === 'lavorazione') {
+                                minIncremento = 5.0; 
+                                maxIncremento = 25.0;
+                            }
+
+                            const incrementoLatte = parseFloat((Math.random() * (maxIncremento - minIncremento) + minIncremento).toFixed(2));
                             const totaleLatte = parseFloat((latteAttuale + incrementoLatte).toFixed(2));
                             
                             // Assegna il valore alla chiave corretta che hai nel DB

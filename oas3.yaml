@@ -275,6 +275,77 @@ paths:
                 serverError:
                   value:
                     message: "Errore interno del server"
+    delete:
+      summary: Rimozione azienda
+      description: Elimina l'azienda identificata dall'id specificato. Solo il proprietario può eliminarla.
+      tags:
+        - Azienda
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID dell'azienda da eliminare
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Azienda eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Azienda eliminata con successo
+        '400':
+          description: ID azienda non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID azienda non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
+        '403':
+          description: Permessi insufficienti (solo allevatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Azienda non trovata
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/punti-vendita/public:
     get:
@@ -1212,80 +1283,7 @@ paths:
                 serverError:
                   value:
                     message: "Errore interno del server"
-  
-  /api/aziende/{id}:
-    delete:
-      summary: Rimozione azienda
-      description: Elimina l'azienda identificata dall'id specificato. Solo il proprietario può eliminarla.
-      tags:
-        - Azienda
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          description: ID dell'azienda da eliminare
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Azienda eliminata con successo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-              examples:
-                success:
-                  value:
-                    message: Azienda eliminata con successo
-        '400':
-          description: ID azienda non valido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidId:
-                  value:
-                    message: ID azienda non valido
-        '401':
-          description: Token mancante, non valido o scaduto
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingOrInvalidToken:
-                  value:
-                    message: "Token mancante o formato non valido: Accesso negato"
-        '403':
-          description: Permessi insufficienti (solo allevatore)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                forbiddenRole:
-                  value:
-                    message: "Permessi insufficienti: Accesso negato"
-        '404':
-          description: Azienda non trovata
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                notFound:
-                  value:
-                    message: Azienda non trovata
-        '500':
-          description: Errore interno del server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-                
+              
   /api/aziende/{aziendaId}/animali:
     post:
       summary: Anagrafica animale aziendale
@@ -2328,6 +2326,7 @@ paths:
                   tipoLavorazione: formaggio
                   codiceTipoLav: B
                   isTemplate: false
+                  templateId: 665fa8d8ad8f8c0012f9d117
                   status: in_corso
                   startedAt: 2026-05-26T07:45:00.000Z
                   inputs:
@@ -2384,7 +2383,23 @@ paths:
                       tipoLavorazione: formaggio
                       codiceTipoLav: B
                       isTemplate: false
+                      templateId: 665fa8d8ad8f8c0012f9d117
                       status: in_corso
+                      startedAt: 2026-05-26T07:45:00.000Z
+                      inputs:
+                        - type: latte
+                          name: Latte crudo
+                          quantity: 350
+                          unit: L
+                      fasi:
+                        - name: Coagulazione
+                          completed: true
+                        - name: Stagionatura
+                          completed: false
+                      outputName: Formaggi freschi
+                      outputQuantity: 40
+                      outputUnit: pezzi
+                      codiceLavorazione: AB002
         '400':
           description: Dati non validi
           content:
@@ -2398,6 +2413,9 @@ paths:
                 invalidTemplateFlag:
                   value:
                     message: isTemplate deve essere true o false
+                missingTemplateId:
+                  value:
+                    message: Se la lavorazione non è un template, deve riferirsi ad un template esistente
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -2405,11 +2423,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Azienda non trovata
           content:
@@ -2509,11 +2531,99 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/lavorazioni/search:
+    get:
+      summary: Visualizza template
+      description: Restituisce i dettagli di un template lavorazione (non funziona per lavorazioni non template).
+      tags:
+        - Lavorazione
+      security:
+       - bearerAuth: []
+      parameters:
+        - in: query
+          name: codiceLavorazione
+          required: true
+          schema:
+            type: string
+          description: Codice lavorazione assegnato al template di cui voglio reperire le informazioni.
+      responses:
+        '200':
+          description: Template Lavorazione trovato
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LavorazioneItem'
+              examples:
+                templateDetails:
+                  value:
+                    _id: 665fa8d8ad8f8c0012f9d111
+                    aziendaId: 665f8fd8ad8f8c0012f9c123
+                    tipoLavorazione: yogurt
+                    codiceTipoLav: C
+                    nomeTemplate: Template Yogurt Bianco Premium
+                    isTemplate: true
+                    notes: Template di prova
+                    status: in_corso
+                    outputName: Vasetti di yogurt
+                    outputUnit: vasetti
+                    codiceLavorazione: AC001
+        '400':
+          description: Codice lavorazione non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noCodiceLavorazione:
+                  value:
+                    message: Il codice del template è obbligatorio
+                invalidCodiceLavorazione:
+                  value:
+                    message: Codice template non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Template non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Nessun template corrispondente trovato
         '500':
           description: Errore interno del server
           content:
@@ -2545,8 +2655,17 @@ paths:
               updateTemplate:
                 value:
                   nomeTemplate: Template Yogurt Bianco Premium
-                  outputName: Vasetti di yogurt intero
-                  isTemplate: true
+                  notes: Aggiornamento nome template
+              updateOperativa:
+                value:    
+                  notes: Aggiornamento fasi e quantità prodotto finale 
+                  fasi:
+                    - name: Ricevimento
+                      completed: true
+                    - name: Confezionamento
+                      completed: true             
+                  status: completata
+                  outputQuantity: 45
       responses:
         '200':
           description: Lavorazione aggiornata con successo
@@ -2555,7 +2674,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LavorazioneResponse'
               examples:
-                success:
+                templateUpdated:
                   value:
                     message: Lavorazione aggiornata con successo
                     lavorazione:
@@ -2565,8 +2684,37 @@ paths:
                       codiceTipoLav: C
                       nomeTemplate: Template Yogurt Bianco Premium
                       isTemplate: true
-                      outputName: Vasetti di yogurt intero
+                      notes: Aggiornamento nome template
+                      fasi:
+                        - name: Ricevimento
+                          completed: false
+                        - name: Confezionamento
+                          completed: false
+                      status: in_corso
+                      outputName: Vasetti di yogurt
+                      outputUnit: vasetti
                       codiceLavorazione: AC001
+                lavorazioneUpdated:
+                  value:
+                    message: Lavorazione aggiornata con successo
+                    lavorazione:
+                      _id: 665fa8d8ad8f8c0012f9d112
+                      aziendaId: 665f8fd8ad8f8c0012f9c123
+                      tipoLavorazione: formaggio
+                      codiceTipoLav: B
+                      isTemplate: false
+                      templateId: 665fa8d8ad8f8c0012f9d117
+                      notes: Aggiornamento fasi e quantità prodotto finale 
+                      fasi:
+                        - name: Ricevimento
+                          completed: true
+                        - name: Confezionamento
+                          completed: true
+                      status: completata
+                      outputName: Formaggi freschi
+                      outputQuantity: 45
+                      outputUnit: kg
+                      codiceLavorazione: AB002
         '400':
           description: ID o dati non validi
           content:
@@ -2574,12 +2722,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
+                nonModifiableFields:
+                  value:
+                    message: I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili
+                noFieldFound:
+                  value:
+                    message: Nessun campo aggiornabile fornito
                 invalidId:
                   value:
                     message: ID lavorazione non valido
-                invalidTemplateFlag:
+                invalidFasi:
                   value:
-                    message: isTemplate deve essere true o false
+                    message: 'Le fasi consentite sono: Ricevimento, Centrifugazione, Omogeneizzazione, Trattamento termico, Inoculo, Coagulazione, Rottura cagliata, Formatura, Salatura, Stagionatura, Concentrazione, Zangolatura, Confezionamento'
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -2587,17 +2741,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Lavorazione non trovata
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Lavorazione non trovata
+        '422':
+          description: Violazione regole di business
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatusTransition:
+                  value:
+                    message: Lo status di un template di lavorazione non può essere modificato
+                invalidFasiTransition:
+                  value: 
+                    message: Le fasi di un template di lavorazione non possono essere modificate
+                invalidNomeTemplateTransition:
+                  value:
+                    message: Il nome di un template non può essere modificato da una lavorazione non template
         '500':
           description: Errore interno del server
           content:
@@ -2646,11 +2824,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Permessi insufficienti
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Lavorazione non trovata
           content:
@@ -2667,6 +2849,93 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /api/lavorazioni/{id}/iot:
+    get:
+      summary: Misurazioni IoT lavorazione
+      description: Recupera le misurazioni IoT associate a una lavorazione per completarla.
+      tags:
+        - Lavorazione
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: 665fa8d8ad8f8c0012f9d112
+      responses:
+        '200':
+          description: Misurazioni IoT recuperate con successo
+          content:
+            application/json:
+              #type: object
+              schema:
+                $ref: '#/components/schemas/LavorazioneIoTResponse'
+              examples:
+                success:
+                  value: 
+                    source: iot
+                    quantity: 70.5
+                    unit: Kg
+                    measuredAt: 2026-05-26T10:30:00.000Z
+                    sensoreId: 665f8fd8ad8f8c0012f9c777
+        '400':
+          description: ID non valido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID lavorazione non valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Lavorazione non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Lavorazione non trovata
+        '409':
+          description: Nessun sensore o misurazione MQTT validi disponibili
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noValidSensore:
+                  value:
+                    message: Nessun sensore di lavorazione attivo associato all'azienda
+                noValidMisurazione:
+                  value:
+                    message: Nessuna lettura MQTT valida disponibile per i sensori di lavorazione attivi
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'                       
 
   /api/lotti-prodotto:
     post:
@@ -3403,7 +3672,7 @@ paths:
                   example: "Collare Mucca Carolina"
                 tipoDispositivo:
                   type: string
-                  enum: [ambientale, indossabile, stoccaggio, mungitura]
+                  enum: [ambientale, indossabile, stoccaggio, mungitura, lavorazione]
                   example: "indossabile"
                 capacita:
                   type: array
@@ -3413,10 +3682,10 @@ paths:
                     properties:
                       tipoDato:
                         type: string
-                        enum: [temperatura, frequenza_cardiaca, livello_passi, esposizione_solare, posizione_gps]
+                        enum: [temperatura, frequenza_cardiaca, livello_passi, esposizione_solare, posizione_gps, peso]
                       unitaMisura:
                         type: string
-                        enum: ['°C', 'bpm', 'passi', 'ore', 'coordinate']
+                        enum: ['°C', 'bpm', 'passi', 'ore', 'coordinate', 'litri', 'chilogrammi']
                 aziendaId:
                   type: string
                   example: "654321abc123456def789012"
@@ -3433,10 +3702,47 @@ paths:
                 properties:
                   message:
                     type: string
-                  
                   item:
                     type: object
                    # Ritorna il sensore creato con l'array capacita
+        '400':
+          description: Campi non validi o mancanti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingValues:
+                  value:
+                    message: Nome, tipo dispositivo, capacità (almeno una) e aziendaId sono obbligatori
+                invalidAziendaId:
+                  value:
+                    message: aziendaId non è un ObjectId valido
+                invalidAnimaleId:
+                  value:
+                    message: animaleId non è un ObjectId valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     get:
       summary: Visualizza i dispositivi collegati
@@ -3462,6 +3768,51 @@ paths:
                     type: array
                     items:
                       type: object # Ora include l'array "capacita"
+        '400':
+          description: Campi non validi o mancanti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingValues:
+                  value:
+                    message: Il parametro query aziendaId è obbligatorio
+                invalidAziendaId:
+                  value:
+                    message: aziendaId non è un ObjectId valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Azienda non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Azienda non trovata
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/iot/sensori/dati:
     get:
@@ -3487,7 +3838,8 @@ paths:
                 type: object
                 properties:
                   timestamp: 
-                    type: string, format: date-time
+                    type: string 
+                    format: date-time
                     
                   items:
                     type: array
@@ -3507,9 +3859,43 @@ paths:
                           type: object # L'oggetto JSON dinamico arrivato da MQTT
                           description: "es. { 'temperatura': 38.5, 'frequenza_cardiaca': 60 }"
                         ultimoAggiornamento: 
-                          type: string, 
+                          type: string 
                           format: date-time 
-                        
+        '400':
+          description: Campi non validi o mancanti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingValues:
+                  value:
+                    message: Il parametro query aziendaId è obbligatorio
+                invalidAziendaId:
+                  value:
+                    message: aziendaId non è un ObjectId valido
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo allevatore o azienda non di proprietà)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -3606,21 +3992,21 @@ components:
             $ref: '#/components/schemas/AziendaPublicItem'
 
     UpdateAziendaRequest:
-      type: Object
+      type: object
       properties:
         companyName:
           type: string
           example: Nuova Azienda Agricola Rossi
         vatNumber:
           type: string
-            example: IT12345687901
-          emailAzienda:
-            type: string
-            format: email
-            example: info@aziendarossi.it
-          address:
-            type: string
-            example: Via delle Margherite 12, Calliano
+          example: IT12345687901
+        emailAzienda:
+          type: string
+          format: email
+          example: info@aziendarossi.it
+        address:
+          type: string
+          example: Via delle Margherite 12, Calliano
     
     AziendaCompleted:
       type: object
@@ -4018,7 +4404,9 @@ components:
             - formaggio
             - yogurt
             - altro
-          example: yogurt
+          example: 
+            createTemplate: yogurt
+            createLavorazione: formaggio
         codiceTipoLav:
           type: string
           enum:
@@ -4026,15 +4414,27 @@ components:
             - B
             - C
             - D
-          example: C
+          example: 
+            createTemplate: C
+            createLavorazione: B
         nomeTemplate:
           type: string
           nullable: true
-          example: Template Yogurt Bianco
+          example: 
+            createTemplate: Template Yogurt Bianco
+            createLavorazione: null
         isTemplate:
           type: boolean
           default: false
-          example: true
+          example: 
+            createTemplate: true
+            createLavorazione: false
+        templateId:
+          type: string
+          nullable: true
+          example: 
+            createTemplate: null
+            createLavorazione: 665fa8d8ad8f8c0012f9d117
         startedAt:
           type: string
           format: date-time
@@ -4066,7 +4466,9 @@ components:
         outputName:
           type: string
           nullable: true
-          example: Vasetti di yogurt
+          example: 
+            createTemplate: Vasetti di yogurt
+            createLavorazione: Formaggi freschi
         outputQuantity:
           type: number
           nullable: true
@@ -4075,7 +4477,9 @@ components:
         outputUnit:
           type: string
           nullable: true
-          example: vasetti
+          example: 
+            createTemplate: vasetti
+            createLavorazione: pezzi
         createdAt:
           type: string
           format: date-time
@@ -4087,7 +4491,33 @@ components:
         codiceLavorazione:
           type: string
           default: null
-          example: AC001
+          example: 
+            createTemplate: AC001
+            createLavorazione: AB002
+
+    LavorazioneIoTResponse:
+      type: object
+      description: Risposta per lettura dati IoT in una lavorazione.
+      properties:
+        source:
+          type: string
+          enum: [iot, manuale]
+          example: iot
+        quantity:
+          type: number
+          minimum: 0
+          example: 75.42
+        unit:
+          type: string
+          enum: [Kg, litri, pezzi]
+          example: Kg
+        measuredAt:
+          type: string
+          format: date-time
+          example: 2026-05-26T08:10:00.000Z
+        sensoreId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c777
 
     CreateLavorazioneRequest:
       type: object
@@ -4107,7 +4537,9 @@ components:
             - formaggio
             - yogurt
             - altro
-          example: yogurt
+          example: 
+            createTemplate: yogurt
+            createLavorazione: formaggio
         codiceTipoLav:
           type: string
           enum:
@@ -4115,11 +4547,15 @@ components:
             - B
             - C
             - D
-          example: C
+          example: 
+            createTemplate: C
+            createLavorazione: B
         nomeTemplate:
           type: string
           description: Nome leggibile del template, utile quando isTemplate=true.
-          example: Template Yogurt Bianco
+          example: 
+            createTemplate: Template Yogurt Bianco
+            createLavorazione: null
         isTemplate:
           oneOf:
             - type: boolean
@@ -4128,6 +4564,9 @@ components:
                 - 'true'
                 - 'false'
           description: Flag booleano o stringa boolean-like.
+        templateId:
+          type: string
+          description: Se isTemplate è false, è possibile specificare un templateId da cui ereditare inputs, fasi, output, codiceLavorazione, ecc.
         startedAt:
           type: string
           format: date-time
@@ -4162,32 +4601,8 @@ components:
       type: object
       description: Corpo richiesta per aggiornare una lavorazione esistente.
       properties:
-        tipoLavorazione:
-          type: string
-          enum:
-            - primo-sale
-            - formaggio
-            - yogurt
-            - altro
-        codiceTipoLav:
-          type: string
-          enum:
-            - A
-            - B
-            - C
-            - D
         nomeTemplate:
           type: string
-        isTemplate:
-          oneOf:
-            - type: boolean
-            - type: string
-              enum:
-                - 'true'
-                - 'false'
-        startedAt:
-          type: string
-          format: date-time
         endedAt:
           type: string
           format: date-time
@@ -4199,21 +4614,9 @@ components:
             - annullata
         notes:
           type: string
-        inputs:
-          type: array
-          items:
-            $ref: '#/components/schemas/LavorazioneInputItem'
-        fasi:
-          type: array
-          items:
-            $ref: '#/components/schemas/LavorazioneFaseItem'
-        outputName:
-          type: string
         outputQuantity:
           type: number
           minimum: 0
-        outputUnit:
-          type: string
 
     LavorazioneResponse:
       type: object
