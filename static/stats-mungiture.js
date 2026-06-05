@@ -693,7 +693,7 @@ const renderYearsChart = () => {
 					position: 'top',
 					labels: {
 						boxWidth: 18,
-						color: '#1a2e05'
+						color: '#e8f8e8'
 					}
 				},
 				tooltip: {
@@ -704,17 +704,17 @@ const renderYearsChart = () => {
 			},
 			scales: {
 				x: {
-					ticks: { color: '#1a2e05' },
+					ticks: { color: '#d7eed6' },
 					grid: { display: false }
 				},
 				y: {
 					beginAtZero: true,
 					ticks: {
-						color: '#1a2e05',
+						color: '#d7eed6',
 						callback: (value) => `${Number(value).toFixed(0)} L`
 					},
 					grid: {
-						color: 'rgba(26, 46, 5, 0.12)'
+						color: 'rgba(215, 238, 214, 0.2)'
 					}
 				}
 			}
