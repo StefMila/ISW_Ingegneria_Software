@@ -25,12 +25,11 @@
         </script>
 
         <section class="section">
-            <h2>Le tue lavorazioni 🛠️</h2>
+            <h2>I tuoi template 📋</h2>
             <p id="statusMsg" class="status"></p>
-            <!--TODO: dividere template Lavorazione da lavorazioni normali con 2 tabelle diverse (vogliamo evitare il codiceLavorazione nelle lavorazioni non template??)-->
 
             <div class="table-wrapper">
-                <table class="animali-table" id="lavorazioniTable">
+                <table class="animali-table" id="templateTable">
                     <thead>
                         <tr class="header-labels">
                             <th>Codice</th>
@@ -42,16 +41,43 @@
                     <tr class="header-filters">
                         <th></th>
                         <th>
-                            <input type="text" id="filterNomeLavorazione" placeholder="Filtra per nome..." data-filter="nome">
+                            <input type="text" id="filterNomeTemplate" placeholder="Filtra per nome..." data-filter="nome">
                         </th>
                         <th>
-                            <input type="text" id="filterInputLavorazione" placeholder="Filtra per input..." data-filter="input">
+                            <input type="text" id="filterInputTemplate" placeholder="Filtra per input..." data-filter="input">
                         </th>
                         <th>
-                            <input type="text" id="filterOutputLavorazione" placeholder="Filtra per output..." data-filter="output">
+                            <input type="text" id="filterOutputTemplate" placeholder="Filtra per output..." data-filter="output">
                         </th>
                         <th></th>
                     </tr>
+                    </thead>
+                    <tbody id="templateTableBody">
+                        <!-- I template saranno inseriti qui dinamicamente -->
+                         <tr>
+                             <td colspan="4" class="status">Caricamento template...</td>
+                         </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Le tue lavorazioni 🛠️</h2>
+            <p id="lavorazioniStatus" class="status"></p>
+
+            <div class="table-wrapper">
+                <table class="animali-table mungiture-table" id="lavorazioniTable">
+                    <thead>
+                        <tr class="header-labels">
+                            <th>Data Avvio</th>
+                            <th>Codice</th>
+                            <th>Quantità</th>
+                            <th>UM</th>
+                            <th>Stato</th>
+                            <th>Note</th>
+                            <th>Azioni</th>
+                        </tr>
                     </thead>
                     <tbody id="lavorazioniTableBody">
                         <!-- Le lavorazioni saranno inserite qui dinamicamente -->

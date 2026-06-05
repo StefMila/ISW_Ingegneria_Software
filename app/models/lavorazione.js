@@ -1,5 +1,11 @@
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
+// serve per la generazione di codiceLavorazione
+const counterSchema = new mongoose.Schema({
+    _id: { type: String, required: true }, 
+    seq: { type: Number, default: 0 }
+});
+
 // definisce l'input di una lavorazione
 const lavorazioneInputSchema = new Schema({
     type: {
@@ -71,12 +77,11 @@ const lavorazioneSchema = new Schema({
         enum: ['A', 'B', 'C', 'D'],
         trim: true,
     },
-    //codice unico della lavorazione, composto da codiceTipoProd + codiceTipoLav + numero progressivo (es. AA001, AA002, AB001, ecc.)
+    // codice unico della lavorazione, composto da codiceTipoProd + codiceTipoLav + numero progressivo (es. AA001, AA002, AB001, ecc.)
     codiceLavorazione: {
-        type: String,
-        //required: true, //TODO: finché non è implementata la gestione di codiceLavorazione per la creazione di una lavorazione "non template", questo campo resta commentato
-        required: false
+        type: String
     },
+    // nel caso in cui la lavorazione non sia un template, questo campo viene tralasciato. Il collegamento al template corrispondente avviene esclusivamente attraverso il campo templateId
     nomeTemplate: {
         type: String,
         required: false,
@@ -86,6 +91,12 @@ const lavorazioneSchema = new Schema({
         type: Boolean,
         required: true,
         default: false,
+        index: true
+    },
+    templateId: { //necessario solo per lavorazioni non template, rimanda al template da cui sono state create
+        type: Schema.Types.ObjectId,
+        ref: 'Lavorazione',
+        required: function () { return !this.isTemplate; },
         index: true
     },
     startedAt: {
@@ -136,6 +147,43 @@ const lavorazioneSchema = new Schema({
     timestamps: true
 });
 
+//middleware di generazione codiceLavorazione univoco per ogni nuovo template di lavorazione
+lavorazioneSchema.pre('validate', async function (next) {
+    //se la nuova lavorazione non è un template, deve avere un template da cui far riferimento (templateId)
+    if(!this.isTemplate) {
+        try {
+            const template = await mongoose.model('Lavorazione').findById(this.templateId);
+            if (!template) {
+                this.invalidate('templateId', 'Template lavorazione non trovato');
+                new mongoose.Error.ValidationError(this);
+            }
+            this.codiceLavorazione = template.codiceLavorazione;
+        } catch (error) {
+            throw error;
+        }
+    } else {
+        // il metodo genera un nuovo codiceLavorazione solo se la nuova lavorazione è un template
+        if (this.isNew) {
+            try {
+                // Genera codiceLavorazione univoco basato su codiceTipoProd, codiceTipoLav e numero progressivo
+                const codiceTipoProd = 'A'; // per ora tutte le lavorazioni sono di tipo 'A' (latticini), ma in futuro si può estendere con altri tipi di prodotto
+                const codiceTipoLav = this.codiceTipoLav; // es. 'A' per 'primo-sale'
+                const counterDoc = await mongoose.model('Counter').findOneAndUpdate(
+                    { _id: `counter_${codiceTipoLav}` }, 
+                    { $inc: { seq: 1 } }, 
+                    { returnDocument: 'after', upsert: true }
+                );
+                const numeroProgressivo = String(counterDoc.seq).padStart(3, '0');
+
+                this.codiceLavorazione = `${codiceTipoProd}${codiceTipoLav}${numeroProgressivo}`;
+
+            } catch (error) {
+                throw error;
+            }
+        }
+    }
+});
+
 lavorazioneSchema.index(
     { codiceLavorazione: 1 }, 
     { 
@@ -144,28 +192,6 @@ lavorazioneSchema.index(
     }
 );
 
-
-//middleware di generazione codiceLavorazione univoco per ogni nuovo template di lavorazione
-lavorazioneSchema.pre('validate', async function (next) {
-    // il metodo genera un nuovo codiceLavorazione solo se la nuova lavorazione è un template
-    if(!this.isTemplate) {
-        return;
-    }
-    if (this.isNew || this.isModified('codiceTipoLav')) {
-        try {
-            // Genera codiceLavorazione univoco basato su codiceTipoProd, codiceTipoLav e numero progressivo
-            const codiceTipoProd = 'A'; // per ora tutte le lavorazioni sono di tipo 'A' (latticini), ma in futuro si può estendere con altri tipi di prodotto
-            const codiceTipoLav = this.codiceTipoLav; // es. 'A' per 'primo-sale'
-            const counter = await mongoose.model('Lavorazione').countDocuments({ codiceTipoLav, isTemplate: true });
-            const numeroProgressivo = String(counter + 1).padStart(3, '0');
-            this.codiceLavorazione = `${codiceTipoProd}${codiceTipoLav}${numeroProgressivo}`;
-
-
-        } catch (error) {
-            throw error;
-        }
-    }
-});
 lavorazioneSchema.path('endedAt').validate(function (value) {
     if (!value) {
         return true;
@@ -181,5 +207,6 @@ lavorazioneSchema.path('outputQuantity').validate(function (value) {
 }, 'outputQuantity deve essere un numero maggiore o uguale a 0 quando lo status è completata');
 
 const Lavorazione = mongoose.model('Lavorazione', lavorazioneSchema);
+const Counter = mongoose.model('Counter', counterSchema);
 
 export default Lavorazione;

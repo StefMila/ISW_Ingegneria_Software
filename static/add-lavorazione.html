@@ -30,26 +30,50 @@
     <hr class="template-divider">
     
     <section id="find-codiceLavorazione" class="section"> 
-      <h2>AGGIUNGI UNA LAVORAZIONE</h2>
+      <h2>🛠️ AGGIUNGI UNA LAVORAZIONE</h2>
       <p class="subtitle">Inserisci il codice ID del template desiderato.</p>
       <form id="search-lavorazione-form" class="form"> 
         <div style="display: flex; gap: 10px; align-items: center;">
-          <input style="flex: 1;" type="text" id="codiceLavorazione" name="codiceLavorazione" placeholder="Es: AB001" required>
+          <input style="flex: 1;" type="text" id="codiceLavorazione" name="codiceLavorazione" placeholder="Es: AC001" required>
           <button type="submit">Cerca Template</button>
         </div>
       </form>
       <p id="searchStatus" class="status"></p>
+      <!-- Form di compilazione Lavorazione non template, con campi modificabili e non -->
+      <form id="template-preview-form" class="form hidden">
+        <input type="hidden" id="templateInfo" name="templateInfo">
+
+        <label for="template">Nome Template:</label>
+        <input type="text" id="template" name="template" disabled>
+
+        <label for="in">Input:</label>
+        <input type="text" id="in" name="in" readonly>
+
+        <label for="fasi">Fasi previste:</label>
+        <input type="text" id="fasi" name="fasi" readonly>
+
+        <label for="out">Output:</label>
+        <input type="text" id="out" name="out" readonly>
+
+        <label for="addedNotes">Note sulla lavorazione:</label>
+        <textarea id="addedNotes" name="addedNotes"></textarea>
+
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button type="submit" class="primary-mungitura-action">Avvia lavorazione</button>
+        </div>
+      </form>
+      <p id="lavorazioneFormStatus" class="status"></p>
     </section>
 
     <section id="section-lavorazione" class="section">
-      <h2>🛠️ CREA NUOVO TEMPLATE LAVORAZIONE</h2>
+      <h2>📋 CREA NUOVO TEMPLATE LAVORAZIONE</h2>
       <p class="subtitle">Crea qui i modelli delle attività che fai di solito nella tua azienda.</p>
 
       <hr class="template-divider">
 
       <form id="add-lavorazione-form" class="form">
         <h3>📝 1. Informazioni Base</h3>
-        <label for="nomeTemplate">Nome Lavorazione:</label>
+        <label for="nomeTemplate">Nome Template:</label>
         <input type="text" id="nomeTemplate" name="nomeTemplate" placeholder="Es: Produzione Caciotta / Produzione Yogurt Bianco" required>
 
         <hr class="template-divider">
@@ -113,7 +137,7 @@
           <button type="submit">Salva Template 💾</button>
         </div>
       </form>
-    <p id="formStatus" class="status"></p>
+    <p id="templateFormStatus" class="status"></p>
     </section>
   </main>
     <script type="module" src="/add-lavorazione.js"></script>

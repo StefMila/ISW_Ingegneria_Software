@@ -114,7 +114,7 @@ describe('US13 - Add Animale - registrazione animale', () => {
   });
 
   // Caso campi mancanti - 400.
-  test('POST /api/aziende/:aziendaId/animali - errore: campi obbligatori mancanti (400)', async () => {
+  test('POST /api/aziende/:aziendaId/animali - errore: name mancante (400)', async () => {
     await request(app)
       .post('/api/aziende/665f8fd8ad8f8c0012f9c123/animali')
       .set('Authorization', `Bearer ${token}`)
@@ -123,6 +123,70 @@ describe('US13 - Add Animale - registrazione animale', () => {
         species: 'mucca',
         dataNascita: '2022-01-10',
         sesso: 'femmina'
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Matricola, name, species, dataNascita, sesso e aziendaId sono obbligatori');
+      });
+  });
+
+  test('POST /api/aziende/:aziendaId/animali - errore: matricola mancante (400)', async () => {
+    await request(app)
+      .post('/api/aziende/665f8fd8ad8f8c0012f9c123/animali')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Bruna',
+        species: 'mucca',
+        dataNascita: '2022-01-10',
+        sesso: 'femmina'
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Matricola, name, species, dataNascita, sesso e aziendaId sono obbligatori');
+      });
+  });
+
+  test('POST /api/aziende/:aziendaId/animali - errore: species mancante (400)', async () => {
+    await request(app)
+      .post('/api/aziende/665f8fd8ad8f8c0012f9c123/animali')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        matricola: 'ITA00001',
+        name: 'Bruna',
+        dataNascita: '2022-01-10',
+        sesso: 'femmina'
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Matricola, name, species, dataNascita, sesso e aziendaId sono obbligatori');
+      });
+  });
+
+  test('POST /api/aziende/:aziendaId/animali - errore: dataNascita mancante (400)', async () => {
+    await request(app)
+      .post('/api/aziende/665f8fd8ad8f8c0012f9c123/animali')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        matricola: 'ITA00001',
+        name: 'Bruna',
+        species: 'mucca',
+        sesso: 'femmina'
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Matricola, name, species, dataNascita, sesso e aziendaId sono obbligatori');
+      });
+  });
+
+  test('POST /api/aziende/:aziendaId/animali - errore: sesso mancante (400)', async () => {
+    await request(app)
+      .post('/api/aziende/665f8fd8ad8f8c0012f9c123/animali')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        matricola: 'ITA00001',
+        name: 'Bruna',
+        species: 'mucca',
+        dataNascita: '2022-01-10'
       })
       .expect(400)
       .expect((res) => {
@@ -145,12 +209,6 @@ describe('US13 - Add Animale - registrazione animale', () => {
       .expect((res) => {
         expect(res.body.message).toBe('Token mancante o formato non valido: Accesso negato');
       });
-  });
-
-  test('GET /api/animali/azienda/:aziendaId/animali senza token restituisce 401', async () => {
-    await request(app)
-      .get('/api/animali/azienda/665f8fd8ad8f8c0012f9c123/animali')
-      .expect(401);
   });
 
   // Caso token non valido - 403.
@@ -195,6 +253,29 @@ describe('US13 - Add Animale - registrazione animale', () => {
       });
   });
 
+  test('POST /api/aziende/:aziendaId/animali - errore: ruolo utente non valido (403)', async () => {
+    const tokenConsumatore = jwt.sign(
+      { userId: 'mocked_user_id', userType: 'consumatore' },
+      process.env.JWT_SECRET,
+      { expiresIn: '30m' }
+    );
+
+    await request(app)
+      .post('/api/aziende/665f8fd8ad8f8c0012f9c123/animali')
+      .set('Authorization', `Bearer ${tokenConsumatore}`)
+      .send({
+        matricola: 'ITA00001',
+        name: 'Bruna',
+        species: 'mucca',
+        dataNascita: '2022-01-10',
+        sesso: 'femmina'
+      })
+      .expect(403)
+      .expect((res) => {
+        expect(res.body.message).toBe('Permessi insufficienti: Accesso negato');
+      });
+  });
+
   // Caso 404 - azienda non trovata.
   test('POST /api/aziende/:aziendaId/animali - errore: azienda non trovata (404)', async () => {
     jest.spyOn(Azienda, 'findById').mockReturnValue({
@@ -215,5 +296,11 @@ describe('US13 - Add Animale - registrazione animale', () => {
       .expect((res) => {
         expect(res.body.message).toBe('Azienda non trovata');
       });
+  });
+
+  test('GET /api/azienda/:aziendaId/animali - errore: token mancante (401)', async () => {
+    await request(app)
+      .get('/api/animali/azienda/665f8fd8ad8f8c0012f9c123/animali')
+      .expect(401);
   });
 });
