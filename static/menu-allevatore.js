@@ -14,6 +14,7 @@
           <ul class="nav-dropdown-menu">
             <li><a href="/add-animale.html">Aggiungi animale</a></li>
             <li><a href="/view-animali.html">Visualizza animali</a></li>
+            <li><a href="/stats-animali.html">Statistiche animali</a></li>
           </ul>
         </div>
         <div class="nav-dropdown">

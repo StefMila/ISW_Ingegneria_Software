@@ -2219,3 +2219,340 @@ button:active {
     min-width: 0;
   }
 }
+
+/* ---- Restyle pagina statistiche animali (scoped) ---- */
+.stats-animali-page .dashboard-container-wide {
+  max-width: 1180px;
+  padding: 0 18px 18px;
+}
+
+.stats-animali-page .section {
+  padding: 18px;
+  border-left-width: 0;
+  border: 1px solid #2d5b3d;
+  border-radius: 14px;
+  box-shadow: 0 10px 22px rgba(16, 43, 21, 0.28);
+  background: linear-gradient(160deg, #163221 0%, #1e442b 55%, #285937 100%);
+}
+
+.stats-animali-page .section > h2 {
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+  color: #f4fff1;
+}
+
+.stats-animali-page .stats-global-filters {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #3d7250;
+  border-radius: 12px;
+  background: rgba(18, 46, 28, 0.72);
+}
+
+.stats-animali-page .stats-global-filters label {
+  color: #d7eed6;
+}
+
+.stats-animali-page .stats-global-filters select,
+.stats-animali-page .stats-global-filters input {
+  background: #214c31;
+  border: 1px solid #4d8c62;
+  color: #f4fff5;
+}
+
+.stats-animali-page #refreshStatsAnimaliBtn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: none;
+  background: #2fbd8f;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stats-animali-page #refreshStatsAnimaliBtn:hover {
+  background: #43cfa2;
+}
+
+.stats-animali-page .stats-animali-headline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.stats-animali-page .stats-animali-subtitle {
+  margin: 2px 0 0;
+  color: #bdd9bf;
+}
+
+.stats-animali-page .stats-animali-headline h2 {
+  color: #b8ff7a;
+}
+
+.stats-animali-page .stats-live-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  border: 1px solid #457659;
+  border-radius: 10px;
+  background: #1d462d;
+  padding: 8px 10px;
+  color: #d3ecd3;
+  font-size: 0.8rem;
+}
+
+.stats-animali-page .stats-live-chip strong {
+  color: #f6fff3;
+  font-size: 0.95rem;
+}
+
+.stats-animali-page .stats-status {
+  color: #e7f7e6;
+}
+
+.stats-animali-page .stats-animali-monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stats-animali-page .stats-monitor-panel {
+  border-radius: 12px;
+  border: 1px solid #2c5a3e;
+  background: linear-gradient(180deg, rgba(21, 52, 33, 0.96) 0%, rgba(15, 40, 24, 0.96) 100%);
+  padding: 10px;
+  color: #346138;
+}
+
+.stats-animali-page .stats-monitor-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stats-animali-page .stats-monitor-panel-head h3 {
+  margin: 0;
+  color: #f0fff1;
+  text-transform: uppercase;
+  font-size: 0.92rem;
+  letter-spacing: 0.03em;
+}
+
+.stats-animali-page .stats-panel-highlight {
+  color: #a9ff89;
+  font-weight: 700;
+}
+
+.stats-animali-page .stats-panel-kpis {
+  grid-column: span 3;
+}
+
+.stats-animali-page .stats-panel-production {
+  grid-column: span 9;
+}
+
+.stats-animali-page .stats-panel-activity,
+.stats-animali-page .stats-panel-outdoor,
+.stats-animali-page .stats-panel-health {
+  grid-column: span 4;
+}
+
+.stats-animali-page .stats-panel-alerts {
+  grid-column: span 5;
+}
+
+.stats-animali-page .stats-panel-details {
+  grid-column: span 7;
+}
+
+.stats-animali-page .stats-panel-details .stats-monitor-panel-head h3 {
+  color: #b8d0b7;
+}
+
+.stats-animali-page .stats-panel-details .table-wrapper {
+  overflow-x: visible;
+}
+
+.stats-animali-page .stats-panel-details .stats-animali-table {
+  font-size: 0.8rem;
+  table-layout: auto;
+}
+
+.stats-animali-page .stats-panel-details .stats-animali-table th,
+.stats-animali-page .stats-panel-details .stats-animali-table td {
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.stats-animali-page .stats-panel-details .animali-table thead th {
+  padding: 8px 8px;
+  font-size: 0.79rem;
+}
+
+.stats-animali-page .stats-panel-details .animali-table tbody td {
+  padding: 7px 8px;
+  color: #23452b;
+  font-weight: 500;
+}
+
+.stats-animali-page .stats-panel-details .animal-photo-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 7px;
+}
+
+.stats-animali-page .stats-panel-details .animal-photo-placeholder {
+  color: #486b4f;
+  font-size: 0.82rem;
+}
+
+.stats-animali-page .stats-panel-details .stats-trend-chip {
+  font-size: 0.68rem;
+  padding: 2px 6px;
+}
+
+.stats-animali-page .stats-panel-alerts .table-wrapper {
+  overflow-x: visible;
+}
+
+.stats-animali-page .stats-panel-alerts .stats-alerts-table {
+  font-size: 0.79rem;
+  table-layout: auto;
+}
+
+.stats-animali-page .stats-panel-alerts .stats-alerts-table th,
+.stats-animali-page .stats-panel-alerts .stats-alerts-table td {
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.stats-animali-page .stats-panel-alerts .animali-table thead th {
+  padding: 8px 8px;
+  font-size: 0.78rem;
+}
+
+.stats-animali-page .stats-panel-alerts .animali-table tbody td {
+  padding: 7px 8px;
+  color: #23452b;
+  font-weight: 500;
+}
+
+.stats-animali-page .stats-kpi-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats-animali-page .stats-kpi-item {
+  border: 1px solid #477458;
+  border-radius: 10px;
+  background: #214c31;
+  padding: 8px;
+}
+
+.stats-animali-page .stats-kpi-item.is-alert {
+  border-color: #9f6f2f;
+  background: #4f3b1f;
+}
+
+.stats-animali-page .stats-kpi-label {
+  display: block;
+  color: #cae6cc;
+  font-size: 0.84rem;
+}
+
+.stats-animali-page .stats-kpi-item strong {
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.stats-animali-page .stats-chart-tight {
+  height: 240px;
+  min-height: 220px;
+}
+
+.stats-animali-page .stats-chart-mini {
+  height: 170px;
+  min-height: 150px;
+}
+
+.stats-animali-page .stats-chart-canvas-wrap {
+  height: 210px;
+  min-height: 160px;
+  border-radius: 11px;
+  border: 1px solid #3b694d;
+  background: #173b26;
+}
+
+.stats-animali-page .stats-animali-table {
+  font-size: 0.88rem;
+}
+
+.stats-animali-page .stats-alerts-table {
+  font-size: 0.84rem;
+}
+
+.stats-animali-page .stats-mini-values {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  color: #d3e7d5;
+  font-size: 0.85rem;
+}
+
+.stats-animali-page .stats-mini-values strong {
+  color: #ffffff;
+}
+
+.stats-animali-page .stats-animali-table th,
+.stats-animali-page .stats-animali-table td {
+  white-space: nowrap;
+}
+
+.stats-animali-page .animali-table thead th {
+  color: #e8f8e8;
+  background: #214a31;
+  border-bottom-color: #4a7b59;
+}
+
+.stats-animali-page .animali-table tbody td {
+  color: #edf8ee;
+  border-bottom-color: rgba(94, 146, 109, 0.4);
+}
+
+.stats-animali-page .animali-table tbody tr:hover {
+  background: rgba(52, 96, 62, 0.45);
+}
+
+@media (max-width: 980px) {
+  .stats-animali-page .section {
+    padding: 12px;
+  }
+
+  .stats-animali-page .stats-panel-kpis,
+  .stats-animali-page .stats-panel-production,
+  .stats-animali-page .stats-panel-activity,
+  .stats-animali-page .stats-panel-outdoor,
+  .stats-animali-page .stats-panel-health,
+  .stats-animali-page .stats-panel-alerts,
+  .stats-animali-page .stats-panel-details {
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 720px) {
+  .stats-animali-page .stats-animali-headline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stats-animali-page .stats-live-chip {
+    align-items: flex-start;
+  }
+}
