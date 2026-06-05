@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Statistiche Animali - MuccApp</title>
+	<script src="/auth-control.js"></script>
+	<script>
+		protectRoute(['allevatore']);
+	</script>
+	<script src="/menu-allevatore.js"></script>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body class="stats-animali-page">
+	<main class="dashboard-container-wide">
+		<div id="allevatoreHeaderMount"></div>
+		<script>
+			renderAllevatoreHeader({ showHomeLink: true, showStats: true });
+		</script>
+
+		<section class="section">
+			<div class="stats-animali-headline">
+				<div>
+					<h2>Monitoraggio mandria</h2>
+					<p class="stats-animali-subtitle">Cruscotto operativo animali, produzione e benessere</p>
+				</div>
+				<div class="stats-live-chip">
+					<span>Ultimo aggiornamento</span>
+					<strong id="statsNowTime">--:--</strong>
+				</div>
+			</div>
+
+			<p id="statsAnimaliStatus" class="status stats-status"></p>
+
+			<div class="stats-global-filters">
+				<label>
+					Vista
+					<select id="filterViewMode" aria-label="Vista statistiche">
+						<option value="insieme">Insieme mandria</option>
+						<option value="singola">Singola mucca</option>
+					</select>
+				</label>
+				<label>
+					Mucca
+					<select id="filterAnimale" aria-label="Filtro animale">
+						<option value="">Seleziona mucca</option>
+					</select>
+				</label>
+				<label>
+					Dal
+					<input type="date" id="filterFromDate" aria-label="Data inizio periodo">
+				</label>
+				<label>
+					Al
+					<input type="date" id="filterToDate" aria-label="Data fine periodo">
+				</label>
+				<button type="button" id="refreshStatsAnimaliBtn">Aggiorna dashboard</button>
+			</div>
+
+			<div class="stats-animali-monitor-grid">
+				<article class="stats-monitor-panel stats-panel-kpis">
+					<header class="stats-monitor-panel-head">
+						<h3>Stato mandria oggi</h3>
+					</header>
+					<div class="stats-kpi-stack">
+						<div class="stats-kpi-item">
+							<span class="stats-kpi-label">Mucche nel filtro</span>
+							<strong id="animalsCountCard">0</strong>
+						</div>
+						<div class="stats-kpi-item">
+							<span class="stats-kpi-label">Media latte/giorno</span>
+							<strong id="litersPerDayCard">0.00 L</strong>
+						</div>
+						<div class="stats-kpi-item is-alert">
+							<span class="stats-kpi-label">Allarmi attivi</span>
+							<strong id="alertsCountCard">0</strong>
+						</div>
+					</div>
+				</article>
+
+				<article class="stats-monitor-panel stats-panel-production">
+					<header class="stats-monitor-panel-head">
+						<h3>Produzione latte nel periodo</h3>
+						<span id="litersTotalCard" class="stats-panel-highlight">0.00 L</span>
+					</header>
+					<div class="stats-chart-canvas-wrap stats-chart-tight">
+						<canvas id="productionTimelineChart" aria-label="Andamento produzione latte" role="img"></canvas>
+					</div>
+				</article>
+
+				<article class="stats-monitor-panel stats-panel-activity">
+					<header class="stats-monitor-panel-head">
+						<h3>Dati IoT e attivita</h3>
+					</header>
+					<div class="stats-chart-canvas-wrap stats-chart-mini">
+						<canvas id="activitySplitChart" aria-label="Ripartizione attivita animale" role="img"></canvas>
+					</div>
+					<div class="stats-mini-values">
+						<span>Passi medi <strong id="stepsAvgCard">0</strong></span>
+						<span>Passi max <strong id="stepsMaxCard">0</strong></span>
+					</div>
+				</article>
+
+				<article class="stats-monitor-panel stats-panel-outdoor">
+					<header class="stats-monitor-panel-head">
+						<h3>Esposizione area aperta</h3>
+					</header>
+					<div class="stats-chart-canvas-wrap stats-chart-mini">
+						<canvas id="outdoorChart" aria-label="Esposizione area aperta" role="img"></canvas>
+					</div>
+					<div class="stats-mini-values">
+						<span>Media <strong id="outdoorAvgCard">0.0 h</strong></span>
+						<span>Max <strong id="outdoorMaxCard">0.0 h</strong></span>
+					</div>
+				</article>
+
+				<article class="stats-monitor-panel stats-panel-health">
+					<header class="stats-monitor-panel-head">
+						<h3>Benessere e salute</h3>
+					</header>
+					<div class="stats-chart-canvas-wrap stats-chart-mini">
+						<canvas id="wellbeingChart" aria-label="Indicatori benessere" role="img"></canvas>
+					</div>
+					<div class="stats-mini-values">
+						<span>Temp media <strong id="tempAvgCard">--</strong></span>
+						<span>BPM medi <strong id="bpmAvgCard">--</strong></span>
+					</div>
+				</article>
+
+				<article class="stats-monitor-panel stats-panel-alerts">
+					<header class="stats-monitor-panel-head">
+						<h3>Lista allarmi IoT</h3>
+					</header>
+					<div class="table-wrapper">
+						<table class="animali-table stats-alerts-table">
+							<thead>
+								<tr class="header-labels">
+									<th>Mucca</th>
+									<th>Evento</th>
+									<th>Valore</th>
+									<th>Stato</th>
+								</tr>
+							</thead>
+							<tbody id="statsAlertsTableBody">
+								<tr>
+									<td colspan="4" class="status">Nessun allarme</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</article>
+
+				<article class="stats-monitor-panel stats-panel-details">
+					<header class="stats-monitor-panel-head">
+						<h3>Dettaglio anagrafica + produzione</h3>
+					</header>
+					<div class="table-wrapper">
+						<table class="animali-table stats-animali-table">
+							<thead>
+								<tr class="header-labels">
+									<th>Foto</th>
+									<th>Nome</th>
+									<th>Anni</th>
+									<th>Parti</th>
+									<th>Litri/giorno</th>
+									<th>Mungiture</th>
+									<th>Temp.</th>
+									<th>BPM</th>
+									<th>Trend</th>
+								</tr>
+							</thead>
+							<tbody id="statsAnimaliTableBody">
+								<tr>
+									<td colspan="9" class="status">Caricamento dati...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</article>
+			</div>
+		</section>
+	</main>
+
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+	<script src="/stats-animali.js"></script>
+	<script src="/logout.js"></script>
+	<script src="/azienda-switcher.js"></script>
+</body>
+</html>
