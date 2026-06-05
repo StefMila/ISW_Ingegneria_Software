@@ -5,7 +5,8 @@ import { jest, describe, beforeEach, afterEach, beforeAll, expect } from '@jest/
 import Azienda from '../app/models/azienda.js';
 import Lavorazione from '../app/models/lavorazione.js';
 import { normalizeInputs, normalizeFasi, parseBooleanLike } from '../app/routes/lavorazioni.js';
-
+import Sensore from '../app/models/sensore.js';
+import { ultimeLettureIot } from '../app/services/mqttService.js';
 
 describe('US72 - US74 - US75 Lavorazioni', () => {
   
@@ -24,8 +25,8 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     unit: 'L'
   });
   const fase = () => ({
-      name: 'Ricevimento',
-      completed: false
+    name: 'Ricevimento',
+    completed: false
   });
   const isTemplate = true;
 
@@ -49,7 +50,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     fasi: normalizedFasi.value,
     outputName: 'Vasetti di yogurt',
 		outputQuantity: '20',
-		outputUnit: 'vasetti'
+		outputUnit: 'pezzi'
   });
 
   beforeAll(() => {
@@ -77,12 +78,23 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       createdAt: new Date(),
       updatedAt: new Date()
     });
-
+    jest.spyOn(Sensore, 'find').mockReturnValue({
+      sort: jest.fn().mockResolvedValue([
+        {
+          _id: '665f8fd8ad8f8c0012f9c777',
+        }
+      ])
+    });
+    ultimeLettureIot.set('665f8fd8ad8f8c0012f9c777', {
+      dati: { peso: 34 },
+      timestamp: new Date('2026-06-04T10:00:00.000Z')
+    });
   });
 
   afterEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
+    ultimeLettureIot.clear();
   });
 
   test('POST /api/lavorazioni crea una nuova lavorazione (200)', async () => {
@@ -255,7 +267,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ aziendaId: aziendaId })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -266,7 +278,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ tipoLavorazione: basePayload().tipoLavorazione })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -277,7 +289,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ codiceTipoLav: basePayload().codiceTipoLav })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -288,7 +300,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ codiceLavorazione: basePayload().codiceLavorazione })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -299,7 +311,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ isTemplate: basePayload().isTemplate })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -310,7 +322,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ templateId: basePayload().templateId })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -321,7 +333,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ startedAt: basePayload().startedAt })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -332,18 +344,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ inputs: 'defined' })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
-      });
-  });
-
-  test('PATCH /api/lavorazioni/:id - errore: fasi non è modificabile (400)', async () => {
-    await request(app)
-      .patch(`/api/lavorazioni/${lavorazioneId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ fasi: 'defined' })
-      .expect(400)
-      .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -354,7 +355,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ outputName: basePayload().outputName })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -365,7 +366,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .send({ outputUnit: basePayload().outputUnit })
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, fasi, outputName e outputUnit non sono modificabili');
+        expect(res.body.message).toBe('I campi aziendaId, tipoLavorazione, codiceTipoLav, codiceLavorazione, isTemplate, templateId, startedAt, inputs, outputName e outputUnit non sono modificabili');
       });
   });
 
@@ -479,6 +480,17 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
+  test('PATCH /api/lavorazioni/:id - errore: fasi template non modificabili (422)', async () => {
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ fasi: [{ name: 'Ricevimento', completed: true }] })
+      .expect(422)
+      .expect((res) => {
+        expect(res.body.message).toBe('Le fasi di un template di lavorazione non possono essere modificate');
+      });
+  });
+
   test('PATCH /api/lavorazioni/:id - errore: nomeTemplate non è modificabile da una lavorazione non template (422)', async () => {
     const payload = basePayload();
     delete payload.isTemplate;
@@ -495,6 +507,25 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .expect(422)
       .expect((res) => {
         expect(res.body.message).toBe('Il nome di un template non può essere modificato da una lavorazione non template');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - errore: fasi non consentite (400)', async () => {
+    const payload = basePayload();
+    delete payload.isTemplate;
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue({
+      _id: lavorazioneId,
+      ...payload,
+      save: jest.fn().mockResolvedValue(undefined)
+    });
+
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ fasi: [{ name: 'Fase inventata', completed: false }] })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Le fasi consentite sono: Ricevimento, Centrifugazione, Omogeneizzazione, Trattamento termico, Inoculo, Coagulazione, Rottura cagliata, Formatura, Salatura, Stagionatura, Concentrazione, Zangolatura, Confezionamento');
       });
   });
 
@@ -611,6 +642,139 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .expect(403)
       .expect((res) => {
         expect(res.body.message).toBe('Non hai i permessi per questa azienda');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id/iot restituisce una misurazione valida da sensore MQTT (200)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200)
+      .expect(res => {
+        expect(res.body.source).toBe('iot');
+        expect(res.body.unit).toBe('pezzi');
+        expect(res.body.quantity).toBe(34);
+        expect(res.body.sensoreId).toBe('665f8fd8ad8f8c0012f9c777');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id/iot - errore: nessun sensore di lavorazione attivo trovato (409)', async () => {
+    jest.spyOn(Sensore, 'find').mockReturnValue({
+          sort: jest.fn().mockResolvedValue([])
+        });
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(409)
+      .expect(res => {
+        expect(res.body.message).toBe('Nessun sensore di lavorazione attivo associato all\'azienda');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id/iot - errore: lavorazioneId non valido (400)', async () => {
+    await request(app)
+      .get('/api/lavorazioni/not_an_id/iot')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('ID lavorazione non valido');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id/iot - errore: tentativo senza token (401)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .expect(401)
+      .expect((res) => {
+        expect(res.body.message).toBe('Token mancante o formato non valido: Accesso negato');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id/iot - errore: token scaduto (401)', async () => {
+    const expiredToken = jwt.sign(
+      { userId: 'mocked_user_id', userType: 'allevatore' },
+      process.env.JWT_SECRET,
+      { expiresIn: '-1s' }
+    );
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .set('Authorization', `Bearer ${expiredToken}`)
+      .expect(401)
+      .expect((res) => {
+        expect(res.body.message).toBe('Token scaduto: Accesso negato');
+      });
+  });
+
+  // Caso token non valido - 403.
+  test('GET /api/lavorazioni/:id/iot - errore: token non valido (403)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .set('Authorization', 'Bearer token_non_valido')
+      .expect(403)
+      .expect((res) => {
+        expect(res.body.message).toBe('Token non valido: Accesso negato');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id/iot - errore: ruolo non autorizzato (403)', async () => {
+    const tokenConsumatore = jwt.sign(
+      { userId: 'mocked_user_id', userType: 'consumatore' },
+      process.env.JWT_SECRET,
+      { expiresIn: '30m' }
+    );
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .set('Authorization', `Bearer ${tokenConsumatore}`)
+      .expect(403)
+      .expect((res) => {
+        expect(res.body.message).toBe('Permessi insufficienti: Accesso negato');
+      });
+  });
+    // Caso 403 - utente non autorizzato (azienda non di sua proprieta).
+  test('GET /api/lavorazioni/:id/iot - errore: utente non autorizzato (403)', async () => {
+    jest.spyOn(Azienda, 'findById').mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: aziendaId,
+        ownerUserId: 'altro_user_id'
+      })
+    });
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403)
+      .expect((res) => {
+        expect(res.body.message).toBe('Non hai i permessi per questa azienda');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id/iot - errore: lavorazione non trovata (404)', async () => {
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue(null);
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404)
+      .expect((res) => {
+        expect(res.body.message).toBe('Lavorazione non trovata');
+      });
+  });
+
+  test('GET /api/lavorazioni/:id/iot - errore: Nessuna misurazione MQTT valida disponibile (409)', async () => {
+    ultimeLettureIot.set('665f8fd8ad8f8c0012f9c777', {
+      dati: { campo_invalido: 'nessun_valore_valido' },
+      timestamp: new Date('2026-06-04T10:00:00.000Z')
+    });
+
+    await request(app)
+      .get(`/api/lavorazioni/${lavorazioneId}/iot`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(409)
+      .expect((res) => {
+        expect(res.body.message).toBe('Nessuna lettura MQTT valida disponibile per i sensori di lavorazione attivi');
       });
   });
 

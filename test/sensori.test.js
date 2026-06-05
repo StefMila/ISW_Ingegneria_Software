@@ -60,7 +60,7 @@ describe('Router Sensori', () => {
             expect(res.status).toBe(400);
         });
 
-        test('Restituisce l\'errore di ownership se l\'azienda non appartiene all\'utente', async () => {
+        test('Restituisce l\'errore di ownership se l\'azienda non appartiene all\'utente (403)', async () => {
             mockAssertAzienda.mockResolvedValueOnce({ ok: false, status: 403, message: 'Non autorizzato' });
             const res = await request(app).get('/api/sensori').query({ aziendaId: validAziendaId });
             expect(res.status).toBe(403);

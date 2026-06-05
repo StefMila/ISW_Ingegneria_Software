@@ -2733,7 +2733,7 @@ paths:
                     message: ID lavorazione non valido
                 invalidFasi:
                   value:
-                    message: fasi deve essere un array
+                    message: 'Le fasi consentite sono: Ricevimento, Centrifugazione, Omogeneizzazione, Trattamento termico, Inoculo, Coagulazione, Rottura cagliata, Formatura, Salatura, Stagionatura, Concentrazione, Zangolatura, Confezionamento'
         '401':
           description: Token mancante, non valido o scaduto
           content:
