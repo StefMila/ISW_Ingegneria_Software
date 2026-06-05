@@ -3,6 +3,8 @@ const addLavorazioneMessage = document.getElementById('templateFormStatus');
 const currentAziendaBadge = document.getElementById('currentAziendaBadge');
 const searchLavorazioneForm = document.getElementById('search-lavorazione-form');
 const searchLavorazioneMessage = document.getElementById('searchStatus');
+const ricercaTemplateInput = document.getElementById('ricercaTemplate');
+const templateSuggestions = document.getElementById('templateSuggestions');
 const templatePreviewForm = document.getElementById('template-preview-form');
 const templatePreviewMessage = document.getElementById('lavorazioneFormStatus');
 
@@ -85,6 +87,112 @@ const getSelectedPhases = () => {
 };
 
 const standardCodiceLavorazione = /^[A][A-D]\d{3}$/;
+let templateSuggestionsCache = [];
+let templateSuggestionsAziendaId = '';
+
+const normalizeText = (value) => String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+const hideTemplateSuggestions = () => {
+    if (!templateSuggestions) return;
+    templateSuggestions.innerHTML = '';
+    templateSuggestions.classList.add('hidden');
+};
+
+const showTemplateSuggestions = (items) => {
+    if (!templateSuggestions) return;
+
+    if (!items.length) {
+        hideTemplateSuggestions();
+        return;
+    }
+
+    templateSuggestions.innerHTML = '';
+
+    items.slice(0, 6).forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'template-suggestion-item';
+        button.dataset.value = String(item.codiceLavorazione || item.nomeTemplate || '').trim();
+
+        const top = document.createElement('span');
+        top.className = 'template-suggestion-top';
+        const codice = String(item.codiceLavorazione || '').trim();
+        const nome = String(item.nomeTemplate || '').trim();
+        top.textContent = [codice, nome].filter(Boolean).join(' - ') || 'Template';
+
+        const bottom = document.createElement('span');
+        bottom.className = 'template-suggestion-bottom';
+        const notes = String(item.notes || '').replace(/\s+/g, ' ').trim();
+        bottom.textContent = notes ? notes.slice(0, 120) : 'Nessuna descrizione';
+
+        button.appendChild(top);
+        button.appendChild(bottom);
+
+        button.addEventListener('click', () => {
+            if (ricercaTemplateInput) {
+                ricercaTemplateInput.value = button.dataset.value || '';
+                ricercaTemplateInput.focus();
+            }
+            hideTemplateSuggestions();
+        });
+
+        templateSuggestions.appendChild(button);
+    });
+
+    templateSuggestions.classList.remove('hidden');
+};
+
+const loadTemplateSuggestions = async () => {
+    const aziendaId = (localStorage.getItem('selectedAziendaId') || '').trim();
+    if (!aziendaId) {
+        templateSuggestionsCache = [];
+        templateSuggestionsAziendaId = '';
+        return;
+    }
+
+    if (templateSuggestionsAziendaId === aziendaId && templateSuggestionsCache.length > 0) {
+        return;
+    }
+
+    const response = await fetch(`/api/lavorazioni?${new URLSearchParams({ aziendaId, isTemplate: 'true' }).toString()}`, {
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+    });
+
+    if (!response.ok) {
+        templateSuggestionsCache = [];
+        templateSuggestionsAziendaId = aziendaId;
+        return;
+    }
+
+    const data = await response.json().catch(() => []);
+    templateSuggestionsCache = Array.isArray(data) ? data : [];
+    templateSuggestionsAziendaId = aziendaId;
+};
+
+const suggestTemplatesByDescription = async () => {
+    const query = normalizeText(getTrimmedValue('ricercaTemplate'));
+    if (!query || query.length < 2) {
+        hideTemplateSuggestions();
+        return;
+    }
+
+    await loadTemplateSuggestions();
+
+    const filtered = templateSuggestionsCache.filter((item) => {
+        const notes = normalizeText(item.notes);
+        const nome = normalizeText(item.nomeTemplate);
+        const codice = normalizeText(item.codiceLavorazione);
+        return notes.includes(query) || nome.includes(query) || codice.includes(query);
+    });
+
+    showTemplateSuggestions(filtered);
+};
 
 if (addLavorazioneForm) {
     addLavorazioneForm.addEventListener('submit', async (event) => {
@@ -188,25 +296,23 @@ if(searchLavorazioneForm){
         event.preventDefault();
         if (!searchLavorazioneMessage) return;
 
-        const codiceLavorazione = getTrimmedValue('codiceLavorazione');
+        const ricercaTemplate = getTrimmedValue('ricercaTemplate');
 
         searchLavorazioneMessage.style.color = 'red';
         searchLavorazioneMessage.textContent = '';
 
         if(!templatePreviewForm.classList.contains('hidden')) { templatePreviewForm.classList.add('hidden'); }
 
-        if(!codiceLavorazione){
-            searchLavorazioneMessage.textContent = 'Inserire il codice lavorazione per proseguire';
-            return;
-        }
-
-        if(!standardCodiceLavorazione.test(codiceLavorazione)){
-            searchLavorazioneMessage.textContent = 'Formato codice lavorazione errato'; 
+        if(!ricercaTemplate){
+            searchLavorazioneMessage.textContent = 'Inserire codice o descrizione del template per proseguire';
             return;
         }
 
         try{ 
-            const response = await fetch(`/api/lavorazioni/search?codiceLavorazione=${codiceLavorazione}`, {
+            const params = new URLSearchParams();
+            params.set('queryTemplate', ricercaTemplate);
+
+            const response = await fetch(`/api/lavorazioni/search?${params.toString()}`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
@@ -231,10 +337,35 @@ if(searchLavorazioneForm){
 
             // Rendo visibile il form 'template-preview-form' compilato
             templatePreviewForm.classList.remove('hidden');
+            hideTemplateSuggestions();
             
             searchLavorazioneForm.reset();
         } catch (error) {
             searchLavorazioneMessage.textContent = 'Errore di rete o del server';
+        }
+    });
+}
+
+if (ricercaTemplateInput) {
+    let debounceTimer = null;
+    ricercaTemplateInput.addEventListener('input', () => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            suggestTemplatesByDescription().catch(() => {
+                hideTemplateSuggestions();
+            });
+        }, 140);
+    });
+
+    ricercaTemplateInput.addEventListener('blur', () => {
+        setTimeout(() => hideTemplateSuggestions(), 120);
+    });
+
+    ricercaTemplateInput.addEventListener('focus', () => {
+        if (getTrimmedValue('ricercaTemplate').length >= 2) {
+            suggestTemplatesByDescription().catch(() => {
+                hideTemplateSuggestions();
+            });
         }
     });
 }

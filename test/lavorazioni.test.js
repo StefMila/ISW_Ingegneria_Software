@@ -529,6 +529,26 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
+  test('PATCH /api/lavorazioni/:id - errore: fasi non modificabili su lavorazione completata (422)', async () => {
+    const payload = basePayload();
+    delete payload.isTemplate;
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue({
+      _id: lavorazioneId,
+      ...payload,
+      status: 'completata',
+      save: jest.fn().mockResolvedValue(undefined)
+    });
+
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ fasi: [{ name: 'Ricevimento', completed: true }] })
+      .expect(422)
+      .expect((res) => {
+        expect(res.body.message).toBe('Le fasi di una lavorazione non in corso non possono essere modificate');
+      });
+  });
+
   test('GET /api/lavorazioni ritorna le informazioni sulle lavorazioni interessate (200)', async () => {
     jest.spyOn(Lavorazione, 'find').mockReturnValue({
       sort: jest.fn().mockResolvedValue([
@@ -563,6 +583,36 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
         isTemplate: 'not_boolean'
       })
       .expect(400);
+  });
+
+  test('GET /api/lavorazioni/search recupera template anche da descrizione (200)', async () => {
+    const payload = {
+      _id: lavorazioneId,
+      ...basePayload(),
+      notes: 'Template produzione yogurt bianco con fermenti lattici',
+      isTemplate: true
+    };
+    jest.spyOn(Lavorazione, 'findOne').mockResolvedValue(payload);
+
+    await request(app)
+      .get('/api/lavorazioni/search')
+      .set('Authorization', `Bearer ${token}`)
+      .query({ descrizioneTemplate: 'yogurt' })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body._id).toBeDefined();
+        expect(res.body.isTemplate).toBe(true);
+      });
+  });
+
+  test('GET /api/lavorazioni/search - errore: nessun criterio di ricerca (400)', async () => {
+    await request(app)
+      .get('/api/lavorazioni/search')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Inserisci codiceLavorazione o descrizioneTemplate');
+      });
   });
 
   test('GET /api/lavorazioni - errore: aziendaId mancante (400)', async () => {
@@ -801,7 +851,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(400)
       .expect((res) => {
-        expect(res.body.message).toBe('Il codice del template è obbligatorio');
+        expect(res.body.message).toBe('Inserisci codiceLavorazione o descrizioneTemplate');
       });
   });
 

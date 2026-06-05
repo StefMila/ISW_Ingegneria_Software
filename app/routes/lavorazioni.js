@@ -286,6 +286,10 @@ export const updateLavorazione = async (req, res) => {
 			return res.status(422).json({ message: 'Le fasi di un template di lavorazione non possono essere modificate' });
 		}
 
+		if (!existingLavorazione.isTemplate && fasi !== undefined && existingLavorazione.status !== 'in_corso') {
+			return res.status(422).json({ message: 'Le fasi di una lavorazione non in corso non possono essere modificate' });
+		}
+
 		if(!existingLavorazione.isTemplate && nomeTemplate !== undefined) {
 			return res.status(422).json({ message: 'Il nome di un template non può essere modificato da una lavorazione non template' });
 		}
@@ -422,21 +426,49 @@ export const getLavorazioni = async (req, res) => {
 //GET /api/lavorazioni/search - visualizzazione del singolo template a partire dal suo codiceLavorazione
 export const getTemplateByCodiceLavorazione = async (req, res) => {
 	try {
-		const { codiceLavorazione } = req.query;
+		const { queryTemplate, codiceLavorazione, descrizioneTemplate } = req.query;
+		const queryValue = typeof queryTemplate === 'string' ? queryTemplate.trim() : '';
+		const codiceValue = typeof codiceLavorazione === 'string' ? codiceLavorazione.trim() : '';
+		const descrizioneValue = typeof descrizioneTemplate === 'string' ? descrizioneTemplate.trim() : '';
 
-		if (!codiceLavorazione) {
-			return res.status(400).json({ message: 'Il codice del template è obbligatorio' });
+		if (!queryValue && !codiceValue && !descrizioneValue) {
+			return res.status(400).json({ message: 'Inserisci codiceLavorazione o descrizioneTemplate' });
 		}
 
 		const standardCodiceLavorazione = /^[A][A-D]\d{3}$/;
-		if(!standardCodiceLavorazione.test(codiceLavorazione)){
+		if(!queryValue && codiceValue && !standardCodiceLavorazione.test(codiceValue)){
 			return res.status(400).json({ message: 'Codice template non valido'});
 		}
 
-		const existingTemplate = await Lavorazione.findOne({
-			codiceLavorazione: codiceLavorazione,
+		const filter = {
 			isTemplate: true
-		});
+		};
+
+		if (queryValue) {
+			const escaped = queryValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			filter.$or = [
+				{ codiceLavorazione: { $regex: escaped, $options: 'i' } },
+				{ notes: { $regex: escaped, $options: 'i' } },
+				{ nomeTemplate: { $regex: escaped, $options: 'i' } }
+			];
+		} else if (codiceValue && descrizioneValue) {
+			const escaped = descrizioneValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			filter.codiceLavorazione = codiceValue;
+			filter.$or = [
+				{ notes: { $regex: escaped, $options: 'i' } },
+				{ nomeTemplate: { $regex: escaped, $options: 'i' } }
+			];
+		} else if (codiceValue) {
+			filter.codiceLavorazione = codiceValue;
+		} else if (descrizioneValue) {
+			const escaped = descrizioneValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			filter.$or = [
+				{ notes: { $regex: escaped, $options: 'i' } },
+				{ nomeTemplate: { $regex: escaped, $options: 'i' } }
+			];
+		}
+
+		const existingTemplate = await Lavorazione.findOne(filter);
 		if (!existingTemplate || !existingTemplate.isTemplate) {
 			return res.status(404).json({ message: 'Nessun template corrispondente trovato'});
 		}

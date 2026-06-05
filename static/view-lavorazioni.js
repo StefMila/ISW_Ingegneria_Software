@@ -65,6 +65,7 @@ const getNotes = (item) => item.notes || '—';
 const getOutputName = (item) => item.outputName || '—';
 const getOutputQuantity = (item) => item.outputQuantity || '—';
 const getOutputUnit = (item) => item.outputUnit || '—';
+const canEditFasi = (item) => !item?.isTemplate && item?.status === 'in_corso';
 // riquadro di dettaglio con tutte le fasi e note
 const formatDateTime = (value) => {
     if (!value) {
@@ -114,7 +115,7 @@ const getPhaseDetails = (phase) => {
     return details.join(' | ');
 };
 
-const getPhasesHtml = (item) => {
+const getPhasesHtml = (item, editable = false) => {
     if (!Array.isArray(item.fasi) || item.fasi.length === 0) {
         return '<p class="status" style="margin:0">Nessuna fase presente.</p>';
     }
@@ -122,9 +123,24 @@ const getPhasesHtml = (item) => {
     const rows = item.fasi.map((phase, index) => {
         const phaseName = escapeHtml(getPhaseName(phase, index));
         const phaseDetails = escapeHtml(getPhaseDetails(phase));
+        const checked = Boolean(phase?.completed);
+
+        if (editable) {
+            return `
+                <li style="margin-bottom:8px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" data-phase-index="${index}" ${checked ? 'checked' : ''}>
+                        <strong>${phaseName}</strong>
+                    </label>
+                    ${phaseDetails ? `<div style="opacity:.85;font-size:.92em;margin-left:24px;">${phaseDetails}</div>` : ''}
+                </li>
+            `;
+        }
+
         return `
             <li style="margin-bottom:8px;">
                 <strong>${phaseName}</strong>
+                ${checked ? '<span style="margin-left:8px;color:#166534;font-size:.85em;">(completata)</span>' : ''}
                 ${phaseDetails ? `<div style="opacity:.85;font-size:.92em;">${phaseDetails}</div>` : ''}
             </li>
         `;
@@ -194,17 +210,23 @@ const openDetails = (item) => {
         return;
     }
 
+    const isEditable = canEditFasi(item);
     body.innerHTML = `
         <div style="display:grid;gap:10px;">
             <p style="margin:0;"><strong>Codice:</strong> ${escapeHtml(getCodiceLavorazione(item))}</p>
             <p style="margin:0;"><strong>Nome:</strong> ${escapeHtml(getNomeLavorazione(item))}</p>
             <p style="margin:0;"><strong>Input:</strong> ${escapeHtml(getInputSummary(item))}</p>
             <p style="margin:0;"><strong>Output:</strong> ${escapeHtml(getOutputName(item))}</p>
+            <p style="margin:0;"><strong>Stato:</strong> ${escapeHtml(getStatoLabel(item.status))}</p>
             <div>
                 <strong>Fasi:</strong>
-                ${getPhasesHtml(item)}
+                ${getPhasesHtml(item, isEditable)}
             </div>
-            ${item.note ? `<p style="margin:0;"><strong>Note:</strong> ${escapeHtml(item.note)}</p>` : ''}
+            ${isEditable
+                ? `<button type="button" id="saveFasiDetailsBtn" data-id="${escapeAttr(item._id)}" style="justify-self:start;border:0;background:#15803d;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;">Salva fasi</button>`
+                : `<p style="margin:0;color:#92400e;font-weight:600;">Dettaglio in sola lettura: la lavorazione non è in corso.</p>`
+            }
+            ${item.notes ? `<p style="margin:0;"><strong>Note:</strong> ${escapeHtml(item.notes)}</p>` : ''}
         </div>
     `;
 
@@ -299,10 +321,68 @@ const renderLavorazioniTable = (items) => {
     items.forEach((item) => rowLavorazioniMap.set(String(item._id), item));
 
     lavorazioniTableBody.innerHTML = items.map((item) => `
-        <tr data-id="${escapeAttr(item._id)}" class="lavorazione-row" tabindex="0" role="button" aria-label="Apri dettaglio template">
+        <tr data-id="${escapeAttr(item._id)}" class="lavorazione-row" tabindex="0" role="button" aria-label="Apri dettaglio lavorazione">
             ${rowLavorazioneHtml(item)}
         </tr>
     `).join('');
+};
+
+const saveFasiFromDetails = async (lavorazioneId) => {
+    const overlay = ensureDetailsOverlay();
+    const token = localStorage.getItem('token');
+    if (!lavorazioneId || !token) {
+        renderStatus(lavorazioniStatus, 'Dati mancanti per salvare le fasi.', 'red');
+        return;
+    }
+
+    const item = rowLavorazioniMap.get(String(lavorazioneId));
+    if (!item || !canEditFasi(item)) {
+        renderStatus(lavorazioniStatus, 'La lavorazione non è modificabile.', '#b45309');
+        return;
+    }
+
+    const phaseInputs = Array.from(overlay.querySelectorAll('[data-phase-index]'));
+    if (phaseInputs.length === 0 || !Array.isArray(item.fasi)) {
+        renderStatus(lavorazioniStatus, 'Nessuna fase disponibile da aggiornare.', '#b45309');
+        return;
+    }
+
+    const updatedFasi = item.fasi.map((phase, index) => {
+        const checkbox = phaseInputs.find((node) => Number(node.dataset.phaseIndex) === index);
+        return {
+            name: getPhaseName(phase, index),
+            completed: Boolean(checkbox?.checked)
+        };
+    });
+
+    try {
+        const response = await fetch(`/api/lavorazioni/${lavorazioneId}`, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fasi: updatedFasi })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            renderStatus(lavorazioniStatus, data.message || 'Errore durante il salvataggio delle fasi.', 'red');
+            return;
+        }
+
+        const updatedItem = data?.lavorazione || { ...item, fasi: updatedFasi };
+        rowLavorazioniMap.set(String(lavorazioneId), updatedItem);
+        allLavorazioni = allLavorazioni.map((current) => (
+            String(current._id) === String(lavorazioneId) ? { ...current, ...updatedItem, fasi: updatedItem.fasi || updatedFasi } : current
+        ));
+
+        renderStatus(lavorazioniStatus, 'Fasi lavorazione aggiornate con successo.', 'green');
+        openDetails(rowLavorazioniMap.get(String(lavorazioneId)));
+    } catch (error) {
+        console.error('Errore durante salvataggio fasi lavorazione:', error);
+        renderStatus(lavorazioniStatus, 'Errore di connessione durante il salvataggio delle fasi.', 'red');
+    }
 };
 
 const applyFilters = () => {
@@ -710,11 +790,21 @@ if (templateTableBody) {
     });
 }
 
+const overlay = ensureDetailsOverlay();
+overlay.addEventListener('click', async (event) => {
+    const saveButton = event.target.closest('#saveFasiDetailsBtn');
+    if (!saveButton) {
+        return;
+    }
+    await saveFasiFromDetails(saveButton.dataset.id);
+});
+
 fetchLavorazioni();
 
 // Funzionalità della tabella dedicata alle lavorazioni 
 if(lavorazioniTableBody){
     lavorazioniTableBody.addEventListener('click', async (event) => {
+        const clickedRow = event.target.closest('tr[data-id]');
         const closeScaleButton = event.target.closest('.terminate-scale-btn');
         const closeManualButton = event.target.closest('.terminate-manual-btn');
         const deleteButton = event.target.closest('.delete-animal-btn');
@@ -734,6 +824,24 @@ if(lavorazioniTableBody){
         if (deleteButton) {
             await deleteLavorazioneById(lavorazioniStatus, deleteButton.dataset.id);
             return;
+        }
+
+        if (clickedRow) {
+            const item = rowLavorazioniMap.get(clickedRow.dataset.id);
+            openDetails(item);
+        }
+    });
+
+    lavorazioniTableBody.addEventListener('keydown', (event) => {
+        const row = event.target.closest('tr[data-id]');
+        if (!row) {
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            const item = rowLavorazioniMap.get(row.dataset.id);
+            openDetails(item);
         }
     });
 }
