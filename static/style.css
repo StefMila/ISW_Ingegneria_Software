@@ -2078,27 +2078,35 @@ button:active {
 .stats-mungiture-page .section {
   padding: 18px;
   border-left-width: 0;
-  border: 1px solid #d8e5c5;
+  border: 1px solid #2d5b3d;
   border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(34, 68, 16, 0.08);
+  box-shadow: 0 10px 22px rgba(16, 43, 21, 0.28);
+  background: linear-gradient(160deg, #163221 0%, #1e442b 55%, #285937 100%);
 }
 
 .stats-mungiture-page .section > h2 {
   margin: 0 0 8px;
   font-size: 1.6rem;
-  color: #17340a;
+  color: #f4fff1;
 }
 
 .stats-mungiture-page .stats-status {
   margin: 0 0 12px;
+  color: #e7f7e6;
 }
 
 .stats-mungiture-page .stats-global-filters {
   margin-bottom: 12px;
   padding: 10px 12px;
-  border: 1px solid #d8e5c5;
+  border: 1px solid #3d7250;
   border-radius: 12px;
-  background: #f8fcef;
+  background: rgba(18, 46, 28, 0.72);
+}
+
+.stats-mungiture-page .stats-global-filters label,
+.stats-mungiture-page .stats-block-header label,
+.stats-mungiture-page .stats-helper-text {
+  color: #d7eed6;
 }
 
 .stats-mungiture-page #refreshStatsBtn {
@@ -2106,22 +2114,22 @@ button:active {
   padding: 0 14px;
   border-radius: 9px;
   border: none;
-  background: #274f14;
+  background: #2fbd8f;
   color: #fff;
   font-weight: 700;
   cursor: pointer;
 }
 
 .stats-mungiture-page #refreshStatsBtn:hover {
-  background: #1f410f;
+  background: #43cfa2;
 }
 
 .stats-mungiture-page .stats-block {
   margin-bottom: 10px;
   padding: 10px;
   border-radius: 12px;
-  border: 1px solid #d6e3c2;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdf6 100%);
+  border: 1px solid #2c5a3e;
+  background: linear-gradient(180deg, rgba(21, 52, 33, 0.96) 0%, rgba(15, 40, 24, 0.96) 100%);
 }
 
 .stats-mungiture-page .stats-block:last-child {
@@ -2136,7 +2144,7 @@ button:active {
   font-size: 0.98rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: #1f3d0f;
+  color: #f0fff1;
 }
 
 .stats-mungiture-page .stats-inline-filters,
@@ -2151,6 +2159,9 @@ button:active {
   min-width: 140px;
   height: 36px;
   font-size: 0.92rem;
+  background: #214c31;
+  border: 1px solid #4d8c62;
+  color: #f4fff5;
 }
 
 .stats-mungiture-page .stats-single-summary {
@@ -2166,22 +2177,48 @@ button:active {
 .stats-mungiture-page .mungiture-summary-card {
   padding: 12px;
   border-radius: 11px;
+  border: 1px solid #477458;
+  background: #214c31;
 }
 
 .stats-mungiture-page .stats-card-icon {
   width: 34px;
   height: 34px;
   font-size: 1rem;
+  background: #1d462d;
 }
 
 .stats-mungiture-page .mungiture-summary-label {
   font-size: 0.85rem;
+  color: #cae6cc;
 }
 
 .stats-mungiture-page .stats-value-row strong {
   font-size: 1.55rem;
   line-height: 1.1;
-  color: #163309;
+  color: #ffffff;
+}
+
+.stats-mungiture-page .stats-trend-chip {
+  border: 1px solid transparent;
+}
+
+.stats-mungiture-page .stats-trend-chip.is-up {
+  background: #1c4d2b;
+  border-color: #4fbf78;
+  color: #d9ffe7;
+}
+
+.stats-mungiture-page .stats-trend-chip.is-down {
+  background: #5a2321;
+  border-color: #f08a86;
+  color: #ffe1df;
+}
+
+.stats-mungiture-page .stats-trend-chip.is-flat {
+  background: #2a3946;
+  border-color: #8ba0b5;
+  color: #e6edf4;
 }
 
 .stats-mungiture-page .stats-topcow-chart-wrap {
@@ -2191,7 +2228,7 @@ button:active {
 .stats-mungiture-page .stats-topcow-label {
   margin-top: 4px;
   font-size: 0.82rem;
-  color: #334155;
+  color: #d3e7d5;
 }
 
 .stats-mungiture-page .stats-topcow-list {
@@ -2200,11 +2237,13 @@ button:active {
 }
 
 .stats-mungiture-page .stats-topcow-item {
-  background: #ffffff;
+  border: 1px solid #3b694d;
+  background: #173b26;
 }
 
 .stats-mungiture-page .stats-topcow-empty {
   padding-left: 0;
+  color: #cae6cc;
 }
 
 .stats-mungiture-page .stats-period-grid {
@@ -2215,6 +2254,8 @@ button:active {
   height: 300px;
   min-height: 250px;
   border-radius: 11px;
+  border: 1px solid #3b694d;
+  background: #173b26;
 }
 
 .stats-mungiture-page .table-wrapper {
@@ -2227,10 +2268,25 @@ button:active {
 
 .stats-mungiture-page .animali-table thead tr.header-labels th {
   padding: 8px 10px;
+  color: #e8f8e8;
+  background: #214a31;
+  border-bottom-color: #4a7b59;
 }
 
 .stats-mungiture-page .animali-table tbody td {
   padding: 8px 10px;
+  color: #1f2937;
+  border-bottom-color: #b9c9ae;
+}
+
+.stats-mungiture-page .animali-table tbody tr:hover {
+  background: #dce8d5;
+}
+
+.stats-mungiture-page .stats-table-total-row td {
+  color: #1f2937;
+  background: #d5dfcf;
+  border-bottom-color: #aabda0;
 }
 
 @media (max-width: 900px) {
