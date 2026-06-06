@@ -114,13 +114,21 @@ function filterAziendeInCurrentViewport(aziende, enabled = false) {
 }
 
 function loadConsumerMenu() {
+	const token = localStorage.getItem('token');
+	const userType = localStorage.getItem('userType');
+	const menuRoot = document.getElementById('menu-root');
+
+	if (!menuRoot) return;
+
+	if (!token || userType !== 'consumatore') {
+		menuRoot.innerHTML = '';
+		return;
+	}
+
 	fetch('/menu-consumatore.html')
 		.then((res) => res.text())
 		.then((html) => {
-			const menuRoot = document.getElementById('menu-root');
-			if (menuRoot) {
-				menuRoot.innerHTML = html;
-			}
+			menuRoot.innerHTML = html;
 		})
 		.catch((err) => {
 			console.error('Errore caricamento menu:', err);
@@ -131,6 +139,12 @@ function loadGoogleMapsApi() {
 	fetch('/api/config')
 		.then((res) => res.json())
 		.then((config) => {
+			if (!config || !config.googleMapsKey) {
+				console.warn('Google Maps API key non configurata: mappa disabilitata, elenco comunque disponibile.');
+				initApp();
+				return;
+			}
+
 			const script = document.createElement('script');
 			script.src = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsKey}&callback=initApp&libraries=places,maps,marker&v=beta`;
 			script.async = true;
@@ -138,7 +152,18 @@ function loadGoogleMapsApi() {
 		})
 		.catch((err) => {
 			console.error('Errore caricamento Google Maps API:', err);
+			initApp();
 		});
+}
+
+function showRuntimeWarning(message) {
+	const menuRoot = document.getElementById('menu-root');
+	if (!menuRoot) return;
+
+	const warning = document.createElement('div');
+	warning.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:40;padding:10px 12px;border-radius:10px;background:#fff4cc;border:1px solid #e2b63f;color:#6a4b00;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.12);';
+	warning.textContent = message;
+	menuRoot.appendChild(warning);
 }
 
 function getRaggioKm() {
@@ -777,17 +802,43 @@ function mostraElencoAziende(aziende) {
 	}
 
 	elenco.innerHTML = '<b>Risultati trovati:</b><ul style="padding-left:18px;">' + aziende
-		.map((az) =>
-			`<li><b>${az.nome}</b> ${az.entityType === 'puntoVendita' ? '(Punto vendita)' : '(Azienda)'}<br>` +
+		.map((az, index) => {
+			const rowBackground = index % 2 === 0 ? '#f8fbf2' : '#eef5e1';
+			return `\n\t\t\t<li class="elenco-result-item" data-entity-id="${escapeHtml(normalizeEntityId(az.id))}" role="button" tabindex="0" style="cursor:pointer;padding:6px 4px;border-radius:6px;background:${rowBackground};"><b>${az.nome}</b> ${az.entityType === 'puntoVendita' ? '(Punto vendita)' : '(Azienda)'}<br>` +
 			(az.categoria ? `<b>Categoria:</b> ${az.categoria}<br>` : '') +
 			(az.indirizzo ? `${az.indirizzo}<br>` : '') +
 			(az.citta ? `${az.citta}<br>` : '') +
 			(az.email ? `Email: ${az.email}<br>` : '') +
 			(az.telefono ? `Tel: ${az.telefono}<br>` : '') +
 			(az.sito ? `Sito: <a href="${az.sito}" target="_blank">${az.sito}</a>` : '') +
-			'</li>'
-		)
+			'</li>';
+		})
 		.join('') + '</ul>';
+
+	elenco.querySelectorAll('.elenco-result-item').forEach((itemEl) => {
+		const openDialog = (event) => {
+			if (event?.target?.closest && event.target.closest('a')) {
+				return;
+			}
+
+			const entityId = itemEl.dataset.entityId;
+			const azienda = aziende.find((az) => normalizeEntityId(az.id) === entityId);
+			if (!azienda) {
+				return;
+			}
+
+			setMapView(azienda.lat, azienda.lng, 12);
+			mostraDettagliAzienda(azienda, null, itemEl);
+		};
+
+		itemEl.addEventListener('click', openDialog);
+		itemEl.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
+				openDialog(event);
+			}
+		});
+	});
 }
 
 function distanzaKm(lat1, lng1, lat2, lng2) {
@@ -914,6 +965,11 @@ window.cercaIntornoAMe = cercaIntornoAMe;
 window.toggleElencoLaterale = toggleElencoLaterale;
 
 document.addEventListener('DOMContentLoaded', () => {
+	if (window.location.protocol === 'file:') {
+		showRuntimeWarning('Pagina aperta come file locale. Avvia il server e apri http://localhost:3000/esplora.html.');
+		return;
+	}
+
 	initQuickFilters();
 	updateAroundMeButtonState();
 	loadConsumerMenu();

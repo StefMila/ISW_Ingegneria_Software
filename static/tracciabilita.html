@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <main class="dashboard-container">
+<main class="dashboard-container">
     <section class="section" id="traceSection">
       <h2>TRACCIABILITA PRODOTTO</h2>
       <p class="status" id="traceIntro">Inserisci un numero lotto o usa il QR code sul prodotto.</p>
@@ -15,7 +15,17 @@
       <div class="form-actions-inline trace-search-row">
         <input type="text" id="lotNumberInput" placeholder="Es. LOT-001" aria-label="Numero lotto">
         <button type="button" id="searchTraceBtn">Cerca</button>
+        <button type="button" id="scanQrBtn">Scansiona QR</button>
       </div>
+
+      <section id="qrScannerPanel" class="card trace-card hidden" style="margin-top: 14px;">
+        <h3>Scanner QR</h3>
+        <p class="status" id="qrScannerStatus">Attiva la fotocamera e inquadra il QR code del prodotto.</p>
+        <video id="qrVideo" autoplay muted playsinline style="width:100%;max-width:480px;border-radius:10px;border:1px solid #b5c9a0;background:#000;"></video>
+        <div class="form-actions-inline" style="margin-top:10px;">
+          <button type="button" id="stopScanBtn">Ferma scansione</button>
+        </div>
+      </section>
 
       <p id="traceStatus" class="status"></p>
 
@@ -43,5 +53,6 @@
   </main>
 
   <script src="/tracciabilita.js"></script>
+  <script src="/public-menu.js"></script>
 </body>
 </html>

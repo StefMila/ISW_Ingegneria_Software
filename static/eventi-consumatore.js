@@ -24,6 +24,13 @@ const setCountBadge = (text, success = false) => {
 const loadConsumerMenu = async () => {
 	if (!menuRoot) return;
 
+	const token = localStorage.getItem('token');
+	const userType = localStorage.getItem('userType');
+	if (!token || userType !== 'consumatore') {
+		menuRoot.innerHTML = '';
+		return;
+	}
+
 	try {
 		const response = await fetch('/menu-consumatore.html');
 		const html = await response.text();
