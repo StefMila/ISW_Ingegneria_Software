@@ -5,12 +5,15 @@ import { assertAziendaOwnedByUser } from './aziende.js';
 import Azienda from '../models/azienda.js';
 import Lavorazione from '../models/lavorazione.js';
 import LottoProdotto from '../models/lottoProdotto.js';
+import QRcode from 'qrcode';
 
 const router = express.Router();
 router.use(checkAuth);
 router.use(checkUserType(['allevatore']));
 // helper per validare ObjectId di MongoDB
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+// URL base pubblica per generazione QR code
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
 // genera un numero per il codice del lotto prodotto basato sulla data corrente
 export const createLottoProdotto = async (req, res) => {
 	try {
@@ -20,13 +23,12 @@ export const createLottoProdotto = async (req, res) => {
 			nomeProdotto,
 			quantity,
 			unit,
-			lotNumber,
-			qrCodeValue
+			lotNumber
 		} = req.body;
 
-		if (!aziendaId || !lavorazioneId || !nomeProdotto || quantity === undefined || !unit || !qrCodeValue) {
+		if (!aziendaId || !lavorazioneId || !nomeProdotto || quantity === undefined || !unit) {
 			return res.status(400).json({
-				message: 'aziendaId, lavorazioneId, nomeProdotto, quantity, unit e qrCodeValue sono obbligatori'
+				message: 'aziendaId, lavorazioneId, nomeProdotto, quantity e unit sono obbligatori'
 			});
 		}
 
@@ -47,7 +49,6 @@ export const createLottoProdotto = async (req, res) => {
 		if (existingLavorazione.isTemplate === true) {
 			return res.status(400).json({ message: 'La lavorazione selezionata è un template e non può essere usata per creare un lotto prodotto' });
 		}
-
 		const newLottoProdotto = new LottoProdotto({
 			aziendaId,
 			lavorazioneId,
@@ -55,9 +56,17 @@ export const createLottoProdotto = async (req, res) => {
 			quantity,
 			unit: String(unit).trim(),
 			lotNumber: typeof lotNumber === 'string' && lotNumber.trim() ? lotNumber.trim() : undefined,
-			qrCodeValue: String(qrCodeValue).trim()
+			qrCodeValue: 'PENDING'
 		});
 
+		await newLottoProdotto.validate();
+
+		const qrCodeValue = `${PUBLIC_BASE_URL}/tracciabilita.html?lotto=${encodeURIComponent(newLottoProdotto.lotNumber)}`;
+		const qrCodeImage = await QRcode.toDataURL(qrCodeValue);
+
+		newLottoProdotto.qrCodeValue = qrCodeValue;
+		newLottoProdotto.qrCodeImage = qrCodeImage;
+		
 		await newLottoProdotto.save();
 
 		return res.status(201).json({
@@ -76,17 +85,18 @@ export const createLottoProdotto = async (req, res) => {
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
+
 // PATCH /api/lottiProdotto/:id - aggiorna un lotto prodotto esistente, con validazione dei campi e controllo di proprietà
 export const updateLottoProdotto = async (req, res) => {
 	try {
 		const { id } = req.params;
+		// campi aggiornabili: lavorazioneId, nomeProdotto, quantity, unit, lotNumber. No QrCode, che viene rigenerato se cambia il lotNumber
 		const {
 			lavorazioneId,
 			nomeProdotto,
 			quantity,
 			unit,
-			lotNumber,
-			qrCodeValue
+			lotNumber
 		} = req.body;
 
 		if (!isValidObjectId(id)) {
@@ -127,8 +137,13 @@ export const updateLottoProdotto = async (req, res) => {
 		if (nomeProdotto !== undefined) existingLottoProdotto.nomeProdotto = String(nomeProdotto).trim();
 		if (quantity !== undefined) existingLottoProdotto.quantity = quantity;
 		if (unit !== undefined) existingLottoProdotto.unit = String(unit).trim();
-		if (lotNumber !== undefined) existingLottoProdotto.lotNumber = String(lotNumber).trim();
-		if (qrCodeValue !== undefined) existingLottoProdotto.qrCodeValue = String(qrCodeValue).trim();
+
+		if (lotNumber !== undefined) {
+			const normalizedLotNumber = String(lotNumber).trim();
+			existingLottoProdotto.lotNumber = normalizedLotNumber;
+			existingLottoProdotto.qrCodeValue = `${PUBLIC_BASE_URL}/tracciabilita.html?lotto=${encodeURIComponent(normalizedLotNumber)}`;
+			existingLottoProdotto.qrCodeImage = await QRcode.toDataURL(existingLottoProdotto.qrCodeValue);
+		}
 
 		await existingLottoProdotto.save();
 

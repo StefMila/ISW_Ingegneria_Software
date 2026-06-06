@@ -14,6 +14,7 @@ class MockLavorazioneModel {
 class MockLottoProdottoModel {
   constructor(payload) {
     Object.assign(this, payload);
+    this.validate = jest.fn().mockResolvedValue(undefined);
     this.save = jest.fn().mockResolvedValue(undefined);
   }
 }
@@ -77,8 +78,7 @@ describe('Routes - Lotti Prodotto template rules', () => {
         lavorazioneId,
         nomeProdotto: 'Caciotta',
         quantity: 10,
-        unit: 'pezzi',
-        qrCodeValue: 'qr-001'
+        unit: 'pezzi'
       }
     };
     const res = makeRes();
