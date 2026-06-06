@@ -66,6 +66,11 @@ const lottoProdottoSchema = new mongoose.Schema({
         required: true,
         trim: true,
         unique: true
+    },
+    qrCodeImage: {
+        type: String,
+        required: false,
+        trim: true
     }
 }, {
     timestamps: true
@@ -89,13 +94,7 @@ lottoProdottoSchema.pre('validate', async function () {
         sequence += 1;
         candidate = `${prefix}-${String(sequence).padStart(3, '0')}`;
     }
-
-    this.lotNumber = candidate;
-    // Auto-genera il QR Code se non esiste
-    if (!this.qrCodeValue) {
-        // Salva un link reale:
-        this.qrCodeValue = `${baseUrl}/tracciabilita.html?lotto=${this.lotNumber}`;
-    }
+    this.lotNumber = candidate; 
 });
 
 const LottoProdotto = mongoose.model('LottoProdotto', lottoProdottoSchema);
