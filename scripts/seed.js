@@ -320,6 +320,11 @@ async function seed() {
   // Solo la prima azienda avrà la mandria seed.
   const aziendaMandria = aziendeAllevatore[0];
 
+  // Reset dei contatori lavorazione per l'azienda seedata, così i codici restano deterministici.
+  await mongoose.model('Counter').deleteMany({
+    _id: { $regex: `^counter_${String(aziendaMandria._id)}_` }
+  });
+
   // 3. Animali — salta quelli con matricola già presente
   let inseriti = 0;
   let saltati = 0;
