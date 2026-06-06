@@ -31,6 +31,8 @@ tags:
     description: Endpoint di supporto all'integrazione mappa (configurazione client e dataset pubblico aziende)
   - name: IoT Sensori
     description: Endpoint per registrazione sensori e consultazione delle letture MQTT in tempo reale
+  - name: Tracciabilita
+    description: Endpoint per tracciabilità lotto (privata e pubblica) e storico benessere animale
 
 paths:
   /api/health:
@@ -2959,7 +2961,7 @@ paths:
                   nomeProdotto: Caciotta Fresca
                   quantity: 40
                   unit: pezzi
-                  qrCodeValue: CACIOTTA-20260526-001
+                  lotNumber: LOT-CACIOTTA-20260526-001
       responses:
         '201':
           description: Lotto prodotto creato con successo
@@ -2979,7 +2981,8 @@ paths:
                       quantity: 40
                       unit: pezzi
                       lotNumber: LOT-CACIOTTA-20260526-001
-                      qrCodeValue: CACIOTTA-20260526-001
+                      qrCodeValue: http://localhost:3000/tracciabilita.html?lotto=LOT-CACIOTTA-20260526-001
+                      qrCodeImage: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         '400':
           description: Dati non validi o lavorazione template non ammessa
           content:
@@ -2989,7 +2992,7 @@ paths:
               examples:
                 missingRequired:
                   value:
-                    message: aziendaId, lavorazioneId, nomeProdotto, quantity, unit e qrCodeValue sono obbligatori
+                    message: aziendaId, lavorazioneId, nomeProdotto, quantity e unit sono obbligatori
                 templateBlocked:
                   value:
                     message: La lavorazione selezionata è un template e non può essere usata per creare un lotto prodotto
@@ -3012,7 +3015,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: lotNumber o qrCodeValue duplicati
+          description: lotNumber duplicato
           content:
             application/json:
               schema:
@@ -3066,7 +3069,8 @@ paths:
                       quantity: 40
                       unit: pezzi
                       lotNumber: LOT-CACIOTTA-20260526-001
-                      qrCodeValue: CACIOTTA-20260526-001
+                      qrCodeValue: http://localhost:3000/tracciabilita.html?lotto=LOT-CACIOTTA-20260526-001
+                      qrCodeImage: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         '400':
           description: Query non valida
           content:
@@ -3140,7 +3144,8 @@ paths:
                       quantity: 38
                       unit: pezzi
                       lotNumber: LOT-CACIOTTA-20260526-001
-                      qrCodeValue: CACIOTTA-20260526-001
+                      qrCodeValue: http://localhost:3000/tracciabilita.html?lotto=LOT-CACIOTTA-20260526-001
+                      qrCodeImage: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         '400':
           description: ID o dati non validi
           content:
@@ -3173,7 +3178,78 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: lotNumber o qrCodeValue duplicati
+          description: lotNumber duplicato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/lotti-prodotto/mark-printed:
+    post:
+      summary: Registra etichette stampate
+      description: Aggiorna a database lo stato di stampa etichette per uno o più lotti prodotto dell'azienda.
+      tags:
+        - Lotto prodotto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkPrintedRequest'
+            examples:
+              markPrinted:
+                value:
+                  aziendaId: 665f8fd8ad8f8c0012f9c123
+                  prints:
+                    - lottoId: 665fb8d8ad8f8c0012f9d210
+                      copies: 3
+                      expiryDate: '2026-12-31'
+                    - lottoId: 665fb8d8ad8f8c0012f9d211
+                      copies: 1
+      responses:
+        '200':
+          description: Stato etichette aggiornato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkPrintedResponse'
+              examples:
+                success:
+                  value:
+                    message: Stato etichette stampate aggiornato
+                    updatedLots: 2
+        '400':
+          description: Dati non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidBody:
+                  value:
+                    message: prints deve essere un array non vuoto
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Uno o più lotti non trovati per l'azienda
           content:
             application/json:
               schema:
@@ -3890,6 +3966,303 @@ paths:
                 forbiddenRole:
                   value:
                     message: "Permessi insufficienti: Accesso negato"
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tracciabilita/lotti:
+    get:
+      summary: Elenco lotti tracciabilità privata
+      description: Restituisce l'elenco lotti di una azienda per la vista master-detail di allevatore/veterinario autorizzato.
+      tags:
+        - Tracciabilita
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: aziendaId
+          required: true
+          schema:
+            type: string
+          description: ID azienda di cui recuperare i lotti.
+      responses:
+        '200':
+          description: Elenco lotti recuperato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        lotNumber:
+                          type: string
+                        nomeProdotto:
+                          type: string
+                        quantity:
+                          type: number
+                        unit:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                        status:
+                          type: string
+        '400':
+          description: Query non valida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti o accesso azienda non autorizzato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tracciabilita/lotti/{lotNumber}:
+    get:
+      summary: Tracciabilità privata di un lotto
+      description: Restituisce catena tracciabilità completa del lotto (lotto, lavorazione, mungiture, timeline, animali con benessere aggregato 30 giorni) per allevatore/veterinario autorizzato.
+      tags:
+        - Tracciabilita
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: lotNumber
+          required: true
+          schema:
+            type: string
+          description: Numero lotto da tracciare.
+      responses:
+        '200':
+          description: Tracciabilità privata recuperata con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lotto:
+                    type: object
+                  lavorazione:
+                    type: object
+                  mungiture:
+                    type: array
+                    items:
+                      type: object
+                  timeline:
+                    type: array
+                    items:
+                      type: object
+                  animals:
+                    type: array
+                    items:
+                      type: object
+        '400':
+          description: Parametri non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti o accesso azienda non autorizzato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Lotto non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tracciabilita/public/lotti/{lotNumber}:
+    get:
+      summary: Tracciabilità pubblica di un lotto
+      description: Restituisce tracciabilità pubblica del lotto con azienda produttrice e indicatori minimi per animale (passi giornalieri medi e percentuale aria aperta).
+      tags:
+        - Tracciabilita
+      parameters:
+        - in: path
+          name: lotNumber
+          required: true
+          schema:
+            type: string
+          description: Numero lotto da tracciare pubblicamente.
+      responses:
+        '200':
+          description: Tracciabilità pubblica recuperata con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lotto:
+                    type: object
+                    properties:
+                      lotNumber:
+                        type: string
+                      nomeProdotto:
+                        type: string
+                      quantity:
+                        type: number
+                      unit:
+                        type: string
+                      createdAt:
+                        type: string
+                        format: date-time
+                  producer:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      companyName:
+                        type: string
+                  timeline:
+                    type: array
+                    items:
+                      type: object
+                  animals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        label:
+                          type: string
+                        benessere:
+                          type: object
+                          properties:
+                            stepsDailyAvg:
+                              type: number
+                              description: Passi medi giornalieri calcolati sui giorni disponibili.
+                            outdoorPercent:
+                              type: number
+                              description: Percentuale media di tempo all'aria aperta sui giorni disponibili.
+        '400':
+          description: Parametri non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Lotto non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tracciabilita/animali/{animaleId}/stats:
+    get:
+      summary: Storico benessere animale (privato)
+      description: Restituisce serie giornaliera e riepilogo aggregato statistiche IoT di benessere per un animale, nell'intervallo from/to.
+      tags:
+        - Tracciabilita
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: animaleId
+          required: true
+          schema:
+            type: string
+          description: ID animale.
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Data iniziale intervallo (inclusiva).
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Data finale intervallo (inclusiva).
+      responses:
+        '200':
+          description: Storico benessere recuperato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  animale:
+                    type: object
+                  range:
+                    type: object
+                  summary:
+                    type: object
+                  days:
+                    type: array
+                    items:
+                      type: object
+        '400':
+          description: Parametri non validi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti o accesso azienda non autorizzato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Animale non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Errore interno del server
           content:
@@ -4657,7 +5030,35 @@ components:
           example: LOT-CACIOTTA-20260526-001
         qrCodeValue:
           type: string
-          example: CACIOTTA-20260526-001
+          description: URL pubblico di tracciabilità usato per generare il QR.
+          example: http://localhost:3000/tracciabilita.html?lotto=LOT-CACIOTTA-20260526-001
+        qrCodeImage:
+          type: string
+          nullable: true
+          description: Immagine QR in formato Data URL (base64).
+          example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        labelsPrinted:
+          type: boolean
+          example: true
+        labelsPrintedCount:
+          type: integer
+          minimum: 0
+          example: 8
+        labelsLastPrintedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2026-06-06T10:15:00.000Z
+        labelsLastExpiryDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2026-12-31T00:00:00.000Z
+        labelsLastPrintCopies:
+          type: integer
+          minimum: 0
+          nullable: true
+          example: 3
         createdAt:
           type: string
           format: date-time
@@ -4676,7 +5077,6 @@ components:
         - nomeProdotto
         - quantity
         - unit
-        - qrCodeValue
       properties:
         aziendaId:
           type: string
@@ -4698,9 +5098,6 @@ components:
           type: string
           description: Facoltativo; se omesso il server lo genera automaticamente.
           example: LOT-CACIOTTA-20260526-001
-        qrCodeValue:
-          type: string
-          example: CACIOTTA-20260526-001
 
     UpdateLottoProdottoRequest:
       type: object
@@ -4717,8 +5114,53 @@ components:
           type: string
         lotNumber:
           type: string
-        qrCodeValue:
+
+    MarkPrintedEntry:
+      type: object
+      required:
+        - lottoId
+        - copies
+      properties:
+        lottoId:
           type: string
+          description: ID del lotto prodotto.
+          example: 665fb8d8ad8f8c0012f9d210
+        copies:
+          type: integer
+          minimum: 1
+          example: 3
+        expiryDate:
+          type: string
+          format: date
+          nullable: true
+          description: Data di scadenza applicata alla stampa etichetta.
+          example: '2026-12-31'
+
+    MarkPrintedRequest:
+      type: object
+      required:
+        - aziendaId
+        - prints
+      properties:
+        aziendaId:
+          type: string
+          example: 665f8fd8ad8f8c0012f9c123
+        prints:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MarkPrintedEntry'
+
+    MarkPrintedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Stato etichette stampate aggiornato
+        updatedLots:
+          type: integer
+          minimum: 0
+          example: 2
 
     LottoProdottoResponse:
       type: object

@@ -39,6 +39,8 @@
           <ul class="nav-dropdown-menu">
             <li><a href="/add-punto-vendita.html">Aggiungi Punto Vendita</a></li>
             <li><a href="/view-punti-vendita.html">Visualizza Punti Vendita</a></li>
+            <li><a href="/tracciabilita-allevatore.html">Tracciabilità</a></li>
+             <li><a href="/crea-etichette.html">Crea etichette</a></li>
           </ul>
         </div>
         <div class="nav-dropdown">

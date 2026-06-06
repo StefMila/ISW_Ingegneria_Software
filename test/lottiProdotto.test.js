@@ -46,6 +46,17 @@ describe('Routes - Lotti Prodotto', () => {
 			.expect(400);
 	});
 
+	test('POST /api/lotti-prodotto/mark-printed con aziendaId non valido restituisce 400', async () => {
+		await request(app)
+			.post('/api/lotti-prodotto/mark-printed')
+			.set('Authorization', authHeader)
+			.send({
+				aziendaId: 'not-an-object-id',
+				prints: [{ lottoId: '665f8fd8ad8f8c0012f9c124', copies: 1 }]
+			})
+			.expect(400);
+	});
+
 	test('DELETE /api/lotti-prodotto/:id con id non valido restituisce 400', async () => {
 		await request(app)
 			.delete('/api/lotti-prodotto/not-an-object-id')

@@ -191,7 +191,112 @@ export const getLottiProdotto = async (req, res) => {
 		}
 
 		const items = await LottoProdotto.find(filter).sort({ createdAt: -1 });
+
+		for (const item of items) {
+			let changed = false;
+
+			if (!item.qrCodeValue && item.lotNumber) {
+				item.qrCodeValue = `${PUBLIC_BASE_URL}/tracciabilita.html?lotto=${encodeURIComponent(item.lotNumber)}`;
+				changed = true;
+			}
+
+			if (!item.qrCodeImage && item.qrCodeValue) {
+				item.qrCodeImage = await QRcode.toDataURL(item.qrCodeValue);
+				changed = true;
+			}
+
+			if (changed) {
+				await item.save();
+			}
+		}
+
 		return res.status(200).json(items);
+	} catch (error) {
+		return res.status(500).json({ message: 'Errore del server' });
+	}
+};
+
+// POST /api/lotti-prodotto/mark-printed - registra a DB le etichette stampate per uno o più lotti.
+export const markLottiProdottoPrinted = async (req, res) => {
+	try {
+		const { aziendaId, prints } = req.body || {};
+
+		if (!aziendaId || !isValidObjectId(aziendaId)) {
+			return res.status(400).json({ message: 'aziendaId non valido' });
+		}
+
+		const ownershipCheck = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
+		if (!ownershipCheck.ok) {
+			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
+		}
+
+		if (!Array.isArray(prints) || prints.length === 0) {
+			return res.status(400).json({ message: 'prints deve essere un array non vuoto' });
+		}
+
+		const normalized = [];
+		for (const item of prints) {
+			const lottoId = typeof item?.lottoId === 'string' ? item.lottoId.trim() : '';
+			const copies = Number(item?.copies);
+			const expiryDateRaw = typeof item?.expiryDate === 'string' ? item.expiryDate.trim() : '';
+			const parsedExpiryDate = expiryDateRaw ? new Date(`${expiryDateRaw}T00:00:00`) : null;
+
+			if (!isValidObjectId(lottoId)) {
+				return res.status(400).json({ message: 'lottoId non valido' });
+			}
+
+			if (!Number.isFinite(copies) || copies <= 0) {
+				return res.status(400).json({ message: 'copies deve essere un numero positivo' });
+			}
+
+			if (parsedExpiryDate && Number.isNaN(parsedExpiryDate.getTime())) {
+				return res.status(400).json({ message: 'expiryDate non valida' });
+			}
+
+			normalized.push({
+				lottoId,
+				copies: Math.floor(copies),
+				expiryDate: parsedExpiryDate
+			});
+		}
+
+		const lotIds = [...new Set(normalized.map((item) => item.lottoId))];
+		const existingLots = await LottoProdotto.find({
+			_id: { $in: lotIds },
+			aziendaId
+		}).select('_id');
+
+		if (existingLots.length !== lotIds.length) {
+			return res.status(404).json({ message: 'Uno o più lotti non trovati per questa azienda' });
+		}
+
+		const now = new Date();
+		for (const item of normalized) {
+			const setPayload = {
+				labelsPrinted: true,
+				labelsLastPrintedAt: now,
+				labelsLastPrintCopies: item.copies
+			};
+
+			if (item.expiryDate) {
+				setPayload.labelsLastExpiryDate = item.expiryDate;
+			}
+
+			await LottoProdotto.updateOne(
+				{ _id: item.lottoId, aziendaId },
+				{
+					$set: setPayload,
+					$inc: {
+						labelsPrintedCount: item.copies
+					}
+				}
+			);
+		}
+
+		return res.status(200).json({
+			message: 'Stato etichette stampate aggiornato',
+			updatedLots: lotIds.length
+		});
 	} catch (error) {
 		return res.status(500).json({ message: 'Errore del server' });
 	}
@@ -225,6 +330,7 @@ export const deleteLottoProdotto = async (req, res) => {
 };
 
 router.post('/', createLottoProdotto);
+router.post('/mark-printed', markLottiProdottoPrinted);
 router.patch('/:id', updateLottoProdotto);
 router.get('/', getLottiProdotto);
 router.delete('/:id', deleteLottoProdotto);

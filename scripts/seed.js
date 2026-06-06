@@ -18,6 +18,11 @@ import path from 'node:path';
 import User from '../app/models/user.js';
 import azienda from '../app/models/azienda.js';
 import Animale from '../app/models/animale.js';
+import Sensore from '../app/models/sensore.js';
+import Mungitura from '../app/models/munigitura.js';
+import Lavorazione from '../app/models/lavorazione.js';
+import LottoProdotto from '../app/models/lottoProdotto.js';
+import Evento from '../app/models/evento.js';
 
 // Carica le variabili d'ambiente dallo stesso .env usato dal server
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -130,6 +135,121 @@ const buildAnimaleFoto = ({ matricola, species }) => {
   return `https://placehold.co/640x480?text=${text}`;
 };
 
+const CAPACITA_INDOSSABILE = [
+  { tipoDato: 'temperatura', unitaMisura: '°C' },
+  { tipoDato: 'frequenza_cardiaca', unitaMisura: 'bpm' },
+  { tipoDato: 'livello_passi', unitaMisura: 'passi' },
+  { tipoDato: 'esposizione_solare', unitaMisura: 'ore' }
+];
+
+const CAPACITA_AMBIENTALE = [
+  { tipoDato: 'temperatura', unitaMisura: '°C' },
+  { tipoDato: 'posizione_gps', unitaMisura: 'coordinate' }
+];
+
+const CAPACITA_MUNGITURA = [
+  { tipoDato: 'peso', unitaMisura: 'litri' }
+];
+
+const CAPACITA_LAVORAZIONE = [
+  { tipoDato: 'peso', unitaMisura: 'chilogrammi' }
+];
+
+const sameCapacita = (left = [], right = []) => {
+  if (!Array.isArray(left) || !Array.isArray(right)) return false;
+  if (left.length !== right.length) return false;
+
+  const normalize = (items) => items
+    .map((item) => `${item.tipoDato}:${item.unitaMisura}`)
+    .sort();
+
+  const a = normalize(left);
+  const b = normalize(right);
+  return a.every((value, index) => value === b[index]);
+};
+
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+const EVENTI_SEED_MARKER = '[seed-eventi-main-v1]';
+
+const sanitizeLotToken = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase()
+  .replace(/[^A-Z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .slice(0, 16) || 'LOTTO';
+
+const buildSeedLotNumber = ({ lavorazione, index }) => {
+  const rawToken = lavorazione?.outputName || lavorazione?.nomeTemplate || lavorazione?.tipoLavorazione || 'lotto';
+  const token = sanitizeLotToken(rawToken);
+  return `LOT-${token}-${String(index + 1).padStart(3, '0')}`;
+};
+
+const asDateShifted = ({ daysAgo = 0, hour = 6, minute = 0 } = {}) => {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  date.setHours(hour, minute, 0, 0);
+  return date;
+};
+
+const sumMungitureQuantity = (items = []) => Number(items
+  .reduce((acc, item) => acc + (Number(item?.quantity) || 0), 0)
+  .toFixed(2));
+
+const cloneInputs = (inputs = []) => inputs.map((input) => ({
+  type: input.type,
+  name: input.name,
+  quantity: input.quantity,
+  unit: input.unit,
+  mungituraIds: Array.isArray(input.mungituraIds) ? input.mungituraIds : []
+}));
+
+const defaultFasiByTipo = {
+  'primo-sale': [
+    { name: 'Ricevimento', completed: true },
+    { name: 'Coagulazione', completed: true },
+    { name: 'Formatura', completed: true },
+    { name: 'Confezionamento', completed: true }
+  ],
+  formaggio: [
+    { name: 'Ricevimento', completed: true },
+    { name: 'Coagulazione', completed: true },
+    { name: 'Salatura', completed: true },
+    { name: 'Stagionatura', completed: true }
+  ],
+  yogurt: [
+    { name: 'Ricevimento', completed: true },
+    { name: 'Inoculo', completed: true },
+    { name: 'Fermentazione', completed: true },
+    { name: 'Confezionamento', completed: true }
+  ]
+};
+
+const buildEventsForYear = ({ year, ownerUserId, aziendaId, companyName }) => {
+  const monthLabels = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+
+  return monthLabels.map((label, month) => {
+    const startAt = new Date(Date.UTC(year, month, 12 + (month % 5), 8 + (month % 3), 0, 0));
+    const endAt = new Date(startAt.getTime() + (90 + (month % 2) * 30) * 60000);
+
+    return {
+      ownerUserId,
+      aziendaId,
+      title: `Controllo produzione ${label} ${year}`,
+      type: month % 2 === 0 ? 'produzione' : 'sanitario',
+      startAt,
+      endAt,
+      location: companyName,
+      locationAddress: 'Via della Campagna 1, Bergamo',
+      description: `${EVENTI_SEED_MARKER} Evento demo per calendario e filtri`,
+      reminderMinutes: 60,
+      visibility: month % 3 === 0 ? 'public' : 'private',
+      recurrenceType: 'single',
+      recurrenceInterval: 1
+    };
+  });
+};
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function seed() {
@@ -228,6 +348,423 @@ async function seed() {
     inseriti++;
   }
   console.log(`🐄  Animali inseriti: ${inseriti}  |  foto aggiornate: ${aggiornatiFoto}  |  già presenti (saltati): ${saltati}`);
+
+  // 4. Sensori IoT: un indossabile per ogni mucca + sensori aziendali per produzione/ambientale
+  const muccheAzienda = await Animale.find({
+    aziendaId: aziendaMandria._id,
+    species: 'mucca'
+  }).select('_id matricola name');
+
+  let sensoriCreati = 0;
+  let sensoriAggiornati = 0;
+  let sensoriRiutilizzati = 0;
+
+  for (const mucca of muccheAzienda) {
+    const nomeSensore = `Collare IoT - ${mucca.matricola}`;
+    const existing = await Sensore.findOne({ nome: nomeSensore, aziendaId: aziendaMandria._id });
+
+    if (existing) {
+      let changed = false;
+
+      if (existing.tipoDispositivo !== 'indossabile') {
+        existing.tipoDispositivo = 'indossabile';
+        changed = true;
+      }
+
+      if (String(existing.animaleId || '') !== String(mucca._id)) {
+        existing.animaleId = mucca._id;
+        changed = true;
+      }
+
+      if (existing.stato !== 'attivo') {
+        existing.stato = 'attivo';
+        changed = true;
+      }
+
+      if (!sameCapacita(existing.capacita, CAPACITA_INDOSSABILE)) {
+        existing.capacita = CAPACITA_INDOSSABILE;
+        changed = true;
+      }
+
+      if (changed) {
+        await existing.save();
+        sensoriAggiornati++;
+      } else {
+        sensoriRiutilizzati++;
+      }
+      continue;
+    }
+
+    await Sensore.create({
+      nome: nomeSensore,
+      tipoDispositivo: 'indossabile',
+      capacita: CAPACITA_INDOSSABILE,
+      stato: 'attivo',
+      aziendaId: aziendaMandria._id,
+      animaleId: mucca._id
+    });
+    sensoriCreati++;
+  }
+
+  const sensoriAziendaliSeed = [
+    {
+      nome: `Stazione Meteo - ${aziendaMandria.companyName}`,
+      tipoDispositivo: 'ambientale',
+      capacita: CAPACITA_AMBIENTALE,
+      animaleId: null
+    },
+    {
+      nome: `Misuratore Tank Latte - ${aziendaMandria.companyName}`,
+      tipoDispositivo: 'mungitura',
+      capacita: CAPACITA_MUNGITURA,
+      animaleId: null
+    },
+    {
+      nome: `Bilancia Lavorazione - ${aziendaMandria.companyName}`,
+      tipoDispositivo: 'lavorazione',
+      capacita: CAPACITA_LAVORAZIONE,
+      animaleId: null
+    }
+  ];
+
+  for (const payload of sensoriAziendaliSeed) {
+    const existing = await Sensore.findOne({ nome: payload.nome, aziendaId: aziendaMandria._id });
+
+    if (existing) {
+      let changed = false;
+
+      if (existing.tipoDispositivo !== payload.tipoDispositivo) {
+        existing.tipoDispositivo = payload.tipoDispositivo;
+        changed = true;
+      }
+
+      if (existing.stato !== 'attivo') {
+        existing.stato = 'attivo';
+        changed = true;
+      }
+
+      if (!sameCapacita(existing.capacita, payload.capacita)) {
+        existing.capacita = payload.capacita;
+        changed = true;
+      }
+
+      if (String(existing.animaleId || '') !== String(payload.animaleId || '')) {
+        existing.animaleId = payload.animaleId;
+        changed = true;
+      }
+
+      if (changed) {
+        await existing.save();
+        sensoriAggiornati++;
+      } else {
+        sensoriRiutilizzati++;
+      }
+      continue;
+    }
+
+    await Sensore.create({
+      ...payload,
+      stato: 'attivo',
+      aziendaId: aziendaMandria._id
+    });
+    sensoriCreati++;
+  }
+
+  console.log(`📡  Sensori IoT creati: ${sensoriCreati}  |  aggiornati: ${sensoriAggiornati}  |  già presenti (riutilizzati): ${sensoriRiutilizzati}`);
+
+  // 5. Mungiture demo (idempotente): prerequisito per legare il latte alle lavorazioni.
+  let mungiturePool = await Mungitura.find({
+    aziendaId: aziendaMandria._id,
+    status: 'completata'
+  })
+    .sort({ startedAt: -1, createdAt: -1 })
+    .limit(240)
+    .select('_id animaleId quantity unit status startedAt endedAt');
+
+  let mungitureCreateCount = 0;
+  if (mungiturePool.length === 0) {
+    const mucchePerMungiture = muccheAzienda.slice(0, 10);
+    const docs = [];
+    for (const [index, mucca] of mucchePerMungiture.entries()) {
+      for (let monthOffset = 0; monthOffset < 3; monthOffset += 1) {
+        const startedAt = asDateShifted({
+          daysAgo: (monthOffset * 14) + (index % 6) + 1,
+          hour: 5 + (index % 4),
+          minute: 10 + (monthOffset * 7)
+        });
+        const endedAt = new Date(startedAt.getTime() + (70 + (index % 5) * 8) * 60000);
+        docs.push({
+          aziendaId: aziendaMandria._id,
+          animaleId: mucca._id,
+          startedAt,
+          endedAt,
+          quantity: Number((16 + (index * 1.25) + (monthOffset * 0.9)).toFixed(2)),
+          unit: 'litri',
+          status: 'completata',
+          notes: '[seed] Mungitura demo per filiera latte'
+        });
+      }
+    }
+
+    if (docs.length > 0) {
+      await Mungitura.insertMany(docs, { ordered: true });
+      mungitureCreateCount = docs.length;
+    }
+
+    mungiturePool = await Mungitura.find({
+      aziendaId: aziendaMandria._id,
+      status: 'completata'
+    })
+      .sort({ startedAt: -1, createdAt: -1 })
+      .limit(240)
+      .select('_id animaleId quantity unit status startedAt endedAt');
+  }
+
+  console.log(`🥛  Mungiture disponibili per la filiera: ${mungiturePool.length}  |  create ora: ${mungitureCreateCount}`);
+
+  // 6. Lavorazioni operative demo (idempotente) e collegamento latte -> mungitureIds.
+  let lavorazioniOperative = await Lavorazione.find({
+    aziendaId: aziendaMandria._id,
+    isTemplate: false,
+    status: 'completata'
+  })
+    .sort({ startedAt: -1, createdAt: -1 })
+    .limit(24);
+
+  let lavorazioniCreateCount = 0;
+  if (lavorazioniOperative.length === 0 && mungiturePool.length > 0) {
+    let template = await Lavorazione.findOne({
+      aziendaId: aziendaMandria._id,
+      isTemplate: true,
+      nomeTemplate: 'Template seed filiera latte'
+    });
+
+    if (!template) {
+      template = await Lavorazione.create({
+        aziendaId: aziendaMandria._id,
+        tipoLavorazione: 'formaggio',
+        codiceTipoLav: 'B',
+        nomeTemplate: 'Template seed filiera latte',
+        isTemplate: true,
+        status: 'in_corso',
+        startedAt: asDateShifted({ daysAgo: 120, hour: 8, minute: 0 }),
+        notes: '[seed] Template per creare lavorazioni legate alle mungiture',
+        inputs: [
+          { type: 'latte', name: 'Latte crudo', quantity: 120, unit: 'litri' },
+          { type: 'additivo', name: 'Fermenti lattici', quantity: 0.8, unit: 'kg' }
+        ],
+        fasi: defaultFasiByTipo.formaggio,
+        outputName: 'Formaggio fresco seed',
+        outputUnit: 'kg'
+      });
+    }
+
+    const runsToCreate = Math.min(12, Math.floor(mungiturePool.length / 2) || 1);
+    for (let index = 0; index < runsToCreate; index += 1) {
+      const m1 = mungiturePool[index * 2] || mungiturePool[index] || null;
+      const m2 = mungiturePool[(index * 2) + 1] || null;
+      const linkedMungiture = [m1, m2].filter(Boolean);
+      if (!linkedMungiture.length) continue;
+
+      const latteQuantity = sumMungitureQuantity(linkedMungiture);
+      const startedAt = asDateShifted({ daysAgo: 20 - index, hour: 6 + (index % 5), minute: 20 });
+      const endedAt = new Date(startedAt.getTime() + (6 * 60 * 60000));
+
+      await Lavorazione.create({
+        aziendaId: aziendaMandria._id,
+        tipoLavorazione: template.tipoLavorazione,
+        codiceTipoLav: template.codiceTipoLav,
+        isTemplate: false,
+        templateId: template._id,
+        startedAt,
+        endedAt,
+        status: 'completata',
+        notes: '[seed] Lavorazione demo collegata a mungiture reali',
+        inputs: [
+          {
+            type: 'latte',
+            name: 'Latte da mungiture aziendali',
+            quantity: latteQuantity,
+            unit: 'litri',
+            mungituraIds: linkedMungiture.map((item) => item._id)
+          },
+          {
+            type: 'additivo',
+            name: 'Fermenti lattici',
+            quantity: 0.6,
+            unit: 'kg'
+          }
+        ],
+        fasi: defaultFasiByTipo.formaggio,
+        outputName: `Formaggio fresco batch ${String(index + 1).padStart(2, '0')}`,
+        outputQuantity: Number((latteQuantity * 0.23).toFixed(2)),
+        outputUnit: 'kg'
+      });
+
+      lavorazioniCreateCount += 1;
+    }
+
+    lavorazioniOperative = await Lavorazione.find({
+      aziendaId: aziendaMandria._id,
+      isTemplate: false,
+      status: 'completata'
+    })
+      .sort({ startedAt: -1, createdAt: -1 })
+      .limit(24);
+  }
+
+  let lavorazioniLinkedCount = 0;
+  if (mungiturePool.length > 0) {
+    for (const [index, lavorazione] of lavorazioniOperative.entries()) {
+      const inputs = cloneInputs(Array.isArray(lavorazione.inputs) ? lavorazione.inputs : []);
+      let changed = false;
+
+      let latteInput = inputs.find((item) => item.type === 'latte');
+      if (!latteInput) {
+        latteInput = {
+          type: 'latte',
+          name: 'Latte da mungiture aziendali',
+          quantity: 0,
+          unit: 'litri',
+          mungituraIds: []
+        };
+        inputs.unshift(latteInput);
+        changed = true;
+      }
+
+      if (!Array.isArray(latteInput.mungituraIds) || latteInput.mungituraIds.length === 0) {
+        const base = (index * 2) % mungiturePool.length;
+        const linked = [
+          mungiturePool[base],
+          mungiturePool[(base + 1) % mungiturePool.length]
+        ].filter(Boolean);
+
+        latteInput.mungituraIds = linked.map((item) => item._id);
+        latteInput.quantity = sumMungitureQuantity(linked);
+        latteInput.unit = 'litri';
+        latteInput.name = latteInput.name || 'Latte da mungiture aziendali';
+        changed = true;
+      }
+
+      if (changed) {
+        lavorazione.inputs = inputs;
+        await lavorazione.save();
+        lavorazioniLinkedCount += 1;
+      }
+    }
+  }
+
+  console.log(`🧀  Lavorazioni operative completate: ${lavorazioniOperative.length}  |  create ora: ${lavorazioniCreateCount}  |  collegate a mungiture ora: ${lavorazioniLinkedCount}`);
+
+  // 7. Lotti prodotto demo per tracciabilità allevatore (idempotente)
+  lavorazioniOperative = await Lavorazione.find({
+    aziendaId: aziendaMandria._id,
+    isTemplate: false,
+    status: 'completata'
+  })
+    .sort({ startedAt: -1, createdAt: -1 })
+    .limit(12)
+    .select('_id outputName outputQuantity outputUnit status nomeTemplate tipoLavorazione');
+
+  let lottiCreati = 0;
+  let lottiAggiornati = 0;
+  let lottiRiutilizzati = 0;
+
+  for (const [index, lavorazione] of lavorazioniOperative.entries()) {
+    const lotNumber = buildSeedLotNumber({ lavorazione, index });
+    const nomeProdotto = String(lavorazione.outputName || lavorazione.nomeTemplate || `Prodotto ${index + 1}`).trim();
+    const quantity = Number.isFinite(lavorazione.outputQuantity) ? lavorazione.outputQuantity : (120 + index * 15);
+    const unit = String(lavorazione.outputUnit || 'kg').trim() || 'kg';
+    const qrCodeValue = `${PUBLIC_BASE_URL}/tracciabilita.html?lotto=${encodeURIComponent(lotNumber)}`;
+
+    let existing = await LottoProdotto.findOne({ lotNumber });
+    if (!existing) {
+      existing = await LottoProdotto.findOne({ aziendaId: aziendaMandria._id, lavorazioneId: lavorazione._id });
+    }
+
+    if (existing) {
+      let changed = false;
+      if (String(existing.aziendaId) !== String(aziendaMandria._id)) {
+        existing.aziendaId = aziendaMandria._id;
+        changed = true;
+      }
+      if (String(existing.lavorazioneId) !== String(lavorazione._id)) {
+        existing.lavorazioneId = lavorazione._id;
+        changed = true;
+      }
+      if (existing.nomeProdotto !== nomeProdotto) {
+        existing.nomeProdotto = nomeProdotto;
+        changed = true;
+      }
+      if (existing.quantity !== quantity) {
+        existing.quantity = quantity;
+        changed = true;
+      }
+      if (existing.unit !== unit) {
+        existing.unit = unit;
+        changed = true;
+      }
+      if (existing.lotNumber !== lotNumber) {
+        existing.lotNumber = lotNumber;
+        changed = true;
+      }
+      if (existing.qrCodeValue !== qrCodeValue) {
+        existing.qrCodeValue = qrCodeValue;
+        changed = true;
+      }
+
+      if (changed) {
+        await existing.save();
+        lottiAggiornati++;
+      } else {
+        lottiRiutilizzati++;
+      }
+      continue;
+    }
+
+    await LottoProdotto.create({
+      aziendaId: aziendaMandria._id,
+      lavorazioneId: lavorazione._id,
+      nomeProdotto,
+      quantity,
+      unit,
+      lotNumber,
+      qrCodeValue,
+      qrCodeImage: ''
+    });
+    lottiCreati++;
+  }
+
+  console.log(`📦  Lotti demo creati: ${lottiCreati}  |  aggiornati: ${lottiAggiornati}  |  già presenti (riutilizzati): ${lottiRiutilizzati}`);
+
+  // 8. Eventi demo calendario (idempotente) nello stesso seed principale.
+  try {
+    const indexes = await Evento.collection.indexes();
+    const legacyGeoIndex = indexes.find(
+      (idx) => idx?.name === 'location_2dsphere' || idx?.key?.location === '2dsphere'
+    );
+    if (legacyGeoIndex?.name) {
+      await Evento.collection.dropIndex(legacyGeoIndex.name);
+      console.log(`🧹  Indice legacy rimosso: ${legacyGeoIndex.name}`);
+    }
+  } catch (indexError) {
+    console.warn('⚠️  Impossibile verificare/rimuovere indice legacy eventi:', indexError.message || indexError);
+  }
+
+  const deletedEventi = await Evento.deleteMany({
+    ownerUserId: user._id,
+    aziendaId: aziendaMandria._id,
+    description: { $regex: `^${EVENTI_SEED_MARKER}` }
+  });
+
+  const eventiDocs = [
+    ...buildEventsForYear({ year: 2024, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName }),
+    ...buildEventsForYear({ year: 2025, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName }),
+    ...buildEventsForYear({ year: 2026, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName })
+  ];
+
+  await Evento.insertMany(eventiDocs, { ordered: true });
+  console.log(`📅  Eventi demo inseriti: ${eventiDocs.length}  |  precedenti rimossi: ${deletedEventi.deletedCount}`);
 
   // ── Riepilogo credenziali ──────────────────────────────────────────────────
   console.log('\n📋  Riepilogo dati di test:');

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracciabilita Prodotto - MuccApp</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-container">
+    <section class="section" id="traceSection">
+      <h2>TRACCIABILITA PRODOTTO</h2>
+      <p class="status" id="traceIntro">Inserisci un numero lotto o usa il QR code sul prodotto.</p>
+
+      <div class="form-actions-inline trace-search-row">
+        <input type="text" id="lotNumberInput" placeholder="Es. LOT-001" aria-label="Numero lotto">
+        <button type="button" id="searchTraceBtn">Cerca</button>
+      </div>
+
+      <p id="traceStatus" class="status"></p>
+
+      <section id="traceResult" class="hidden">
+        <div class="card trace-card">
+          <h3>Dati lotto</h3>
+          <p><strong>Azienda produttrice:</strong> <span id="lotProducerValue">-</span></p>
+          <p><strong>Lotto:</strong> <span id="lotNumberValue">-</span></p>
+          <p><strong>Prodotto:</strong> <span id="lotProductValue">-</span></p>
+          <p><strong>Quantita:</strong> <span id="lotQuantityValue">-</span></p>
+          <p><strong>Creato il:</strong> <span id="lotCreatedAtValue">-</span></p>
+        </div>
+
+        <div class="card trace-card">
+          <h3>Timeline filiera</h3>
+          <ul id="traceTimelineList"></ul>
+        </div>
+
+        <div class="card trace-card trace-card-last">
+          <h3>Benessere animale</h3>
+          <div id="traceAnimalsList"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/tracciabilita.js"></script>
+</body>
+</html>

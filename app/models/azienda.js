@@ -14,6 +14,12 @@ const aziendaSchema = new Schema({
         required: true,
         index: true
     },
+    authorizedVeterinarianIds: [{
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: false,
+        index: true
+    }],
     // campo obbligatorio 
     vatNumber: {
         type: String,

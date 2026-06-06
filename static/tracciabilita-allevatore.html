@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracciabilita Allevatore - MuccApp</title>
+  <script src="/auth-control.js"></script>
+  <script>
+    protectRoute(['allevatore', 'veterinario']);
+  </script>
+    <script src="/menu-allevatore.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-container">
+    <div id="allevatoreHeaderMount"></div>
+    <script>
+      window.renderAllevatoreHeader({
+        showHomeLink: false,
+        showEventMenu: false,
+      });
+    </script>
+
+    <div class="secondary-home-bar">
+      <a href="/home-allevatore.html" class="nav-home-btn">← Torna alla Home</a>
+    </div>
+
+    <section class="section" id="traceFarmSection">
+      <h2>TRACCIABILITA ALLEVATORE</h2>
+      <p class="status">Seleziona un lotto dall'elenco per visualizzare timeline e dettagli completi.</p>
+
+      <div class="form-actions-inline trace-search-row">
+        <input type="text" id="farmLotFilterInput" placeholder="Filtra per ID lotto, numero lotto o prodotto" aria-label="Filtro lotti">
+        <button type="button" id="farmReloadLotsBtn">Aggiorna elenco</button>
+      </div>
+
+      <p id="farmTraceStatus" class="status"></p>
+
+      <div class="card trace-card">
+        <h3>STORIA LOTTI E STATO CORRENTE</h3>
+        <ul id="farmLotsList" class="trace-history-list"></ul>
+      </div>
+
+      <div id="farmTraceDialog" class="trace-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="farmDialogTitle">
+        <div class="trace-dialog-content">
+          <div class="trace-dialog-header">
+            <div>
+              <h3 id="farmDialogTitle">Dettaglio tracciabilità lotto</h3>
+              <p id="farmDialogSubtitle" class="status"></p>
+            </div>
+            <button type="button" id="farmCloseTraceDialogBtn">Chiudi</button>
+          </div>
+
+          <div class="trace-dialog-body">
+            <aside class="trace-dialog-tree">
+              <h4>Timeline</h4>
+              <ul id="farmTimelineList" class="trace-history-list"></ul>
+
+              <h4>Mungiture</h4>
+              <ul id="farmMungitureList" class="trace-history-list"></ul>
+
+              <h4>Animali</h4>
+              <ul id="farmAnimalsList" class="trace-history-list"></ul>
+            </aside>
+
+            <section class="trace-dialog-detail">
+              <div class="card trace-card">
+                <h4>Dati lotto</h4>
+                <p><strong>ID lotto:</strong> <span id="farmLottoId">-</span></p>
+                <p><strong>Azienda:</strong> <span id="farmAziendaId">-</span></p>
+                <p><strong>Numero lotto:</strong> <span id="farmLotNumber">-</span></p>
+                <p><strong>Prodotto:</strong> <span id="farmLotProduct">-</span></p>
+                <p><strong>Quantita:</strong> <span id="farmLotQuantity">-</span></p>
+                <p><strong>Creato il:</strong> <span id="farmLotCreatedAt">-</span></p>
+                <div class="form-actions-inline" style="margin-top:10px;">
+                  <button type="button" id="farmPrintLabelBtn">Ristampa etichetta</button>
+                </div>
+              </div>
+              <div id="farmDetailPanel" class="card trace-card trace-card-last"></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/azienda-switcher.js"></script>
+  <script src="/tracciabilita-allevatore.js"></script>
+  <script src="/logout.js"></script>
+</body>
+</html>

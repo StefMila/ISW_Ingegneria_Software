@@ -13,6 +13,7 @@ import puntiVenditaRoutes from './routes/puntiVendita.js';
 import mungitureRoutes from './routes/mungiture.js';
 import lottiProdottoRoutes from './routes/lottiProdotto.js';
 import lavorazioniRoutes from './routes/lavorazioni.js';
+import { publicTracciabilitaRoutes, tracciabilitaRoutes } from './routes/tracciabilita.js';
 
 import './services/mqttService.js'; // Fa partire la connessione e la simulazione MQTT all'avvio
 import iotSensoriRoutes from './routes/sensori.js';
@@ -42,6 +43,8 @@ app.use('/api/mungiture', mungitureRoutes);
 app.use('/api/lotti-prodotto', lottiProdottoRoutes);
 app.use('/api/lavorazioni', lavorazioniRoutes);
 app.use('/api/iot', iotSensoriRoutes);
+app.use('/api/tracciabilita/public', publicTracciabilitaRoutes);
+app.use('/api/tracciabilita', tracciabilitaRoutes);
 app.use('/api/aziende/:aziendaId/eventi', publicEventiRoutes);
 app.use('/api/aziende/:aziendaId/eventi', aziendeEventiRoutes);
 app.use('/api/eventi', publicEventiRoutes);

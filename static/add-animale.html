@@ -66,8 +66,33 @@
 
                  <label for="note">Note:</label>
                 <textarea id="note" name="note" placeholder="Inserisci eventuali note"></textarea>
-                <button type="submit">Salva Animale</button>
+                <p id="availableWearableSensorsInfo" class="status">Sensori indossabili disponibili: ...</p>
+
+                <div class="form-actions-inline">
+                    <button type="submit" id="saveAnimaleBtn">Salva Animale</button>
+                </div>
             </form>
+
+            <section id="wearableWizard" class="section hidden">
+                <h3>Configura sensore indossabile (Step 2)</h3>
+                <p id="wearableWizardAnimalInfo" class="status"></p>
+
+                <label for="wizardSensorName">Nome sensore:</label>
+                <input type="text" id="wizardSensorName" name="wizardSensorName" placeholder="Es. Collare IoT - ITA00001">
+
+                <label for="wizardSensorState">Stato iniziale sensore:</label>
+                <select id="wizardSensorState" name="wizardSensorState">
+                    <option value="attivo" selected>Attivo</option>
+                    <option value="offline">Offline</option>
+                </select>
+
+                <div class="form-actions-inline">
+                    <button type="button" id="wizardCreateSensorBtn">Crea sensore e termina</button>
+                    <button type="button" id="wizardSkipSensorBtn">Salta per ora</button>
+                </div>
+
+                <p id="wearableWizardMessage" class="status"></p>
+            </section>
             <p id="addAnimaleMessage" class="status"></p>
             
         </section>
