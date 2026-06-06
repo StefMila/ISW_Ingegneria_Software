@@ -455,7 +455,12 @@ export const getLavorazioni = async (req, res) => {
 //GET /api/lavorazioni/search - visualizzazione del singolo template a partire dal suo codiceLavorazione
 export const getTemplateByCodiceLavorazione = async (req, res) => {
 	try {
-		const { queryTemplate, codiceLavorazione, descrizioneTemplate } = req.query;
+		const { queryTemplate, codiceLavorazione, descrizioneTemplate, aziendaId } = req.query;
+
+		if (!aziendaId) {
+            return res.status(400).json({ message: 'Il parametro aziendaId è obbligatorio' });
+        }
+
 		const queryValue = typeof queryTemplate === 'string' ? queryTemplate.trim() : '';
 		const codiceValue = typeof codiceLavorazione === 'string' ? codiceLavorazione.trim() : '';
 		const descrizioneValue = typeof descrizioneTemplate === 'string' ? descrizioneTemplate.trim() : '';
@@ -470,6 +475,7 @@ export const getTemplateByCodiceLavorazione = async (req, res) => {
 		}
 
 		const filter = {
+			aziendaId: aziendaId,
 			isTemplate: true
 		};
 

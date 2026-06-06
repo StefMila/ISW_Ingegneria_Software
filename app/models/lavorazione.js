@@ -164,12 +164,21 @@ lavorazioneSchema.pre('validate', async function (next) {
     } else {
         // il metodo genera un nuovo codiceLavorazione solo se la nuova lavorazione è un template
         if (this.isNew) {
+
+            if (!this.aziendaId) {
+                this.invalidate('aziendaId', 'aziendaId è richiesto per generare il codice lavorazione');
+                return new mongoose.Error.ValidationError(this);
+            }
+
             try {
                 // Genera codiceLavorazione univoco basato su codiceTipoProd, codiceTipoLav e numero progressivo
                 const codiceTipoProd = 'A'; // per ora tutte le lavorazioni sono di tipo 'A' (latticini), ma in futuro si può estendere con altri tipi di prodotto
                 const codiceTipoLav = this.codiceTipoLav; // es. 'A' per 'primo-sale'
+
+                const counterId = `counter_${this.aziendaId}_${codiceTipoLav}`;
+
                 const counterDoc = await mongoose.model('Counter').findOneAndUpdate(
-                    { _id: `counter_${codiceTipoLav}` }, 
+                    { _id: counterId }, 
                     { $inc: { seq: 1 } }, 
                     { returnDocument: 'after', upsert: true }
                 );
@@ -185,7 +194,7 @@ lavorazioneSchema.pre('validate', async function (next) {
 });
 
 lavorazioneSchema.index(
-    { codiceLavorazione: 1 }, 
+    { aziendaId: 1, codiceLavorazione: 1 }, 
     { 
         unique: true, 
         partialFilterExpression: { isTemplate: true } 

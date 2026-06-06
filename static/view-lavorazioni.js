@@ -63,8 +63,15 @@ const getInputSummary = (item) => {
 const getNotes = (item) => item.notes || '—';
 
 const getOutputName = (item) => item.outputName || '—';
-const getOutputQuantity = (item) => item.outputQuantity || '—';
-const getOutputUnit = (item) => item.outputUnit || '—';
+const getQuantityLabel = (item) => {
+    if(!item.outputQuantity || typeof item.outputQuantity !== 'number'){
+        if (!item.outputUnit || typeof item.outputUnit !== 'string'){
+            return `—`;
+        }
+        return `— ${item.outputUnit}`;
+    }
+    return `${item.outputQuantity} ${item.outputUnit}`;
+}
 const canEditFasi = (item) => !item?.isTemplate && item?.status === 'in_corso';
 const hasSequentialCompletedFasi = (fasi = []) => {
     let foundIncomplete = false;
@@ -269,8 +276,7 @@ const rowTemplateHtml = (item) => `
 const rowLavorazioneHtml = (item) => `
     <td>${escapeHtml(formatDateTime(item.startedAt))}</td>
     <td>${escapeHtml(getCodiceLavorazione(item))}</td>
-    <td>${escapeHtml(getOutputQuantity(item))}</td>
-    <td>${escapeHtml(getOutputUnit(item))}</td>
+    <td>${escapeHtml(getQuantityLabel(item))}</td>
     <td>${escapeHtml(getStatoLabel(item.status))}</td>
     <td>${escapeHtml(getNotes(item))}</td>
     <td>
