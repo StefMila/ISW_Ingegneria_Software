@@ -35,4 +35,12 @@ if (logoutButton) {
         }
     });
 }
-                
+
+// Forzo il ricaricamento della pagina una volta fatto click sul pulsante "<-" (Indietro) del browser
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted || window.performance && window.performance.navigation.type === 2) {
+        if (!localStorage.getItem('userToken')) {
+            window.location.replace('login.html');
+        }
+    }
+});

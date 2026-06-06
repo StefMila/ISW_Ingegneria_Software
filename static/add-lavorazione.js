@@ -297,6 +297,7 @@ if(searchLavorazioneForm){
         if (!searchLavorazioneMessage) return;
 
         const ricercaTemplate = getTrimmedValue('ricercaTemplate');
+        const aziendaId = (localStorage.getItem('selectedAziendaId') || '').trim();
 
         searchLavorazioneMessage.style.color = 'red';
         searchLavorazioneMessage.textContent = '';
@@ -308,9 +309,15 @@ if(searchLavorazioneForm){
             return;
         }
 
+        if (!aziendaId) {
+            searchLavorazioneMessage.textContent = 'Seleziona un\'azienda prima di effettuare la ricerca';
+            return;
+        }
+
         try{ 
             const params = new URLSearchParams();
             params.set('queryTemplate', ricercaTemplate);
+            params.set('aziendaId', aziendaId);
 
             const response = await fetch(`/api/lavorazioni/search?${params.toString()}`, {
                 headers: {
