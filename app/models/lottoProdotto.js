@@ -71,6 +71,31 @@ const lottoProdottoSchema = new mongoose.Schema({
         type: String,
         required: false,
         trim: true
+    },
+    labelsPrinted: {
+        type: Boolean,
+        required: true,
+        default: false,
+        index: true
+    },
+    labelsPrintedCount: {
+        type: Number,
+        required: true,
+        default: 0,
+        min: 0
+    },
+    labelsLastPrintedAt: {
+        type: Date,
+        required: false
+    },
+    labelsLastExpiryDate: {
+        type: Date,
+        required: false
+    },
+    labelsLastPrintCopies: {
+        type: Number,
+        required: false,
+        min: 1
     }
 }, {
     timestamps: true

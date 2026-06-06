@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import Sensore from '../models/sensore.js';
+import Animale from '../models/animale.js';
 import { checkAuth, checkUserType } from './auth.js';
 import { assertAziendaOwnedByUser } from './aziende.js';
 
@@ -79,6 +80,75 @@ router.post('/sensori', checkAuth, checkUserType(['allevatore']), async (req, re
         });
     } catch (error) {
         console.error("Errore durante la registrazione del sensore:", error);
+        return res.status(500).json({ message: 'Errore interno del server' });
+    }
+});
+
+// Associa automaticamente il primo sensore indossabile disponibile a un animale.
+router.patch('/sensori/auto-associa-indossabile', checkAuth, checkUserType(['allevatore']), async (req, res) => {
+    try {
+        const { aziendaId, animaleId } = req.body;
+
+        if (!aziendaId || !animaleId) {
+            return res.status(400).json({ message: 'aziendaId e animaleId sono obbligatori' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
+            return res.status(400).json({ message: 'aziendaId non è un ObjectId valido' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(animaleId)) {
+            return res.status(400).json({ message: 'animaleId non è un ObjectId valido' });
+        }
+
+        const ownership = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
+        if (!ownership.ok) {
+            return res.status(ownership.status).json({ message: ownership.message });
+        }
+
+        const animal = await Animale.findById(animaleId).select('_id aziendaId');
+        if (!animal) {
+            return res.status(404).json({ message: 'Animale non trovato' });
+        }
+
+        if (String(animal.aziendaId) !== String(aziendaId)) {
+            return res.status(403).json({ message: 'Animale non associato a questa azienda' });
+        }
+
+        const alreadyAssigned = await Sensore.findOne({
+            aziendaId,
+            tipoDispositivo: 'indossabile',
+            animaleId
+        });
+
+        if (alreadyAssigned) {
+            return res.status(200).json({
+                message: 'Animale ha già un sensore indossabile associato',
+                item: alreadyAssigned
+            });
+        }
+
+        const assigned = await Sensore.findOneAndUpdate(
+            {
+                aziendaId,
+                tipoDispositivo: 'indossabile',
+                stato: 'attivo',
+                $or: [{ animaleId: null }, { animaleId: { $exists: false } }]
+            },
+            { $set: { animaleId } },
+            { new: true, sort: { createdAt: 1 } }
+        );
+
+        if (!assigned) {
+            return res.status(404).json({ message: 'Nessun sensore indossabile disponibile' });
+        }
+
+        return res.status(200).json({
+            message: 'Sensore indossabile associato con successo',
+            item: assigned
+        });
+    } catch (error) {
+        console.error('Errore durante l\'associazione automatica del sensore:', error);
         return res.status(500).json({ message: 'Errore interno del server' });
     }
 });

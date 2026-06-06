@@ -56,7 +56,8 @@ Server: `http://localhost:3000`
 - `npm start`: avvia il server in modalita produzione
 - `npm test`: esegue i test con Jest
 - `npm run gen-env`: aggiorna la specifica env
-- `npm run seed`: popola il database con dati di test
+- `npm run seed`: popola il database con dati di test completi (utenti, aziende, animali, mungiture, lavorazioni, lotti, eventi)
+- `npm run seed:lavorazioni`: popola template/run lavorazioni demo
 - `npm run seed:mungiture`: popola mungiture demo distribuite su piu anni (2024-2026)
 - `npm run seed:eventi`: popola eventi demo distribuiti su piu anni (2024-2026)
 
@@ -68,7 +69,15 @@ Esegui:
 npm run seed
 ```
 
-Lo script crea/riutilizza un utente allevatore di test e popola aziende/animali.
+Lo script crea/riutilizza la catena base completa della filiera:
+- utenti
+- aziende
+- animali (mucche)
+- mungiture completate
+- lavorazioni completate con input latte collegato tramite `inputs[].mungituraIds`
+- lotti prodotto in output dalle lavorazioni
+
+Se nel database esistono già lavorazioni completate senza link alle mungiture, il seed prova ad allinearle aggiungendo il collegamento nel campo `mungituraIds` dell'input `latte`.
 Credenziali principali seed:
 | Tipo         | Email                       | Password     |
 |--------------|-----------------------------|--------------|
@@ -77,7 +86,7 @@ Credenziali principali seed:
 | veterinario  | veterinario@muccapp.it      | Password123! |
 | consumatore  | consumatore@muccapp.it      | Password123! |
 
-### Seed modulari per dominio
+### Seed modulari per dominio (opzionali)
 
 Per avere dati realistici e verificare grafici/filtri, sono disponibili seed separati:
 
@@ -90,7 +99,7 @@ Per avere dati realistici e verificare grafici/filtri, sono disponibili seed sep
 
 Entrambi i seed sono idempotenti: rimuovono prima i dati demo creati da seed precedenti e poi li reinseriscono.
 
-Ordine consigliato:
+Ordine consigliato (se usi il seed principale, basta il primo comando):
 
 ```bash
 npm run seed
@@ -98,7 +107,7 @@ npm run seed:mungiture
 npm run seed:eventi
 ```
 
-Nota: `seed:mungiture` e `seed:eventi` richiedono che il seed base (`npm run seed`) sia gia stato eseguito almeno una volta.
+Nota: `seed:mungiture`, `seed:lavorazioni` e `seed:eventi` sono script opzionali di dominio e richiedono che il seed base (`npm run seed`) sia gia stato eseguito almeno una volta.
 
 ## Documentazione API
 

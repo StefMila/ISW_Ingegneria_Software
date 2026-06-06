@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crea Etichette - MuccApp</title>
+  <script src="/auth-control.js"></script>
+  <script>
+    protectRoute(['allevatore']);
+  </script>
+  <script src="/menu-allevatore.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-container">
+    <div id="allevatoreHeaderMount"></div>
+    <script>
+      window.renderAllevatoreHeader({
+        showHomeLink: false,
+        showEventMenu: false,
+      });
+    </script>
+
+    <div class="secondary-home-bar">
+      <a href="/home-allevatore.html" class="nav-home-btn">← Torna alla Home</a>
+    </div>
+
+    <section class="section" id="labelBuilderSection">
+      <h2>CREA ETICHETTE</h2>
+      <p class="status">3 step: selezione lotti, impostazione scadenza/copie, stampa etichette termiche 58x40 mm.</p>
+
+      <div class="label-stepper" aria-label="Step creazione etichette">
+        <button type="button" class="label-step is-active" id="labelStep1Btn" data-step="1">1. Seleziona lotti</button>
+        <button type="button" class="label-step" id="labelStep2Btn" data-step="2">2. Parametri etichette</button>
+        <button type="button" class="label-step" id="labelStep3Btn" data-step="3">3. Anteprima e stampa</button>
+      </div>
+
+      <p id="labelBuilderStatus" class="status"></p>
+
+      <section id="labelStep1" class="card trace-card label-step-panel">
+        <h3>Step 1 - Filtra e seleziona lotti</h3>
+        <div class="form-actions-inline trace-search-row">
+          <input type="text" id="labelLotsFilterInput" placeholder="Filtra per numero lotto o prodotto" aria-label="Filtro lotti etichette">
+          <input type="date" id="labelCreatedFromInput" aria-label="Creato dal">
+          <input type="date" id="labelCreatedToInput" aria-label="Creato al">
+          <button type="button" id="labelLotsReloadBtn">Aggiorna elenco</button>
+        </div>
+
+        <div class="label-table-wrap">
+          <table class="label-lots-table" aria-label="Tabella lotti">
+            <thead>
+              <tr>
+                <th scope="col">Sel.</th>
+                <th scope="col">Numero lotto</th>
+                <th scope="col">Prodotto</th>
+                <th scope="col">Creato il</th>
+                <th scope="col">Stampa etichette</th>
+              </tr>
+            </thead>
+            <tbody id="labelLotsTableBody"></tbody>
+          </table>
+        </div>
+
+      </section>
+
+      <section id="labelStep2" class="card trace-card label-step-panel hidden">
+        <h3>Step 2 - Scadenza e copie per lotto</h3>
+        <div class="label-table-wrap">
+          <table class="label-lots-table" aria-label="Parametri etichette lotto">
+            <thead>
+              <tr>
+                <th scope="col">Numero lotto</th>
+                <th scope="col">Prodotto</th>
+                <th scope="col">Scadenza</th>
+                <th scope="col">Copie</th>
+              </tr>
+            </thead>
+            <tbody id="labelConfigTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="labelStep3" class="card trace-card label-step-panel hidden">
+        <h3>Step 3 - Anteprima e stampa</h3>
+        <p><strong>Azienda produttrice:</strong> <span id="labelProducerName">-</span></p>
+        <p><strong>Totale etichette da stampare:</strong> <span id="labelTotalCount">0</span></p>
+        <div id="labelPreviewGrid" class="label-preview-grid"></div>
+      </section>
+
+      <div class="form-actions-inline label-actions-row">
+        <button type="button" id="labelPrevBtn">Indietro</button>
+        <button type="button" id="labelNextBtn">Avanti</button>
+        <button type="button" id="labelPrintBtn" class="hidden">Stampa etichette</button>
+      </div>
+
+      <div id="labelLotDetailCard" class="trace-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="labelReprintDialogTitle">
+        <div class="trace-dialog-content">
+          <div class="trace-dialog-header">
+            <div>
+              <h3 id="labelReprintDialogTitle">Dettaglio lotto e ristampa</h3>
+              <p class="status">Ristampa rapida</p>
+            </div>
+            <button type="button" id="labelCloseReprintDialogBtn">Chiudi</button>
+          </div>
+
+          <div class="trace-dialog-body">
+            <section class="trace-dialog-detail" style="width:100%">
+              <div class="card trace-card">
+                <p><strong>Stato stampa:</strong> <span id="labelDetailPrintedStatus">-</span></p>
+                <div class="form-actions-inline trace-search-row">
+                  <input type="date" id="labelDetailExpiryInput" aria-label="Scadenza ristampa">
+                  <input type="number" id="labelDetailCopiesInput" min="1" max="200" step="1" value="1" aria-label="Copie ristampa">
+                  <button type="button" id="labelDetailReprintBtn">Ristampa etichette</button>
+                </div>
+
+                <article class="label-preview-card label-reprint-preview-card">
+                  <p><strong>Azienda:</strong> <span id="labelDetailProducer">-</span></p>
+                  <p><strong>Lotto:</strong> <span id="labelDetailLotNumber">-</span></p>
+                  <p><strong>Prodotto:</strong> <span id="labelDetailProduct">-</span></p>
+                  <p><strong>Creato:</strong> <span id="labelDetailCreatedAt">-</span></p>
+                  <p><strong>Scadenza:</strong> <span id="labelDetailExpiryText">-</span></p>
+                  <img id="labelDetailQrImage" alt="QR lotto" class="hidden">
+                  <p id="labelDetailQrMissing" class="label-not-printed hidden">QR non disponibile</p>
+                </article>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/azienda-switcher.js"></script>
+  <script src="/crea-etichette.js"></script>
+  <script src="/logout.js"></script>
+</body>
+</html>

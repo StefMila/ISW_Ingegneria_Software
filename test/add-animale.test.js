@@ -17,6 +17,10 @@ describe('US13 - Add Animale - pagina e script', () => {
     expect(response.text).toContain('id="nomeAnimale"');
     expect(response.text).toContain('id="species"');
     expect(response.text).toContain('id="sesso"');
+    expect(response.text).toContain('id="availableWearableSensorsInfo"');
+    expect(response.text).toContain('id="wearableWizard"');
+    expect(response.text).toContain('id="wizardCreateSensorBtn"');
+    expect(response.text).toContain('id="wizardSkipSensorBtn"');
     expect(response.text).toContain('id="addAnimaleMessage"');
   });
 
@@ -34,6 +38,11 @@ describe('US13 - Add Animale - pagina e script', () => {
       .expect(200);
 
     expect(response.text).toContain('/api/aziende/${aziendaId}/animali');
+    expect(response.text).toContain('/api/iot/sensori?aziendaId=');
+    expect(response.text).toContain('/api/iot/sensori');
+    expect(response.text).toContain('step 2');
+    expect(response.text).toContain('Sensori indossabili disponibili:');
+    expect(response.text).toContain('Animale registrato con successo. Sensore indossabile creato e associato.');
     expect(response.text).toContain('La matricola è obbligatoria');
     expect(response.text).toContain('Il nome è obbligatorio');
     expect(response.text).toContain('Errore di connessione al server');

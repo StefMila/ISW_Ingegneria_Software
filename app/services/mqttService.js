@@ -1,5 +1,6 @@
 import mqtt from 'mqtt';
 import Sensore from '../models/sensore.js';
+import IotDailyStat from '../models/iotDailyStat.js';
 
 // Connessione a un broker MQTT pubblico di test
 const client = process.env.NODE_ENV !== 'test' 
@@ -10,6 +11,117 @@ const client = process.env.NODE_ENV !== 'test'
 export const ultimeLettureIot = new Map();
 
 const TOPIC_BASE = 'unitn/muccapp/allevamento_smart/sensori';
+
+const BENESSERE_KEYS = {
+    steps: 'livello_passi',
+    outdoor: 'esposizione_solare',
+    temperature: 'temperatura',
+    bpm: 'frequenza_cardiaca'
+};
+
+const asNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const startOfUtcDay = (date = new Date()) => {
+    const day = new Date(date);
+    day.setUTCHours(0, 0, 0, 0);
+    return day;
+};
+
+const phaseFromSensorType = (sensorType) => {
+    switch (sensorType) {
+        case 'indossabile':
+            return 'benessere';
+        case 'mungitura':
+            return 'mungitura';
+        case 'lavorazione':
+            return 'lavorazione';
+        case 'ambientale':
+            return 'ambientale';
+        case 'stoccaggio':
+            return 'stoccaggio';
+        default:
+            return 'sconosciuta';
+    }
+};
+
+const applyMetricValue = (window, value, { cumulative = false } = {}) => {
+    if (value === null) {
+        return;
+    }
+
+    if (!Number.isFinite(window.first)) {
+        window.first = value;
+    }
+
+    window.last = value;
+    window.min = Number.isFinite(window.min) ? Math.min(window.min, value) : value;
+    window.max = Number.isFinite(window.max) ? Math.max(window.max, value) : value;
+    window.sum = Number.isFinite(window.sum) ? window.sum + value : value;
+    window.count = Number.isFinite(window.count) ? window.count + 1 : 1;
+
+    if (cumulative && window.last < window.first) {
+        // Se il contatore del dispositivo viene resettato, riallineiamo il baseline giornaliero.
+        window.first = window.last;
+    }
+};
+
+const updateDailyAggregate = async (sensoreId, misurazioni) => {
+    try {
+        const sensore = await Sensore.findById(sensoreId)
+            .select('_id aziendaId animaleId tipoDispositivo stato');
+
+        if (!sensore || sensore.stato !== 'attivo' || !sensore.animaleId || !sensore.aziendaId) {
+            return;
+        }
+
+        const steps = asNumber(misurazioni?.[BENESSERE_KEYS.steps]);
+        const outdoor = asNumber(misurazioni?.[BENESSERE_KEYS.outdoor]);
+        const temperature = asNumber(misurazioni?.[BENESSERE_KEYS.temperature]);
+        const bpm = asNumber(misurazioni?.[BENESSERE_KEYS.bpm]);
+
+        if (steps === null && outdoor === null && temperature === null && bpm === null) {
+            return;
+        }
+
+        const day = startOfUtcDay(new Date());
+        let stat = await IotDailyStat.findOne({ sensoreId: sensore._id, day });
+        if (!stat) {
+            stat = new IotDailyStat({
+                aziendaId: sensore.aziendaId,
+                animaleId: sensore.animaleId,
+                sensoreId: sensore._id,
+                day,
+                processPhase: phaseFromSensorType(sensore.tipoDispositivo)
+            });
+        }
+
+        stat.aziendaId = sensore.aziendaId;
+        stat.animaleId = sensore.animaleId;
+        stat.processPhase = phaseFromSensorType(sensore.tipoDispositivo);
+
+        applyMetricValue(stat.metrics.steps, steps, { cumulative: true });
+        applyMetricValue(stat.metrics.outdoor, outdoor, { cumulative: true });
+        applyMetricValue(stat.metrics.temperature, temperature);
+        applyMetricValue(stat.metrics.bpm, bpm);
+
+        if (steps !== null && steps < 2800) {
+            stat.alerts.lowActivityCount += 1;
+        }
+        if (temperature !== null && temperature > 39.5) {
+            stat.alerts.highTemperatureCount += 1;
+        }
+        if (bpm !== null && bpm > 100) {
+            stat.alerts.highBpmCount += 1;
+        }
+
+        await stat.save();
+    } catch (error) {
+        console.error('Errore aggiornamento storico IoT giornaliero:', error.message);
+    }
+};
 
 client.on('connect', () => {
     console.log('=== Connesso con successo al Broker MQTT ===');
@@ -26,7 +138,7 @@ client.on('connect', () => {
 });
 
 // Ricezione e parsing dati MQTT
-client.on('message', (topic, message) => {
+client.on('message', async (topic, message) => {
     try {
         const partiTopic = topic.split('/');
         const sensoreId = partiTopic[4];
@@ -36,6 +148,8 @@ client.on('message', (topic, message) => {
             dati: misurazioni,
             timestamp: new Date()
         });
+
+        await updateDailyAggregate(sensoreId, misurazioni);
     } catch (error) {
         console.error('Errore nel parsing JSON MQTT:', error.message);
     }
