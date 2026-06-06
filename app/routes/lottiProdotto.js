@@ -90,6 +90,7 @@ export const createLottoProdotto = async (req, res) => {
 export const updateLottoProdotto = async (req, res) => {
 	try {
 		const { id } = req.params;
+		// campi aggiornabili: lavorazioneId, nomeProdotto, quantity, unit, lotNumber. No QrCode, che viene rigenerato se cambia il lotNumber
 		const {
 			lavorazioneId,
 			nomeProdotto,
