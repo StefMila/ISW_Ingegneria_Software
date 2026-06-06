@@ -17,6 +17,7 @@ import path from 'node:path';
 
 import User from '../app/models/user.js';
 import azienda from '../app/models/azienda.js';
+import PuntoVendita from '../app/models/puntoVendita.js';
 import Animale from '../app/models/animale.js';
 import Sensore from '../app/models/sensore.js';
 import Mungitura from '../app/models/munigitura.js';
@@ -72,26 +73,89 @@ const seedAziendeAllevatore = [
     companyName: 'Azienda Agricola Test',
     vatNumber: 'IT12345678901',
     address: 'Via della Campagna 1, 24100 Bergamo BG',
+    geo: { lat: 45.6983, lng: 9.6773 },
     emailAzienda: 'info@agricolatest.it',
     phoneNumber: '035 123456',
+    city: 'Bergamo',
+    province: 'BG',
+    country: 'Italia',
     categories: ['latte', 'formaggi'],
   },
   {
     companyName: 'Fattoria Pianura',
     vatNumber: 'IT12345678902',
     address: 'Via dei Prati 12, 24100 Bergamo BG',
+    geo: { lat: 45.6892, lng: 9.7016 },
     emailAzienda: 'contatti@fattoriapianura.it',
     phoneNumber: '035 654321',
+    city: 'Bergamo',
+    province: 'BG',
+    country: 'Italia',
     categories: ['carne', 'salumi'],
   },
   {
     companyName: 'Cascina Colle Verde',
     vatNumber: 'IT12345678903',
     address: 'Strada del Colle 7, 24100 Bergamo BG',
+    geo: { lat: 45.7081, lng: 9.6594 },
     emailAzienda: 'info@colleverde.it',
     phoneNumber: '035 987654',
+    city: 'Bergamo',
+    province: 'BG',
+    country: 'Italia',
     categories: ['uova', 'yogurt'],
   },
+];
+
+const seedPuntiVendita = [
+  {
+    nomePunto: 'Caseificio Centro Bergamo',
+    indirizzo: 'Via XX Settembre 45, 24122 Bergamo BG',
+    geo: { lat: 45.6958, lng: 9.6688 },
+    city: 'Bergamo',
+    province: 'BG',
+    categories: ['formaggio', 'latte'],
+    description: 'Punto vendita seed in centro citta con prodotti caseari locali.',
+    emailPunto: 'centro.bergamo@muccapp.it',
+    phoneNumber: '035 110011',
+    website: 'https://example.com/pv-centro-bergamo'
+  },
+  {
+    nomePunto: 'Bottega Latte Alta',
+    indirizzo: 'Via Borgo Santa Caterina 88, 24124 Bergamo BG',
+    geo: { lat: 45.7037, lng: 9.6862 },
+    city: 'Bergamo',
+    province: 'BG',
+    categories: ['latte', 'yogurt'],
+    description: 'Negozio seed specializzato in latte fresco e yogurt.',
+    emailPunto: 'latte.alta@muccapp.it',
+    phoneNumber: '035 220022',
+    website: 'https://example.com/pv-latte-alta'
+  },
+  {
+    nomePunto: 'Emporio Formaggi Colle',
+    indirizzo: 'Via Sant\'Alessandro 29, 24122 Bergamo BG',
+    geo: { lat: 45.6951, lng: 9.6598 },
+    city: 'Bergamo',
+    province: 'BG',
+    categories: ['formaggio', 'salumi'],
+    description: 'Emporio seed con selezione di formaggi e salumi del territorio.',
+    emailPunto: 'formaggi.colle@muccapp.it',
+    phoneNumber: '035 330033',
+    website: 'https://example.com/pv-formaggi-colle'
+  },
+  {
+    nomePunto: 'Mercato Verde Sud',
+    indirizzo: 'Via Zanica 101, 24126 Bergamo BG',
+    geo: { lat: 45.6769, lng: 9.6764 },
+    city: 'Bergamo',
+    province: 'BG',
+    categories: ['uova', 'yogurt'],
+    description: 'Mercato seed con prodotti freschi e filiera tracciata.',
+    emailPunto: 'mercato.sud@muccapp.it',
+    phoneNumber: '035 440044',
+    website: 'https://example.com/pv-mercato-verde-sud'
+  }
 ];
 
 // Animali associati all'azienda dell'allevatore di test
@@ -302,6 +366,44 @@ async function seed() {
         aziendaUpdated = true;
       }
 
+      const seedLat = Number(aziendaSeed?.geo?.lat);
+      const seedLng = Number(aziendaSeed?.geo?.lng);
+      if (Number.isFinite(seedLat) && Number.isFinite(seedLng)) {
+        if (!aziendaItem.geo || Number(aziendaItem.geo.lat) !== seedLat || Number(aziendaItem.geo.lng) !== seedLng) {
+          aziendaItem.geo = { lat: seedLat, lng: seedLng };
+          aziendaUpdated = true;
+        }
+
+        const currentCoords = Array.isArray(aziendaItem.location?.coordinates)
+          ? aziendaItem.location.coordinates
+          : [];
+        if (
+          aziendaItem.location?.type !== 'Point' ||
+          currentCoords.length !== 2 ||
+          Number(currentCoords[0]) !== seedLng ||
+          Number(currentCoords[1]) !== seedLat
+        ) {
+          aziendaItem.location = {
+            type: 'Point',
+            coordinates: [seedLng, seedLat]
+          };
+          aziendaUpdated = true;
+        }
+      }
+
+      if (aziendaSeed.city && aziendaItem.city !== aziendaSeed.city) {
+        aziendaItem.city = aziendaSeed.city;
+        aziendaUpdated = true;
+      }
+      if (aziendaSeed.province && aziendaItem.province !== aziendaSeed.province) {
+        aziendaItem.province = aziendaSeed.province;
+        aziendaUpdated = true;
+      }
+      if (aziendaSeed.country && aziendaItem.country !== aziendaSeed.country) {
+        aziendaItem.country = aziendaSeed.country;
+        aziendaUpdated = true;
+      }
+
       if (aziendaUpdated) {
         await aziendaItem.save();
       }
@@ -310,12 +412,101 @@ async function seed() {
     } else {
       aziendaItem = await azienda.create({
         ...aziendaSeed,
+        location: {
+          type: 'Point',
+          coordinates: [aziendaSeed.geo.lng, aziendaSeed.geo.lat]
+        },
         ownerUserId: user._id,
       });
       console.log(`🏡  Azienda creata: ${aziendaItem.companyName} (${aziendaItem._id})`);
     }
     aziendeAllevatore.push(aziendaItem);
   }
+
+  // 2b. Punti vendita demo pubblici per esplora (idempotente)
+  let puntiVenditaCreati = 0;
+  let puntiVenditaAggiornati = 0;
+  let puntiVenditaRiutilizzati = 0;
+
+  for (const puntoSeed of seedPuntiVendita) {
+    const query = {
+      ownerUserId: user._id,
+      nomePunto: puntoSeed.nomePunto
+    };
+
+    let punto = await PuntoVendita.findOne(query);
+    if (!punto) {
+      punto = await PuntoVendita.create({
+        ownerUserId: user._id,
+        isActive: true,
+        nomePunto: puntoSeed.nomePunto,
+        indirizzo: puntoSeed.indirizzo,
+        formattedAddress: puntoSeed.indirizzo,
+        geo: puntoSeed.geo,
+        city: puntoSeed.city,
+        province: puntoSeed.province,
+        categories: puntoSeed.categories,
+        description: puntoSeed.description,
+        emailPunto: puntoSeed.emailPunto,
+        phoneNumber: puntoSeed.phoneNumber,
+        website: puntoSeed.website
+      });
+      puntiVenditaCreati += 1;
+      continue;
+    }
+
+    let changed = false;
+    const fieldsToSync = [
+      'indirizzo',
+      'city',
+      'province',
+      'description',
+      'emailPunto',
+      'phoneNumber',
+      'website'
+    ];
+
+    for (const field of fieldsToSync) {
+      if (String(punto[field] || '') !== String(puntoSeed[field] || '')) {
+        punto[field] = puntoSeed[field];
+        changed = true;
+      }
+    }
+
+    const currentCategories = Array.isArray(punto.categories) ? punto.categories : [];
+    if (JSON.stringify(currentCategories) !== JSON.stringify(puntoSeed.categories)) {
+      punto.categories = puntoSeed.categories;
+      changed = true;
+    }
+
+    if (!punto.isActive) {
+      punto.isActive = true;
+      changed = true;
+    }
+
+    const lat = Number(puntoSeed.geo?.lat);
+    const lng = Number(puntoSeed.geo?.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      if (!punto.geo || Number(punto.geo.lat) !== lat || Number(punto.geo.lng) !== lng) {
+        punto.geo = { lat, lng };
+        changed = true;
+      }
+    }
+
+    if (String(punto.formattedAddress || '') !== String(puntoSeed.indirizzo || '')) {
+      punto.formattedAddress = puntoSeed.indirizzo;
+      changed = true;
+    }
+
+    if (changed) {
+      await punto.save();
+      puntiVenditaAggiornati += 1;
+    } else {
+      puntiVenditaRiutilizzati += 1;
+    }
+  }
+
+  console.log(`🏬  Punti vendita seed: creati ${puntiVenditaCreati}  |  aggiornati: ${puntiVenditaAggiornati}  |  già presenti (riutilizzati): ${puntiVenditaRiutilizzati}`);
 
   // Solo la prima azienda avrà la mandria seed.
   const aziendaMandria = aziendeAllevatore[0];

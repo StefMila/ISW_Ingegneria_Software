@@ -6,6 +6,101 @@ html, body {
   font-family: Arial, sans-serif;
 }
 
+body.public-menu-enabled {
+  padding-top: 84px;
+}
+
+.public-fixed-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 84px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 16px;
+  background: #f4f4f3;
+  border-bottom: 1px solid rgba(20, 47, 22, 0.1);
+}
+
+.public-fixed-menu__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1f3d20;
+  text-decoration: none;
+}
+
+.public-fixed-menu__brand-icon {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid #a8b2a8;
+  background: #f3f3ee;
+  flex: 0 0 auto;
+}
+
+.public-fixed-menu__brand-cow {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.public-fixed-menu__brand-text {
+  font-size: clamp(1.6rem, 2.2vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1f3d20;
+}
+
+.public-fixed-menu__nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.public-fixed-menu__nav a {
+  color: #29412a;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 12px 14px;
+  border-radius: 999px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.public-fixed-menu__nav a:hover,
+.public-fixed-menu__nav a.is-active {
+  background: #e8efdf;
+}
+
+.public-fixed-menu__nav a.public-fixed-menu__cta {
+  background: #1f4f1f;
+  color: #fff;
+  padding: 12px 20px;
+}
+
+.public-fixed-menu__nav a.public-fixed-menu__cta:hover,
+.public-fixed-menu__nav a.public-fixed-menu__cta.is-active {
+  background: #2f6825;
+}
+
+body.public-menu-esplora .quick-search-nav {
+  top: 108px;
+}
+
+body.public-menu-esplora .search-container {
+  top: 168px;
+}
+
+body.public-menu-esplora #mappaElencoLayout {
+  margin-top: 160px;
+}
+
 /* Contenitore della barra di ricerca sopra la mappa */
 .search-container {
   position: absolute;
@@ -187,6 +282,22 @@ body.elenco-collapsed #elencoAziende {
 }
 
 @media (max-width: 980px) {
+  body.public-menu-esplora .quick-search-nav {
+    top: 126px;
+    left: 50%;
+  }
+
+  body.public-menu-esplora .search-container {
+    top: 168px;
+    left: 50%;
+    width: min(94vw, 700px);
+    flex-wrap: wrap;
+  }
+
+  body.public-menu-esplora #mappaElencoLayout {
+    margin-top: 190px;
+  }
+
   .quick-search-nav {
     top: 68px;
     left: 50%;
@@ -217,6 +328,31 @@ body.elenco-collapsed #elencoAziende {
 
   #elencoToggleBtn {
     display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  body.public-menu-enabled {
+    padding-top: 132px;
+  }
+
+  .public-fixed-menu {
+    height: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .public-fixed-menu__nav {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .public-fixed-menu__nav a {
+    padding: 9px 11px;
   }
 }
 

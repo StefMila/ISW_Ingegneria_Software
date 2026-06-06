@@ -1,5 +1,10 @@
 const lotNumberInput = document.getElementById('lotNumberInput');
 const searchTraceBtn = document.getElementById('searchTraceBtn');
+const scanQrBtn = document.getElementById('scanQrBtn');
+const stopScanBtn = document.getElementById('stopScanBtn');
+const qrScannerPanel = document.getElementById('qrScannerPanel');
+const qrScannerStatus = document.getElementById('qrScannerStatus');
+const qrVideo = document.getElementById('qrVideo');
 const traceStatus = document.getElementById('traceStatus');
 const traceResult = document.getElementById('traceResult');
 
@@ -10,6 +15,11 @@ const lotCreatedAtValue = document.getElementById('lotCreatedAtValue');
 const lotProducerValue = document.getElementById('lotProducerValue');
 const traceTimelineList = document.getElementById('traceTimelineList');
 const traceAnimalsList = document.getElementById('traceAnimalsList');
+
+let qrStream = null;
+let qrScanIntervalId = null;
+let qrIsActive = false;
+let qrDetector = null;
 
 const getLotFromQuery = () => {
   const params = new URLSearchParams(window.location.search);
@@ -28,6 +38,136 @@ const setStatus = (message, color = '#3d5a1a') => {
   if (!traceStatus) return;
   traceStatus.style.color = color;
   traceStatus.textContent = message;
+};
+
+const setQrStatus = (message, color = '#3d5a1a') => {
+  if (!qrScannerStatus) return;
+  qrScannerStatus.style.color = color;
+  qrScannerStatus.textContent = message;
+};
+
+const showQrPanel = () => {
+  if (!qrScannerPanel) return;
+  qrScannerPanel.classList.remove('hidden');
+};
+
+const hideQrPanel = () => {
+  if (!qrScannerPanel) return;
+  qrScannerPanel.classList.add('hidden');
+};
+
+const extractLotFromQrValue = (rawValue) => {
+  const value = String(rawValue || '').trim();
+  if (!value) return '';
+
+  const directMatch = value.match(/\bLOT-[A-Z0-9-]+\b/i);
+  if (directMatch) {
+    return directMatch[0].toUpperCase();
+  }
+
+  try {
+    const parsedUrl = new URL(value);
+    const lotFromQuery = (parsedUrl.searchParams.get('lotto') || parsedUrl.searchParams.get('lot') || '').trim();
+    if (lotFromQuery) return lotFromQuery;
+  } catch (_) {
+    const queryMatch = value.match(/[?&]lotto=([^&#]+)/i) || value.match(/[?&]lot=([^&#]+)/i);
+    if (queryMatch?.[1]) {
+      try {
+        return decodeURIComponent(queryMatch[1]).trim();
+      } catch (_) {
+        return queryMatch[1].trim();
+      }
+    }
+  }
+
+  return value;
+};
+
+const stopQrScan = () => {
+  qrIsActive = false;
+
+  if (qrScanIntervalId) {
+    clearInterval(qrScanIntervalId);
+    qrScanIntervalId = null;
+  }
+
+  if (qrVideo) {
+    qrVideo.pause();
+    qrVideo.srcObject = null;
+  }
+
+  if (qrStream) {
+    qrStream.getTracks().forEach((track) => track.stop());
+    qrStream = null;
+  }
+
+  hideQrPanel();
+};
+
+const startQrScan = async () => {
+  if (qrIsActive) return;
+
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+    setStatus('Il browser non supporta la fotocamera per la scansione QR.', 'red');
+    return;
+  }
+
+  if (typeof window.BarcodeDetector !== 'function') {
+    setStatus('Scansione QR non disponibile su questo browser. Inserisci il lotto manualmente.', 'red');
+    return;
+  }
+
+  try {
+    qrDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+  } catch (error) {
+    console.error('Errore inizializzazione BarcodeDetector:', error);
+    setStatus('Impossibile avviare lo scanner QR su questo dispositivo.', 'red');
+    return;
+  }
+
+  try {
+    qrStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    });
+
+    if (qrVideo) {
+      qrVideo.srcObject = qrStream;
+      await qrVideo.play();
+    }
+
+    qrIsActive = true;
+    showQrPanel();
+    setQrStatus('Scanner attivo: inquadra il QR del prodotto.');
+    setStatus('Scanner QR avviato.');
+
+    qrScanIntervalId = setInterval(async () => {
+      if (!qrIsActive || !qrVideo || qrVideo.readyState < 2) return;
+
+      try {
+        const barcodes = await qrDetector.detect(qrVideo);
+        if (!Array.isArray(barcodes) || barcodes.length === 0) return;
+
+        const rawValue = barcodes[0]?.rawValue || '';
+        const lotNumber = extractLotFromQrValue(rawValue);
+        if (!lotNumber) return;
+
+        if (lotNumberInput) {
+          lotNumberInput.value = lotNumber;
+        }
+
+        setQrStatus(`QR rilevato: ${lotNumber}`, '#2f855a');
+        stopQrScan();
+        loadTraceability(lotNumber);
+      } catch (_) {
+        // ignora frame non decodificabili
+      }
+    }, 350);
+  } catch (error) {
+    console.error('Errore accesso fotocamera:', error);
+    stopQrScan();
+    setStatus('Accesso alla fotocamera negato o non disponibile.', 'red');
+  }
 };
 
 const renderTimeline = (timeline = []) => {
@@ -147,6 +287,19 @@ if (searchTraceBtn) {
   });
 }
 
+if (scanQrBtn) {
+  scanQrBtn.addEventListener('click', () => {
+    startQrScan();
+  });
+}
+
+if (stopScanBtn) {
+  stopScanBtn.addEventListener('click', () => {
+    stopQrScan();
+    setStatus('Scanner QR fermato.');
+  });
+}
+
 if (lotNumberInput) {
   lotNumberInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
@@ -164,3 +317,7 @@ if (prefilledLot && lotNumberInput) {
   setStatus('Pronto. Inserisci un lotto per vedere la tracciabilita.');
   hideResult();
 }
+
+window.addEventListener('beforeunload', () => {
+  stopQrScan();
+});
