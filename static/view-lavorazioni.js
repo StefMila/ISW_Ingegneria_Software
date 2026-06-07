@@ -60,6 +60,8 @@ const getInputSummary = (item) => {
         .join(', ') || '—';
 };
 
+const getLotto = (item) => item.lottoId || '—';
+
 const getNotes = (item) => item.notes || '—';
 
 const getOutputName = (item) => item.outputName || '—';
@@ -277,6 +279,7 @@ const rowLavorazioneHtml = (item) => `
     <td>${escapeHtml(formatDateTime(item.startedAt))}</td>
     <td>${escapeHtml(getCodiceLavorazione(item))}</td>
     <td>${escapeHtml(getQuantityLabel(item))}</td>
+    <td>${escapeHtml(getLotto(item))}</td>
     <td>${escapeHtml(getStatoLabel(item.status))}</td>
     <td>${escapeHtml(getNotes(item))}</td>
     <td>

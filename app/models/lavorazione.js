@@ -128,6 +128,12 @@ const lavorazioneSchema = new Schema({
         type: [lavorazioneFaseSchema],
         default: []
     },
+    lottoId: {
+        type: String,
+        required: false,
+        trim: true,
+        default: undefined
+    },
     outputName: {
         type: String,
         required: false,
