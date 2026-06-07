@@ -7,6 +7,8 @@ import User from '../app/models/user.js';
 import Azienda from '../app/models/azienda.js';
 import Lavorazione from '../app/models/lavorazione.js';
 
+// ATTENZIONE!!!: prima di eseguire il seed, è necessario commentare temporaneamente la riga 203 di /app/models/lavorazione.js, altrimenti il sistema dà errore di duplicazione
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../server/.env') });
 
@@ -297,7 +299,8 @@ async function seedLavorazioni() {
       endedAt: daysAgo(2, 14, 45),
       outputQuantity: 319.76,
       notes: `${SEED_MARKER} Lavorazione completata con rilievo IoT`,
-      fasiCompleted: 9
+      fasiCompleted: 9,
+      lottoId: 'LOT-FORMA-STAGIONATA-006'
     },
     {
       templateName: 'Produzione formaggio Riserva',
@@ -306,7 +309,8 @@ async function seedLavorazioni() {
       endedAt: daysAgo(1, 15, 30),
       outputQuantity: 309.42,
       notes: `${SEED_MARKER} Chiusura manuale con controllo qualita`,
-      fasiCompleted: 9
+      fasiCompleted: 9,
+      lottoId: 'LOT-FORMA-STAGIONATA-003'
     },
     {
       templateName: 'Primo sale fresco',
@@ -315,7 +319,8 @@ async function seedLavorazioni() {
       endedAt: daysAgo(4, 13, 40),
       outputQuantity: 212.5,
       notes: `${SEED_MARKER} Lotto stabile e conforme`,
-      fasiCompleted: 7
+      fasiCompleted: 7,
+      lottoId: 'LOT-PRIMO-SALE-FRESC-008'
     },
     {
       templateName: 'Primo sale fresco',
@@ -338,7 +343,8 @@ async function seedLavorazioni() {
       endedAt: daysAgo(3, 10, 25),
       outputQuantity: 1180,
       notes: `${SEED_MARKER} Vasetti confezionati e pronti distribuzione`,
-      fasiCompleted: 8
+      fasiCompleted: 8,
+      lottoId: 'LOT-YOGURT-VANIGLIA--007'
     },
     {
       templateName: 'Produzione yogurt vaniglia',
@@ -354,7 +360,8 @@ async function seedLavorazioni() {
       endedAt: daysAgo(6, 16, 5),
       outputQuantity: 260.8,
       notes: `${SEED_MARKER} Colatura completata e confezionamento finale`,
-      fasiCompleted: 7
+      fasiCompleted: 7,
+      lottoId: 'LOT-YOGURT-GRECO-COL-012'
     },
     {
       templateName: 'Latte alimentare',
@@ -363,7 +370,8 @@ async function seedLavorazioni() {
       endedAt: daysAgo(2, 9, 15),
       outputQuantity: 980,
       notes: `${SEED_MARKER} Confezionamento completato`,
-      fasiCompleted: 5
+      fasiCompleted: 5,
+      lottoId: 'LOT-LATTE-ALIMENTARE-004'
     },
     {
       templateName: 'Produzione burro',
@@ -372,7 +380,8 @@ async function seedLavorazioni() {
       endedAt: daysAgo(6, 13, 35),
       outputQuantity: 640,
       notes: `${SEED_MARKER} Panetti pronti per punto vendita`,
-      fasiCompleted: 7
+      fasiCompleted: 7,
+      lottoId: 'LOT-PANETTI-DI-BURRO-011'
     },
     {
       templateName: 'Produzione burro',
@@ -388,7 +397,8 @@ async function seedLavorazioni() {
       endedAt: daysAgo(3, 14, 10),
       outputQuantity: 154.2,
       notes: `${SEED_MARKER} Siero recuperato e stoccato`,
-      fasiCompleted: 4
+      fasiCompleted: 4,
+      lottoId: 'LOT-SIERO-DI-LATTE-R-005'
     }
   ];
 
@@ -411,6 +421,7 @@ async function seedLavorazioni() {
       notes: run.notes,
       inputs: cloneInputs(template.inputs),
       fasi: markFasiProgress(cloneFasi(template.fasi), run.fasiCompleted),
+      lottoId: run.lottoId !== undefined ? run.lottoId : undefined,
       outputName: template.outputName,
       outputUnit: template.outputUnit,
       outputQuantity: run.status === 'completata' ? run.outputQuantity : undefined
