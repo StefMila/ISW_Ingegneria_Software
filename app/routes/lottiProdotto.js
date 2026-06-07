@@ -70,7 +70,7 @@ export const createLottoProdotto = async (req, res) => {
 		await newLottoProdotto.save();
 
 		// collegamento bilaterale lavorazione <--> lotto
-		existingLavorazione.lottoId = newLottoProdotto._id;
+		existingLavorazione.lottoId = newLottoProdotto.lotNumber;
 		await existingLavorazione.save();
 
 		return res.status(201).json({
