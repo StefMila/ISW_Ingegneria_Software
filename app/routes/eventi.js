@@ -149,8 +149,12 @@ const toPublicEventDTO = (item, aziendaMeta = {}) => ({
   companyName: aziendaMeta.companyName || '',
   city: aziendaMeta.city || '',
   companyAddress: aziendaMeta.address || '',
-  lat: Number.isFinite(Number(aziendaMeta.lat)) ? Number(aziendaMeta.lat) : null,
-  lng: Number.isFinite(Number(aziendaMeta.lng)) ? Number(aziendaMeta.lng) : null
+  lat: Number.isFinite(Number(item?.lat))
+    ? Number(item.lat)
+    : (Number.isFinite(Number(aziendaMeta.lat)) ? Number(aziendaMeta.lat) : null),
+  lng: Number.isFinite(Number(item?.lng))
+    ? Number(item.lng)
+    : (Number.isFinite(Number(aziendaMeta.lng)) ? Number(aziendaMeta.lng) : null)
 });
 // converte evento pubblico in qualcosa di visibile lato frontend
 const buildGooglePayload = (eventDoc, defaultReminderMinutes = 0) => {

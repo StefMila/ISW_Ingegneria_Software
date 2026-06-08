@@ -513,7 +513,7 @@ function clearEventMarkers() {
 	eventMarkerAttivi = [];
 }
 
-function mostraEventiSettimanaSuMappa(aziendeVisibili) {
+function mostraEventiSettimanaSuMappa(aziendeVisibili, eventiSource = eventiPubbliciSettimana) {
 	if (!mappaComponent) return;
 
 	clearEventMarkers();
@@ -525,7 +525,7 @@ function mostraEventiSettimanaSuMappa(aziendeVisibili) {
 		{ lat: Number(azienda.lat), lng: Number(azienda.lng) }
 	]));
 
-	const eventiConCoordinate = eventiPubbliciSettimana
+	const eventiConCoordinate = (Array.isArray(eventiSource) ? eventiSource : [])
 		.map((evento) => {
 			const directLat = parseCoordinate(evento.lat);
 			const directLng = parseCoordinate(evento.lng);
@@ -702,8 +702,9 @@ function initApp() {
 }
 
 function mostraAziendeSuMappa(aziende, options = {}) {
-	const { preserveMapView = false } = options;
+	const { preserveMapView = false, eventiOverride = null } = options;
 	const aziendeDaVisualizzare = Array.isArray(aziende) ? aziende : [];
+	const onlyEventMode = activeFilters.eventi === true;
 	markerAttivi.forEach((marker) => {
 		if (marker && typeof marker.setMap === 'function') {
 			marker.setMap(null);
@@ -716,7 +717,7 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 	markerAttivi = [];
 	const mapInstance = getMapInstance();
 
-	if (mapInstance && window.google && google.maps && google.maps.Marker) {
+	if (!onlyEventMode && mapInstance && window.google && google.maps && google.maps.Marker) {
 		aziendeDaVisualizzare.forEach((azienda) => {
 			const marker = new google.maps.Marker({
 				map: mapInstance,
@@ -733,11 +734,12 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 		});
 	}
 
-	const eventiVisibili = activeFilters.eventi
-		? (mostraEventiSettimanaSuMappa(aziendeDaVisualizzare) || [])
+	const eventiSource = Array.isArray(eventiOverride) ? eventiOverride : eventiPubbliciSettimana;
+	const eventiVisibili = onlyEventMode
+		? (mostraEventiSettimanaSuMappa(aziendeDaVisualizzare, eventiSource) || [])
 		: [];
 
-	if (!activeFilters.eventi) {
+	if (!onlyEventMode) {
 		clearEventMarkers();
 	}
 	if (!preserveMapView && eventiVisibili.length > 0 && window.google && google.maps) {
@@ -760,8 +762,8 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 		}
 	}
 
-		if (!preserveMapView && !aziendeDaVisualizzare.length && activeFilters.eventi) {
-			const primoEventoConCoordinate = eventiPubbliciSettimana.find((evento) =>
+		if (!preserveMapView && !aziendeDaVisualizzare.length && onlyEventMode) {
+			const primoEventoConCoordinate = eventiVisibili.find((evento) =>
 				hasUsableCoordinates(parseCoordinate(evento?.lat), parseCoordinate(evento?.lng))
 			);
 			if (primoEventoConCoordinate) {
@@ -769,7 +771,67 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 			}
 		}
 
+	if (onlyEventMode) {
+		mostraElencoEventi(eventiVisibili);
+		return;
+	}
+
 	mostraElencoAziende(aziendeDaVisualizzare);
+}
+
+function mostraElencoEventi(eventi) {
+	const elenco = document.getElementById('elencoAziende');
+	if (!Array.isArray(eventi) || !eventi.length) {
+		elenco.innerHTML = '<em>nessun evento trovato</em>';
+		return;
+	}
+
+	elenco.innerHTML = '<b>Eventi trovati:</b><ul style="padding-left:18px;">' + eventi
+		.map((evento, index) => {
+			const rowBackground = index % 2 === 0 ? '#f8fbf2' : '#eef5e1';
+			const eventId = normalizeEntityId(evento.id || evento._id || `${evento.title}-${index}`);
+			const eventDate = getEventStartDate(evento);
+			const dateLabel = eventDate
+				? eventDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+				: (evento.date || '');
+
+			return `\n\t\t\t<li class="elenco-event-item" data-event-id="${escapeHtml(eventId)}" role="button" tabindex="0" style="cursor:pointer;padding:6px 4px;border-radius:6px;background:${rowBackground};"><b>${escapeHtml(evento.title || 'Evento')}</b><br>` +
+				(evento.companyName ? `<b>Azienda:</b> ${escapeHtml(evento.companyName)}<br>` : '') +
+				(dateLabel ? `<b>Data:</b> ${escapeHtml(dateLabel)}<br>` : '') +
+				(evento.startTime ? `<b>Orario:</b> ${escapeHtml(evento.startTime)}${evento.endTime ? ` - ${escapeHtml(evento.endTime)}` : ''}<br>` : '') +
+				(evento.location ? `${escapeHtml(evento.location)}<br>` : '') +
+				'</li>';
+		})
+		.join('') + '</ul>';
+
+	elenco.querySelectorAll('.elenco-event-item').forEach((itemEl) => {
+		const openDialog = (event) => {
+			if (event?.target?.closest && event.target.closest('a')) {
+				return;
+			}
+
+			const eventId = itemEl.dataset.eventId;
+			const evento = eventi.find((ev, idx) => {
+				const currentId = normalizeEntityId(ev.id || ev._id || `${ev.title}-${idx}`);
+				return currentId === eventId;
+			});
+
+			if (!evento) {
+				return;
+			}
+
+			setMapView(evento.lat, evento.lng, 12);
+			mostraDettagliEvento(evento, null, itemEl);
+		};
+
+		itemEl.addEventListener('click', openDialog);
+		itemEl.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
+				openDialog(event);
+			}
+		});
+	});
 }
 
 function mostraElencoAziende(aziende) {
@@ -851,6 +913,44 @@ function filtraAziende(options = {}) {
 	const input = document.getElementById('searchInput');
 	const testoCercato = input.value.trim();
 	const testoNorm = testoCercato.toLowerCase();
+
+	if (activeFilters.eventi) {
+		let eventiFiltrati = (Array.isArray(eventiPubbliciSettimana) ? eventiPubbliciSettimana : [])
+			.filter((evento) => hasUsableCoordinates(parseCoordinate(evento?.lat), parseCoordinate(evento?.lng)));
+
+		if (testoNorm) {
+			eventiFiltrati = eventiFiltrati.filter((evento) => {
+				const blob = [evento.title, evento.companyName, evento.location, evento.city, evento.description]
+					.filter(Boolean)
+					.join(' ')
+					.toLowerCase();
+				return blob.includes(testoNorm);
+			});
+		}
+
+		if (aroundMeEnabled && aroundMeCoords) {
+			const raggioKm = getRaggioKm();
+			eventiFiltrati = eventiFiltrati.filter((evento) => distanzaKm(
+				aroundMeCoords.lat,
+				aroundMeCoords.lng,
+				evento.lat,
+				evento.lng
+			) <= raggioKm);
+		}
+
+		mostraAziendeSuMappa([], { preserveMapView, eventiOverride: eventiFiltrati });
+
+		if (!preserveMapView) {
+			if (eventiFiltrati.length === 1) {
+				setMapView(eventiFiltrati[0].lat, eventiFiltrati[0].lng, 12);
+			} else if (!eventiFiltrati.length && aroundMeEnabled && aroundMeCoords) {
+				setMapView(aroundMeCoords.lat, aroundMeCoords.lng, 12);
+			}
+		}
+
+		return;
+	}
+
 	const aziendeFiltratePerToggle = applyActiveFilters(databaseAziende);
 
 	if (!testoCercato) {
