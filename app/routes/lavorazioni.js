@@ -173,6 +173,7 @@ export const createLavorazione = async (req, res) => {
 			notes,
 			inputs,
 			fasi,
+			lottoId,
 			outputName,
 			outputQuantity,
 			outputUnit
@@ -203,7 +204,15 @@ export const createLavorazione = async (req, res) => {
 		}
 
 		if(!parsedIsTemplate && !templateId) {
-			return res.status(400).json({ message: 'Se la lavorazione non è un template, deve riferirsi ad un template esistente' });
+			return res.status(422).json({ message: 'Se la lavorazione non è un template, deve riferirsi ad un template esistente' });
+		}
+
+		if(parsedIsTemplate && lottoId){
+			return res.status(422).json({ message: 'Un template lavorazione non può essere associato ad un lotto'});
+		}
+
+		if(status !== 'completata' && lottoId){
+			return res.status(422).json({ message: 'Una lavorazione non completata non può avere un lotto associato ad essa'});
 		}
 
 		const newLavorazione = new Lavorazione({
@@ -219,6 +228,7 @@ export const createLavorazione = async (req, res) => {
 			notes: typeof notes === 'string' ? notes.trim() : undefined,
 			inputs: normalizedInputs.value,
 			fasi: normalizedFasi.value,
+			lottoId: lottoId || undefined,
 			outputName: typeof outputName === 'string' ? outputName.trim() : undefined,
 			outputQuantity: outputQuantity !== undefined ? outputQuantity : undefined,
 			outputUnit: typeof outputUnit === 'string' ? outputUnit.trim() : undefined
@@ -260,6 +270,7 @@ export const updateLavorazione = async (req, res) => {
 			notes,
 			inputs,
 			fasi,
+			lottoId,
 			outputName,
 			outputQuantity,
 			outputUnit
@@ -314,6 +325,14 @@ export const updateLavorazione = async (req, res) => {
 			return res.status(422).json({ message: 'Il nome di un template non può essere modificato da una lavorazione non template' });
 		}
 
+		if(existingLavorazione.isTemplate && lottoId !== undefined){
+			return res.status(422).json({ message: 'Un template lavorazione non può essere associato ad un lotto'});
+		}
+
+		if((existingLavorazione.status !== 'completata' || status !== 'completata') && lottoId !== undefined){
+			return res.status(422).json({ message: 'Una lavorazione non completata non può avere un lotto associato ad essa'});
+		}
+
 		const normalizedFasi = normalizeFasi(fasi);
 		if (!normalizedFasi.ok) {
 			return res.status(normalizedFasi.status || 400).json({ message: normalizedFasi.message });
@@ -334,6 +353,7 @@ export const updateLavorazione = async (req, res) => {
 		if (status !== undefined) existingLavorazione.status = status;
 		if (notes !== undefined) existingLavorazione.notes = typeof notes === 'string' ? notes.trim() : undefined;
 		if (normalizedFasi.value !== undefined) existingLavorazione.fasi = normalizedFasi.value;
+		if (lottoId !== undefined) existingLavorazione.lottoId = lottoId;
 		if (outputQuantity !== undefined) existingLavorazione.outputQuantity = outputQuantity;
 
 		await existingLavorazione.save();

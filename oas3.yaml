@@ -188,6 +188,17 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateAziendaRequest'
+            examples:
+              updateNomeEVat:
+                summary: Modifica Ragione Sociale e Partita IVA
+                value:
+                  companyName: "Nuova Azienda Agricola Rossi"
+                  vatNumber: "IT12345687901"
+              updateContatti:
+                summary: Modifica Email e Indirizzo
+                value:
+                  emailAzienda: "info@aziendarossi.it"
+                  address: "Via delle Margherite 12, Calliano"
       responses:
         '200':
           description: Azienda aggiornata con successo
@@ -200,36 +211,68 @@ paths:
                     type: string
                   itemInfo:
                     $ref: '#/components/schemas/AziendaCompleted'
+              examples:
+                success:
+                  value:
+                    message: "Azienda aggiornata con successo"
+                    itemInfo:
+                      _id: "665f9fd8ad8f8c0012f9d900"
+                      ownerUserId: "665f8d90ad8f8c0012f9b456"
+                      vatNumber: "IT12345678901"
+                      companyName: "Nuova Azienda Agricola Rossi"
+                      emailAzienda: "info@aziendarossi.it"
+                      address: "Via delle Margherite 12, Calliano"
+                      categories: ["latte", "formaggi"]
         '400':
-          description: ID non valido o dati non validi
+          description: ID non valido (non rispetta il formato ObjectId di MongoDB)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: "aziendaId non è un ObjectId valido"
         '401':
           description: Token JWT mancante, non valido o scaduto
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  value:
+                    message: "Token mancante o non valido"
         '403':
-          description: L'utente autenticato non è il proprietario dell'azienda o non ha il ruolo allevatore
+          description: L'utente autenticato non è il proprietario dell'azienda o non ha il ruolo 'allevatore'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbidden:
+                  value:
+                    message: "Non hai i permessi per questa azienda"
         '404':
-          description: Azienda non trovata
+          description: L'azienda con l'ID specificato non esiste nel database
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: "Azienda non trovata"
         '500':
-          description: Errore interno del server
+          description: Errore interno del server o del database
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  value:
+                    message: "Errore interno del server"
     delete:
       summary: Rimozione azienda
       description: Elimina l'azienda identificata dall'id specificato. Solo il proprietario può eliminarla.
@@ -251,30 +294,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Azienda eliminata con successo
         '400':
           description: ID azienda non valido
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidId:
+                  value:
+                    message: ID azienda non valido
         '401':
           description: Token mancante, non valido o scaduto
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingOrInvalidToken:
+                  value:
+                    message: "Token mancante o formato non valido: Accesso negato"
         '403':
           description: Permessi insufficienti (solo allevatore)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '404':
           description: Azienda non trovata
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: Azienda non trovata
         '500':
           description: Errore interno del server
           content:
@@ -443,6 +506,7 @@ paths:
                 serverError:
                   value:
                     message: Errore interno del server
+
   /api/punti-vendita/public:
     get:
       summary: Dataset punti vendita pubblico
@@ -2743,9 +2807,6 @@ paths:
                 invalidTemplateFlag:
                   value:
                     message: isTemplate deve essere true o false
-                missingTemplateId:
-                  value:
-                    message: Se la lavorazione non è un template, deve riferirsi ad un template esistente
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -2768,6 +2829,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Violazione regole di business
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingTemplateId:
+                  value: 
+                    message: Se la lavorazione non è un template, deve riferirsi ad un template esistente
+                invalidLotConnectionTemplate:
+                  value: 
+                    message: Un template lavorazione non può essere associato ad un lotto
+                invalidLotConnectionStatus:
+                  value: 
+                    message: Una lavorazione non completata non può avere un lotto associato ad essa
         '500':
           description: Errore interno del server
           content:
@@ -2995,6 +3072,7 @@ paths:
                     - name: Confezionamento
                       completed: true             
                   status: completata
+                  lottoId: LOT-FORMAGGI-STAGION-007
                   outputQuantity: 45
       responses:
         '200':
@@ -3041,6 +3119,7 @@ paths:
                         - name: Confezionamento
                           completed: true
                       status: completata
+                      lottoId: LOT-FORMAGGI-STAGION-007
                       outputName: Formaggi freschi
                       outputQuantity: 45
                       outputUnit: kg
@@ -3058,12 +3137,12 @@ paths:
                 noFieldFound:
                   value:
                     message: Nessun campo aggiornabile fornito
-                invalidId:
+                invalidLavorazioneId:
                   value:
                     message: ID lavorazione non valido
                 invalidFasi:
                   value:
-                    message: 'Le fasi consentite sono: Ricevimento, Centrifugazione, Omogeneizzazione, Trattamento termico, Inoculo, Coagulazione, Rottura cagliata, Formatura, Salatura, Stagionatura, Concentrazione, Zangolatura, Confezionamento'
+                    message: "Le fasi consentite sono: Ricevimento, Centrifugazione, Omogeneizzazione, Trattamento termico, Inoculo, Coagulazione, Rottura cagliata, Formatura, Salatura, Stagionatura, Concentrazione, Zangolatura, Confezionamento"
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -3106,6 +3185,12 @@ paths:
                 invalidNomeTemplateTransition:
                   value:
                     message: Il nome di un template non può essere modificato da una lavorazione non template
+                invalidLotConnectionTemplate:
+                  value:
+                    message: Un template lavorazione non può essere associato ad un lotto
+                invalidLotConnectionStatus:
+                  value:
+                    message: Una lavorazione non completata non può avere un lotto associato ad essa
         '500':
           description: Errore interno del server
           content:
@@ -5286,6 +5371,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LavorazioneFaseItem'
+        lottoId:
+          type: string
         outputName:
           type: string
         outputQuantity:
@@ -5310,6 +5397,12 @@ components:
             - completata
             - annullata
         notes:
+          type: string
+        fasi:
+          type: array
+          items:
+            $ref: '#/components/schemas/LavorazioneFaseItem'
+        lottoId:
           type: string
         outputQuantity:
           type: number
