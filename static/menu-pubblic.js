@@ -44,7 +44,7 @@
 
   const buildMenuMarkup = () => `
     <header class="public-fixed-menu" aria-label="Menu pubblico">
-      <a href="/index2.html" class="public-fixed-menu__brand" aria-label="MuccApp home pubblica">
+      <a href="/index.html" class="public-fixed-menu__brand" aria-label="MuccApp home pubblica">
         <span class="public-fixed-menu__brand-icon" aria-hidden="true"><i class="fa-solid fa-cow public-fixed-menu__brand-cow"></i></span>
         <span class="public-fixed-menu__brand-text">MuccApp</span>
       </a>
