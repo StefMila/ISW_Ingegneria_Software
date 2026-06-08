@@ -13,6 +13,7 @@ dotenv.config({ path: path.join(__dirname, '../server/.env') });
 const MONGO_URI = process.env.DB_URL || process.env.MONGODB_URI || process.env.MONGO_URI;
 const SEED_MARKER = '[seed-eventi-stats-v1]';
 const DEFAULT_EVENT_CENTER = { lat: 45.6983, lng: 9.6773 };
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 if (!MONGO_URI) {
   console.error('Variabile DB_URL non trovata nel file server/.env');
@@ -173,7 +174,7 @@ async function seedEventi() {
   const deleteResult = await Evento.deleteMany({
     ownerUserId: allevatore._id,
     aziendaId: azienda._id,
-    description: { $regex: `^${SEED_MARKER}` }
+    description: { $regex: new RegExp(`^${escapeRegex(SEED_MARKER)}`) }
   });
   console.log(`Eventi seed precedenti rimossi: ${deleteResult.deletedCount}`);
 
