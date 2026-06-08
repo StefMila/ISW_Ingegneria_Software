@@ -234,6 +234,9 @@ const sameCapacita = (left = [], right = []) => {
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
 const EVENTI_SEED_MARKER = '[seed-eventi-main-v1]';
+const DEFAULT_EVENT_CENTER = { lat: 45.6983, lng: 9.6773 };
+
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const sanitizeLotToken = (value) => String(value || '')
   .normalize('NFD')
@@ -289,12 +292,91 @@ const defaultFasiByTipo = {
   ]
 };
 
-const buildEventsForYear = ({ year, ownerUserId, aziendaId, companyName }) => {
+const resolveEventPosition = ({ baseLat, baseLng, seed }) => {
+  const latOffset = ((seed % 9) - 4) * 0.0012;
+  const lngOffset = ((((seed * 3) % 11) - 5) * 0.0014);
+
+  return {
+    lat: Number((baseLat + latOffset).toFixed(6)),
+    lng: Number((baseLng + lngOffset).toFixed(6))
+  };
+};
+
+const resolveUpcomingSummerYear = () => {
+  const now = new Date();
+  const currentYear = now.getUTCFullYear();
+  const currentMonth = now.getUTCMonth();
+
+  return currentMonth > 6 ? currentYear + 1 : currentYear;
+};
+
+const buildDenseEventsForMonth = ({ year, month, count, ownerUserId, aziendaId, companyName, titlePrefix, type, baseLat, baseLng }) => {
+  return Array.from({ length: count }, (_, idx) => {
+    const day = 1 + ((idx * 3) % 28);
+    const startHour = 8 + (idx % 9);
+    const minute = idx % 2 === 0 ? 0 : 30;
+    const startAt = new Date(Date.UTC(year, month, day, startHour, minute, 0));
+    const endAt = new Date(startAt.getTime() + (75 + (idx % 3) * 15) * 60000);
+    const coords = resolveEventPosition({ baseLat, baseLng, seed: year * 100 + month * 10 + idx });
+
+    return {
+      ownerUserId,
+      aziendaId,
+      title: `${titlePrefix} #${idx + 1}`,
+      type,
+      startAt,
+      endAt,
+      location: `${companyName} - area evento ${idx + 1}`,
+      locationAddress: 'Via della Campagna 1, Bergamo',
+      lat: coords.lat,
+      lng: coords.lng,
+      description: `${EVENTI_SEED_MARKER} Evento extra per prossimi mesi`,
+      reminderMinutes: 60,
+      visibility: idx % 2 === 0 ? 'public' : 'private',
+      recurrenceType: 'single',
+      recurrenceInterval: 1
+    };
+  });
+};
+
+const buildUpcomingDenseEvents = ({ ownerUserId, aziendaId, companyName, baseLat, baseLng }) => {
+  const targetYear = resolveUpcomingSummerYear();
+
+  return [
+    ...buildDenseEventsForMonth({
+      year: targetYear,
+      month: 5,
+      count: 10,
+      ownerUserId,
+      aziendaId,
+      companyName,
+      baseLat,
+      baseLng,
+      titlePrefix: `Open Day e degustazioni Giugno ${targetYear}`,
+      type: 'altro'
+    }),
+    ...buildDenseEventsForMonth({
+      year: targetYear,
+      month: 6,
+      count: 4,
+      ownerUserId,
+      aziendaId,
+      companyName,
+      baseLat,
+      baseLng,
+      titlePrefix: `Tour in fattoria Luglio ${targetYear}`,
+      type: 'altro'
+    })
+  ];
+};
+
+const buildEventsForYear = ({ year, ownerUserId, aziendaId, companyName, baseLat, baseLng }) => {
   const monthLabels = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
   return monthLabels.map((label, month) => {
     const startAt = new Date(Date.UTC(year, month, 12 + (month % 5), 8 + (month % 3), 0, 0));
     const endAt = new Date(startAt.getTime() + (90 + (month % 2) * 30) * 60000);
+    const coords = resolveEventPosition({ baseLat, baseLng, seed: year * 100 + month });
 
     return {
       ownerUserId,
@@ -305,6 +387,8 @@ const buildEventsForYear = ({ year, ownerUserId, aziendaId, companyName }) => {
       endAt,
       location: companyName,
       locationAddress: 'Via della Campagna 1, Bergamo',
+      lat: coords.lat,
+      lng: coords.lng,
       description: `${EVENTI_SEED_MARKER} Evento demo per calendario e filtri`,
       reminderMinutes: 60,
       visibility: month % 3 === 0 ? 'public' : 'private',
@@ -950,13 +1034,26 @@ async function seed() {
   const deletedEventi = await Evento.deleteMany({
     ownerUserId: user._id,
     aziendaId: aziendaMandria._id,
-    description: { $regex: `^${EVENTI_SEED_MARKER}` }
+    description: { $regex: new RegExp(`^${escapeRegex(EVENTI_SEED_MARKER)}`) }
   });
 
+  const baseLat = Number.isFinite(Number(aziendaMandria?.geo?.lat))
+    ? Number(aziendaMandria.geo.lat)
+    : (Array.isArray(aziendaMandria?.location?.coordinates) && Number.isFinite(Number(aziendaMandria.location.coordinates[1]))
+      ? Number(aziendaMandria.location.coordinates[1])
+      : DEFAULT_EVENT_CENTER.lat);
+
+  const baseLng = Number.isFinite(Number(aziendaMandria?.geo?.lng))
+    ? Number(aziendaMandria.geo.lng)
+    : (Array.isArray(aziendaMandria?.location?.coordinates) && Number.isFinite(Number(aziendaMandria.location.coordinates[0]))
+      ? Number(aziendaMandria.location.coordinates[0])
+      : DEFAULT_EVENT_CENTER.lng);
+
   const eventiDocs = [
-    ...buildEventsForYear({ year: 2024, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName }),
-    ...buildEventsForYear({ year: 2025, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName }),
-    ...buildEventsForYear({ year: 2026, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName })
+    ...buildEventsForYear({ year: 2024, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName, baseLat, baseLng }),
+    ...buildEventsForYear({ year: 2025, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName, baseLat, baseLng }),
+    ...buildEventsForYear({ year: 2026, ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName, baseLat, baseLng }),
+    ...buildUpcomingDenseEvents({ ownerUserId: user._id, aziendaId: aziendaMandria._id, companyName: aziendaMandria.companyName, baseLat, baseLng })
   ];
 
   await Evento.insertMany(eventiDocs, { ordered: true });

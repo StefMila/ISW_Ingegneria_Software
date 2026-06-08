@@ -6529,6 +6529,14 @@ components:
         companyAddress:
           type: string
           description: Indirizzo dell'azienda, valorizzato negli endpoint pubblici
+        lat:
+          type: number
+          nullable: true
+          description: Latitudine dell'evento (o fallback dell'azienda) negli endpoint pubblici
+        lng:
+          type: number
+          nullable: true
+          description: Longitudine dell'evento (o fallback dell'azienda) negli endpoint pubblici
 
     EventListResponse:
       type: object

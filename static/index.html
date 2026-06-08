@@ -32,6 +32,21 @@
             background-color: var(--bg-cream);
             color: var(--text-dark);
             line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        body.public-menu-enabled {
+            min-height: 100vh;
+        }
+
+        main {
+            width: min(100%, 1440px);
+            margin: 0 auto;
+        }
+
+        body.public-menu-enabled main {
+            padding-top: clamp(12px, 2vw, 28px);
+            transform-origin: top center;
         }
 
         /* HEADER & NAVIGAZIONE */
@@ -42,6 +57,7 @@
             top: 0;
             z-index: 1000;
             border-bottom: 1px solid rgba(26, 48, 29, 0.08);
+            -webkit-backdrop-filter: blur(8px);
             backdrop-filter: blur(8px);
         }
 
@@ -101,16 +117,16 @@
 
         /* HERO SECTION */
         .hero {
-            padding: 700px 20px 100px 20px;
+            padding: clamp(700px, 24vw, 320px) 20px clamp(72px, 10vw, 100px) 20px;
             background: linear-gradient(180deg, rgba(26,48,29,0.03) 0%, rgba(253,251,247,0) 100%);
             text-align: center;
-            max-width: 900px;
+            max-width: min(900px, calc(100vw - 32px));
             margin: 0 auto;
         }
 
         .hero h1 {
             font-family: 'DM Serif Display', serif;
-            font-size: 56px;
+            font-size: clamp(2.2rem, 4.8vw, 3.5rem);
             color: var(--forest-green);
             line-height: 1.1;
             margin-bottom: 24px;
@@ -118,7 +134,7 @@
 
         .hero p {
             font-family: 'DM Serif Display', serif;
-            font-size: 32px;
+            font-size: clamp(1.35rem, 2.8vw, 2rem);
             color: var(--text-muted);
             margin-bottom: 40px;
             line-height: 1.25;
@@ -172,9 +188,9 @@
 
         /* SEZIONE FEATURES (I Tre Pilastri) */
         .features-section {
-            max-width: 1200px;
+            max-width: min(1200px, calc(100vw - 24px));
             margin: 0 auto;
-            padding: 60px 20px 120px 20px;
+            padding: clamp(40px, 6vw, 60px) 20px clamp(72px, 10vw, 120px) 20px;
         }
 
         .grid-features {
@@ -187,7 +203,7 @@
             background-color: var(--card-bg);
             border: 1px solid rgba(26, 48, 29, 0.06);
             border-radius: 24px;
-            padding: 40px;
+            padding: clamp(24px, 3vw, 40px);
             box-shadow: 0 10px 30px rgba(26, 48, 29, 0.02);
             transition: all 0.3s ease;
             display: flex;
@@ -234,7 +250,7 @@
 
         /* FASCIA VALORI + FLUSSO */
         .values-flow-section {
-            max-width: 1200px;
+            max-width: min(1200px, calc(100vw - 24px));
             margin: 10px auto 30px auto;
             padding: 0 20px;
         }
@@ -243,7 +259,7 @@
             background: #f9f6ee;
             border: 1px solid rgba(26, 48, 29, 0.12);
             border-radius: 18px;
-            padding: 24px 28px;
+            padding: clamp(18px, 2.4vw, 28px);
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0;
@@ -261,7 +277,7 @@
 
         .values-flow-title {
             font-family: 'Inter', sans-serif;
-            font-size: 28px;
+            font-size: clamp(1.7rem, 2.5vw, 1.95rem);
             line-height: 1;
             letter-spacing: 0.03em;
             font-weight: 800;
@@ -311,8 +327,8 @@
 
         .value-icon,
         .flow-icon {
-            width: 60px;
-            height: 60px;
+            width: clamp(52px, 5vw, 60px);
+            height: clamp(52px, 5vw, 60px);
             margin: 0 auto 10px auto;
             border-radius: 50%;
             border: 1px solid rgba(26, 48, 29, 0.35);
@@ -320,13 +336,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: clamp(20px, 2vw, 24px);
             background: #fffdf7;
         }
 
         .flow-icon-wrap {
             position: relative;
-            width: 60px;
+            width: clamp(52px, 5vw, 60px);
             margin: 0 auto 10px auto;
         }
 
@@ -349,14 +365,14 @@
 
         .value-label,
         .flow-label {
-            font-size: 18px;
+            font-size: clamp(0.96rem, 1.7vw, 1.125rem);
             font-weight: 700;
             color: #211d17;
             line-height: 1.2;
         }
 
         .flow-label {
-            font-size: 17px;
+            font-size: clamp(0.95rem, 1.5vw, 1.0625rem);
         }
 
         .card-link {
@@ -413,19 +429,14 @@
                 font-size: 15px;
             }
 
-            .hero h1 {
-                font-size: 40px;
-            }
-
-            .hero p {
-                font-size: 24px;
-            }
-
-            .hero {
-                padding-top: 180px;
-            }
             .nav-menu {
                 display: none; /* Per pura semplicità di codice statico */
+            }
+        }
+
+        @media (max-width: 1360px), (max-height: 900px) {
+            body.public-menu-enabled main {
+                zoom: min(1, calc((100vw - 24px) / 1360px), calc((100vh - 120px) / 980px));
             }
         }
     </style>
