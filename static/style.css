@@ -68,6 +68,7 @@ body.public-menu-enabled {
   color: #29412a;
   text-decoration: none;
   font-weight: 700;
+  white-space: nowrap;
   padding: 12px 14px;
   border-radius: 999px;
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -333,26 +334,68 @@ body.elenco-collapsed #elencoAziende {
 
 @media (max-width: 900px) {
   body.public-menu-enabled {
-    padding-top: 132px;
+    padding-top: 92px;
   }
 
   .public-fixed-menu {
-    height: auto;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 12px;
-    gap: 10px;
-  }
-
-  .public-fixed-menu__nav {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    height: 84px;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 10px;
     gap: 8px;
   }
 
+  .public-fixed-menu__brand {
+    flex: 0 0 auto;
+  }
+
+  .public-fixed-menu__nav {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    gap: 6px;
+    padding-bottom: 2px;
+  }
+
+  .public-fixed-menu__nav::-webkit-scrollbar {
+    display: none;
+  }
+
   .public-fixed-menu__nav a {
-    padding: 9px 11px;
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 560px) {
+  body.public-menu-enabled {
+    padding-top: 84px;
+  }
+
+  .public-fixed-menu {
+    padding: 0 8px;
+  }
+
+  .public-fixed-menu__brand-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .public-fixed-menu__brand-text {
+    font-size: 1.9rem;
+  }
+
+  .public-fixed-menu__nav a {
+    font-size: 0.86rem;
+    padding: 7px 9px;
+  }
+
+  .public-fixed-menu__nav a.public-fixed-menu__cta {
+    padding: 7px 12px;
   }
 }
 

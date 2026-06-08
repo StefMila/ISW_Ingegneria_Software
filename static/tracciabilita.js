@@ -309,14 +309,16 @@ if (lotNumberInput) {
   });
 }
 
-const prefilledLot = getLotFromQuery();
-if (prefilledLot && lotNumberInput) {
-  lotNumberInput.value = prefilledLot;
-  loadTraceability(prefilledLot);
-} else {
-  setStatus('Pronto. Inserisci un lotto per vedere la tracciabilita.');
-  hideResult();
-}
+document.addEventListener('DOMContentLoaded', async () => {
+  const prefilledLot = getLotFromQuery();
+  if (prefilledLot && lotNumberInput) {
+    lotNumberInput.value = prefilledLot;
+    loadTraceability(prefilledLot);
+  } else {
+    setStatus('Pronto. Inserisci un lotto per vedere la tracciabilita.');
+    hideResult();
+  }
+});
 
 window.addEventListener('beforeunload', () => {
   stopQrScan();

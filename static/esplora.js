@@ -113,28 +113,6 @@ function filterAziendeInCurrentViewport(aziende, enabled = false) {
 	});
 }
 
-function loadConsumerMenu() {
-	const token = localStorage.getItem('token');
-	const userType = localStorage.getItem('userType');
-	const menuRoot = document.getElementById('menu-root');
-
-	if (!menuRoot) return;
-
-	if (!token || userType !== 'consumatore') {
-		menuRoot.innerHTML = '';
-		return;
-	}
-
-	fetch('/menu-consumatore.html')
-		.then((res) => res.text())
-		.then((html) => {
-			menuRoot.innerHTML = html;
-		})
-		.catch((err) => {
-			console.error('Errore caricamento menu:', err);
-		});
-}
-
 function loadGoogleMapsApi() {
 	fetch('/api/config')
 		.then((res) => res.json())
@@ -972,6 +950,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	initQuickFilters();
 	updateAroundMeButtonState();
-	loadConsumerMenu();
 	loadGoogleMapsApi();
 });
