@@ -53,7 +53,7 @@ body.public-menu-enabled {
 
 .public-fixed-menu__brand-text {
   font-size: clamp(1.6rem, 2.2vw, 2.2rem);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: #1f3d20;
 }
@@ -67,7 +67,7 @@ body.public-menu-enabled {
 .public-fixed-menu__nav a {
   color: #29412a;
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 600;
   padding: 12px 14px;
   border-radius: 999px;
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -81,6 +81,7 @@ body.public-menu-enabled {
 .public-fixed-menu__nav a.public-fixed-menu__cta {
   background: #1f4f1f;
   color: #fff;
+  font-weight: 700;
   padding: 12px 20px;
 }
 
@@ -988,6 +989,11 @@ input[type="checkbox"]:invalid {
   max-width: 900px;
 }
 
+.home-consumatore-page .dashboard-container {
+  margin: 0 auto;
+  padding-top: 92px;
+}
+
 @media (max-width: 520px) {
   .home-consumatore-page .top-left-actions {
     top: 10px;
@@ -1012,6 +1018,10 @@ input[type="checkbox"]:invalid {
   }
 
   .home-consumatore-page .consumer-content {
+    padding-top: 70px;
+  }
+
+  .home-consumatore-page .dashboard-container {
     padding-top: 70px;
   }
 }

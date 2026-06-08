@@ -1,4 +1,35 @@
 (() => {
+  const isAuthenticatedConsumer = () => {
+    const token = localStorage.getItem('token');
+    const userType = localStorage.getItem('userType');
+    return Boolean(token) && userType === 'consumatore';
+  };
+
+  const ensureMenuRoot = () => {
+    let menuRoot = document.getElementById('menu-root');
+    if (!menuRoot) {
+      menuRoot = document.createElement('div');
+      menuRoot.id = 'menu-root';
+      document.body.insertAdjacentElement('afterbegin', menuRoot);
+    }
+
+    return menuRoot;
+  };
+
+  const mountConsumerMenu = async () => {
+    const menuRoot = ensureMenuRoot();
+    if (!menuRoot) return;
+
+    try {
+      const response = await fetch('/menu-consumatore.html');
+      const html = await response.text();
+      menuRoot.innerHTML = html;
+      document.body.classList.add('home-consumatore-page');
+    } catch (error) {
+      console.error('Errore caricamento menu consumatore:', error);
+    }
+  };
+
   const ensureFontAwesome = () => {
     if (document.querySelector('link[data-public-menu-fa="1"]')) return;
     if (document.querySelector('link[href*="font-awesome"]')) return;
@@ -20,6 +51,7 @@
       <nav class="public-fixed-menu__nav" aria-label="Navigazione pubblica">
         <a href="/esplora.html" data-menu-link="/esplora.html">Trova gli Allevatori</a>
         <a href="/tracciabilita.html" data-menu-link="/tracciabilita.html">Scansiona i Prodotti</a>
+        <a href="/login.html" data-menu-link="/login.html">Login</a>
         <a class="public-fixed-menu__cta" href="/signup.html" data-menu-link="/signup.html">Registrazione</a>
       </nav>
     </header>
@@ -35,11 +67,16 @@
     });
   };
 
-  const mountPublicMenu = () => {
+  const mountPublicMenu = async () => {
     if (document.querySelector('.public-fixed-menu')) return;
 
     const body = document.body;
     if (!body) return;
+
+    if (isAuthenticatedConsumer()) {
+      await mountConsumerMenu();
+      return;
+    }
 
     ensureFontAwesome();
 

@@ -21,25 +21,6 @@ const setCountBadge = (text, success = false) => {
 	publicEventsCount.classList.toggle('status-chip-warning', !success);
 };
 
-const loadConsumerMenu = async () => {
-	if (!menuRoot) return;
-
-	const token = localStorage.getItem('token');
-	const userType = localStorage.getItem('userType');
-	if (!token || userType !== 'consumatore') {
-		menuRoot.innerHTML = '';
-		return;
-	}
-
-	try {
-		const response = await fetch('/menu-consumatore.html');
-		const html = await response.text();
-		menuRoot.innerHTML = html;
-	} catch (error) {
-		console.error('Errore caricamento menu consumatore:', error);
-	}
-};
-
 const formatDateTime = (item) => {
 	const startDate = item.date ? new Date(`${item.date}T${item.startTime || '00:00'}`) : null;
 	if (!startDate || Number.isNaN(startDate.getTime())) {
@@ -161,7 +142,6 @@ if (resetFiltersButton) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-	await loadConsumerMenu();
 	await loadCompanies();
 	await loadPublicEvents();
 });
