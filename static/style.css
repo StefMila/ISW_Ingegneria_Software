@@ -1672,7 +1672,7 @@ input[type="checkbox"]:invalid {
 
 .azienda-foto-filename {
   display: block;
-  color: #64748b;
+  color: var(--green-hover);
   margin-bottom: 6px;
 }
 
@@ -1680,7 +1680,7 @@ input[type="checkbox"]:invalid {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #475569;
+  color: var(--green-hover);
 }
 
 .save-animal-btn,
@@ -1986,7 +1986,7 @@ input[type="checkbox"]:invalid {
   grid-template-columns: 200px 1fr;
   align-items: center;
   padding-bottom: 16px;
-  border-bottom: 1px solid #f7fafc;
+  border-bottom: 1px solid #f8fcf7;
 }
 
 /* Ultimo elemento senza bordo inferiore */
@@ -1999,7 +1999,7 @@ input[type="checkbox"]:invalid {
 .info-field-group label {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #718096;
+  color: var(--text-mid);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -2014,7 +2014,7 @@ input[type="checkbox"]:invalid {
 /* Testo in modalità lettura */
 .view-mode-text {
   font-size: 1.1rem;
-  color: #1a202c;
+  color: var(--text-dark);
   font-weight: 500;
   display: inline-block;
   padding: 6px 0;
@@ -2026,9 +2026,9 @@ input[type="checkbox"]:invalid {
   max-width: 500px; /* Evita che l'input diventi troppo largo su schermi giganti */
   padding: 8px 12px;
   font-size: 1rem;
-  color: #2d3748;
+  color: var(--green-dark);
   background-color: #fff;
-  border: 1px solid #cbd5e0;
+  border: 1px solid var(--green-light);
   border-radius: 6px;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -2064,10 +2064,10 @@ input[type="checkbox"]:invalid {
 .btn-success:hover { background-color: #2f855a; }
 
 .btn-secondary {
-  background-color: #edf2f7;
-  color: #4a5568;
+  background-color: #dcecd7;
+  color: var(--green-hover);;
 }
-.btn-secondary:hover { background-color: #e2e8f0; }
+.btn-secondary:hover { background-color: var(--green-light); }
 
 button:active {
   transform: scale(0.98);
