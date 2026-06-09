@@ -484,6 +484,58 @@ export const createGoogleCalendarEvent = async ({ integration, eventPayload }) =
   return data;
 };
 
+export const updateGoogleCalendarEvent = async ({ integration, googleEventId, eventPayload }) => {
+  const accessToken = await refreshAccessTokenIfNeeded(integration);
+  const normalizedVisibility = eventPayload?.visibility === 'public' ? 'public' : 'private';
+  const targetCalendarId = normalizedVisibility === 'public'
+    ? (integration.publicCalendarId || integration.calendarId || 'primary')
+    : (integration.privateCalendarId || integration.calendarId || 'primary');
+  const calendarId = encodeURIComponent(targetCalendarId);
+  const encodedEventId = encodeURIComponent(String(googleEventId || '').trim());
+  const payloadForGoogle = { ...eventPayload };
+  delete payloadForGoogle.visibility;
+
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${encodedEventId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payloadForGoogle)
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    if (response.status === 404) {
+      return null;
+    }
+    const errorMessage = data?.error?.message || 'Errore aggiornamento evento su Google Calendar';
+    throw new Error(errorMessage);
+  }
+
+  return data;
+};
+
+export const upsertGoogleCalendarEvent = async ({ integration, eventPayload, existingGoogleEventId }) => {
+  const normalizedExistingId = typeof existingGoogleEventId === 'string'
+    ? existingGoogleEventId.trim()
+    : '';
+
+  if (normalizedExistingId) {
+    const updated = await updateGoogleCalendarEvent({
+      integration,
+      googleEventId: normalizedExistingId,
+      eventPayload
+    });
+
+    if (updated?.id) {
+      return updated;
+    }
+  }
+
+  return createGoogleCalendarEvent({ integration, eventPayload });
+};
+
 export const getGoogleIntegrationForUserAzienda = async ({ userId, aziendaId }) => {
   return GoogleCalendarIntegration.findOne({ ownerUserId: userId, aziendaId });
 };

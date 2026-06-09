@@ -975,7 +975,8 @@ input[type="checkbox"]:invalid {
   margin-bottom: 8px;
 }
 
-.home-consumatore-page .sidebar-menu a {
+.home-consumatore-page .sidebar-menu a,
+.home-consumatore-page .sidebar-menu .menu-title {
   display: block;
   color: #f3f9e8;
   text-decoration: none;
@@ -988,7 +989,8 @@ input[type="checkbox"]:invalid {
   color: #ffffff;
 }
 
-.home-consumatore-page .sidebar-menu .dropdown > a {
+.home-consumatore-page .sidebar-menu .dropdown > a,
+.home-consumatore-page .sidebar-menu .dropdown > .menu-title {
   font-weight: bold;
 }
 
@@ -1325,7 +1327,7 @@ input[type="checkbox"]:invalid {
   gap: 6px;
   align-items: stretch;
   justify-content: center;
-  min-width: 120px;
+  min-width: 190px;
 }
 
 .mungiture-table tbody td:last-child button {
@@ -1333,8 +1335,8 @@ input[type="checkbox"]:invalid {
   min-width: 0;
   white-space: normal;
   line-height: 1.15;
-  padding: 8px 10px;
-  font-size: 0.88rem;
+  padding: 10px 12px;
+  font-size: 0.92rem;
 }
 
 .mungiture-table .delete-mungitura-btn {
@@ -1606,6 +1608,79 @@ input[type="checkbox"]:invalid {
   outline: none;
   border-color: var(--green-dark);
   box-shadow: 0 0 0 2px rgba(74,124,31,0.15);
+}
+
+.inline-photo-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.inline-photo-preview {
+  min-height: 44px;
+}
+
+.inline-photo-input {
+  max-width: 170px;
+  font-size: 0.78rem;
+}
+
+.inline-photo-pick-btn {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  border: 1px solid var(--green-mid);
+  border-radius: 6px;
+  background: #eef8e6;
+  color: var(--green-dark);
+  cursor: pointer;
+}
+
+.inline-photo-pick-btn:hover {
+  background: #e3f1d6;
+}
+
+.inline-photo-filename {
+  color: var(--text-mid);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  max-width: 170px;
+  word-break: break-word;
+}
+
+.inline-remove-photo-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-mid);
+  white-space: nowrap;
+}
+
+.inline-remove-photo {
+  width: 14px;
+  height: 14px;
+}
+
+.azienda-foto-upload-btn {
+  margin-bottom: 6px;
+}
+
+.azienda-foto-preview {
+  margin-bottom: 6px;
+}
+
+.azienda-foto-filename {
+  display: block;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.azienda-foto-remove-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
 }
 
 .save-animal-btn,
@@ -2624,21 +2699,6 @@ button:active {
   color: #d7eed6;
 }
 
-.stats-mungiture-page #refreshStatsBtn {
-  height: 38px;
-  padding: 0 14px;
-  border-radius: 9px;
-  border: none;
-  background: #2fbd8f;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.stats-mungiture-page #refreshStatsBtn:hover {
-  background: #43cfa2;
-}
-
 .stats-mungiture-page .stats-block {
   margin-bottom: 10px;
   padding: 10px;
@@ -2743,7 +2803,7 @@ button:active {
 .stats-mungiture-page .stats-topcow-label {
   margin-top: 4px;
   font-size: 0.82rem;
-  color: #d3e7d5;
+  color: #e2f4e5;
 }
 
 .stats-mungiture-page .stats-topcow-list {
@@ -2752,13 +2812,26 @@ button:active {
 }
 
 .stats-mungiture-page .stats-topcow-item {
-  border: 1px solid #3b694d;
-  background: #173b26;
+  border: 1px solid #4e8564;
+  background: linear-gradient(180deg, #1d4a31 0%, #173c28 100%);
+}
+
+.stats-mungiture-page .stats-topcow-rank {
+  background: #dff4dd;
+  color: #143d22;
+}
+
+.stats-mungiture-page .stats-topcow-name {
+  color: #ecfbef;
+}
+
+.stats-mungiture-page .stats-topcow-value {
+  color: #9ff3b7;
 }
 
 .stats-mungiture-page .stats-topcow-empty {
   padding-left: 0;
-  color: #cae6cc;
+  color: #d8f0da;
 }
 
 .stats-mungiture-page .stats-period-grid {
@@ -2790,18 +2863,22 @@ button:active {
 
 .stats-mungiture-page .animali-table tbody td {
   padding: 8px 10px;
-  color: #1f2937;
-  border-bottom-color: #b9c9ae;
+  color: #e8f8e8;
+  border-bottom-color: #406c51;
+}
+
+.stats-mungiture-page .animali-table tbody tr {
+  background: rgba(24, 57, 37, 0.92);
 }
 
 .stats-mungiture-page .animali-table tbody tr:hover {
-  background: #dce8d5;
+  background: rgba(38, 83, 54, 0.95);
 }
 
 .stats-mungiture-page .stats-table-total-row td {
-  color: #1f2937;
-  background: #d5dfcf;
-  border-bottom-color: #aabda0;
+  color: #f2fff4;
+  background: #275339;
+  border-bottom-color: #4e8564;
 }
 
 @media (max-width: 900px) {
