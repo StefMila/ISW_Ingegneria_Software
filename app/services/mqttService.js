@@ -19,6 +19,9 @@ const BENESSERE_KEYS = {
     bpm: 'frequenza_cardiaca'
 };
 
+const MIN_MUNGITURA_READING = 2;
+const MAX_MUNGITURA_READING = 10;
+
 const asNumber = (value) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
@@ -211,35 +214,32 @@ export const avviaSimulatoreHardware = () => {
                             break;
 
                         case 'peso':
-                            // Parte da una base di 300 (es. 300 litri/kg nel tank) o dal valore precedente
-                            const pesoAttuale = datiPrecedenti.peso || 300;
-                            // Incremento decimale positivo ad ogni ciclo (es. da 0.1 a 0.5 kg/litri alla volta)
-                            const incrementoPeso = parseFloat((Math.random() * (0.5 - 0.1) + 0.1).toFixed(2));
-                            payloadJSON.peso = parseFloat((pesoAttuale + incrementoPeso).toFixed(2));
+                            if (sensore.tipoDispositivo === 'mungitura') {
+                                payloadJSON.peso = parseFloat((Math.random() * (MAX_MUNGITURA_READING - MIN_MUNGITURA_READING) + MIN_MUNGITURA_READING).toFixed(2));
+                            } else {
+                                // Parte da una base di 300 (es. 300 litri/kg nel tank) o dal valore precedente
+                                const pesoAttuale = datiPrecedenti.peso || 300;
+                                // Incremento decimale positivo ad ogni ciclo (es. da 0.1 a 0.5 kg/litri alla volta)
+                                const incrementoPeso = parseFloat((Math.random() * (0.5 - 0.1) + 0.1).toFixed(2));
+                                payloadJSON.peso = parseFloat((pesoAttuale + incrementoPeso).toFixed(2));
+                            }
                             break;
 
                         case 'litri':
                         case 'litri_latte':
-                            const latteAttuale = datiPrecedenti.litri || datiPrecedenti.litri_latte || 0.0;
-
-                            // Incremento default
-                            let minIncremento = 0.0;
-                            let maxIncremento = 0.0;
-
                             if (sensore.tipoDispositivo === 'mungitura') {
-                                minIncremento = 0.1; 
-                                maxIncremento = 1.5;
+                                const misurazioneMungitura = parseFloat((Math.random() * (MAX_MUNGITURA_READING - MIN_MUNGITURA_READING) + MIN_MUNGITURA_READING).toFixed(2));
+                                if (cap.tipoDato === 'litri') payloadJSON.litri = misurazioneMungitura;
+                                else payloadJSON.litri_latte = misurazioneMungitura;
                             } else if (sensore.tipoDispositivo === 'lavorazione') {
-                                minIncremento = 5.0; 
-                                maxIncremento = 25.0;
-                            }
+                                const latteAttuale = datiPrecedenti.litri || datiPrecedenti.litri_latte || 0.0;
+                                const incrementoLatte = parseFloat((Math.random() * (25.0 - 5.0) + 5.0).toFixed(2));
+                                const totaleLatte = parseFloat((latteAttuale + incrementoLatte).toFixed(2));
 
-                            const incrementoLatte = parseFloat((Math.random() * (maxIncremento - minIncremento) + minIncremento).toFixed(2));
-                            const totaleLatte = parseFloat((latteAttuale + incrementoLatte).toFixed(2));
-                            
-                            // Assegna il valore alla chiave corretta che hai nel DB
-                            if (cap.tipoDato === 'litri') payloadJSON.litri = totaleLatte;
-                            else payloadJSON.litri_latte = totaleLatte;
+                                // Assegna il valore alla chiave corretta che hai nel DB
+                                if (cap.tipoDato === 'litri') payloadJSON.litri = totaleLatte;
+                                else payloadJSON.litri_latte = totaleLatte;
+                            }
                             break;
 
                         case 'esposizione_solare':
