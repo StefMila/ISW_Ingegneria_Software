@@ -1865,7 +1865,7 @@ paths:
                     message: Animale non trovato
     delete:
       summary: Rimozione animale
-      description: Elimina l'animale identificato dall'id specificato.
+      description: Elimina l'animale identificato dall'id specificato. Se l'animale ha gia mungiture registrate, l'operazione viene bloccata.
       tags:
         - Animale
       security:
@@ -1937,6 +1937,17 @@ paths:
                 notFound:
                   value:
                     message: Animale non trovato
+
+        '409':
+          description: Eliminazione non consentita per vincoli di dominio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                animaleConMungiture:
+                  value:
+                    message: 'Impossibile eliminare la mucca: esistono mungiture gia registrate'
 
         '500':
           description: Errore interno del server
@@ -2957,27 +2968,37 @@ paths:
   /api/lavorazioni/search:
     get:
       summary: Visualizza template
-      description: Restituisce i dettagli di un template lavorazione (non funziona per lavorazioni non template).
+      description: Restituisce i dettagli di un template lavorazione (non funziona per lavorazioni non template). Richiede sempre aziendaId e almeno uno tra codiceLavorazione e descrizioneTemplate.
       tags:
         - Lavorazione
       security:
-       - bearerAuth: []
+        - bearerAuth: []
       parameters:
         - in: query
-          name: codiceLavorazione
+          name: aziendaId
           required: true
           schema:
             type: string
+          description: ID dell'azienda a cui appartiene il template richiesto.
+        - in: query
+          name: codiceLavorazione
+          required: false
+          schema:
+            type: string
           description: Codice lavorazione assegnato al template di cui voglio reperire le informazioni.
+        - in: query
+          name: descrizioneTemplate
+          required: false
+          schema:
+            type: string
+          description: Testo libero da cercare nel nome o nelle note del template.
       responses:
         '200':
           description: Template Lavorazione trovato
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LavorazioneItem'
+                $ref: '#/components/schemas/LavorazioneItem'
               examples:
                 templateDetails:
                   value:
@@ -2993,15 +3014,18 @@ paths:
                     outputUnit: vasetti
                     codiceLavorazione: AC001
         '400':
-          description: Codice lavorazione non valido
+          description: Parametri di ricerca non validi
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
-                noCodiceLavorazione:
+                missingAziendaId:
                   value:
-                    message: Il codice del template è obbligatorio
+                    message: Il parametro aziendaId è obbligatorio
+                missingSearchCriteria:
+                  value:
+                    message: Inserisci codiceLavorazione o descrizioneTemplate
                 invalidCodiceLavorazione:
                   value:
                     message: Codice template non valido
@@ -3998,7 +4022,7 @@ paths:
 
     delete:
       summary: Elimina mungitura
-      description: Elimina una mungitura esistente dell'azienda dell'utente autenticato.
+      description: Elimina una mungitura esistente dell'azienda dell'utente autenticato. Se la mungitura e gia referenziata in una lavorazione, l'operazione viene bloccata.
       tags:
         - Mungitura
       security:
@@ -4048,6 +4072,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Eliminazione non consentita per vincoli di dominio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                mungituraUsataInLavorazione:
+                  value:
+                    message: 'Impossibile eliminare la mungitura: e gia utilizzata in una lavorazione'
         '500':
           description: Errore interno del server
           content:

@@ -6,7 +6,7 @@ import { assertAziendaOwnedByUser } from './aziende.js';
 import Evento from '../models/evento.js';
 import Azienda from '../models/azienda.js';
 import {
-  createGoogleCalendarEvent,
+  upsertGoogleCalendarEvent,
   getGoogleIntegrationForUserAzienda,
   refreshAccessTokenIfNeeded
 } from './google-calendar.js';
@@ -404,14 +404,15 @@ aziendeRouter.post('/', async (req, res) => {
     await evento.save();
 
     const integration = await getGoogleIntegrationForUserAzienda({ userId: req.user.userId, aziendaId });
-    if (integration?.connected) {
+    if (integration?.connected && integration?.syncMode === 'automatica') {
       try {
-        const createdGoogleEvent = await createGoogleCalendarEvent({
+        const syncedGoogleEvent = await upsertGoogleCalendarEvent({
           integration,
-          eventPayload: buildGooglePayload(evento, integration.defaultReminderMinutes)
+          eventPayload: buildGooglePayload(evento, integration.defaultReminderMinutes),
+          existingGoogleEventId: evento.googleCalendarEventId
         });
 
-        evento.googleCalendarEventId = createdGoogleEvent.id;
+        evento.googleCalendarEventId = syncedGoogleEvent.id;
         evento.googleSyncedAt = new Date();
         await evento.save();
       } catch (syncError) {
@@ -582,12 +583,13 @@ const syncAllGoogleEventsHandler = async (req, res) => {
 
     for (const evento of items) {
       try {
-        const createdGoogleEvent = await createGoogleCalendarEvent({
+        const syncedGoogleEvent = await upsertGoogleCalendarEvent({
           integration,
-          eventPayload: buildGooglePayload(evento, integration.defaultReminderMinutes)
+          eventPayload: buildGooglePayload(evento, integration.defaultReminderMinutes),
+          existingGoogleEventId: evento.googleCalendarEventId
         });
 
-        evento.googleCalendarEventId = createdGoogleEvent.id;
+        evento.googleCalendarEventId = syncedGoogleEvent.id;
         evento.googleSyncedAt = new Date();
         await evento.save();
         synced += 1;
@@ -650,12 +652,13 @@ const syncSingleGoogleEventHandler = async (req, res) => {
       return res.status(400).json({ message: 'Google Calendar non connesso per questa azienda' });
     }
 
-    const createdGoogleEvent = await createGoogleCalendarEvent({
+    const syncedGoogleEvent = await upsertGoogleCalendarEvent({
       integration,
-      eventPayload: buildGooglePayload(evento, integration.defaultReminderMinutes)
+      eventPayload: buildGooglePayload(evento, integration.defaultReminderMinutes),
+      existingGoogleEventId: evento.googleCalendarEventId
     });
 
-    evento.googleCalendarEventId = createdGoogleEvent.id;
+    evento.googleCalendarEventId = syncedGoogleEvent.id;
     evento.googleSyncedAt = new Date();
     await evento.save();
 

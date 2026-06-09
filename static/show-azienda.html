@@ -69,6 +69,22 @@
 
             <div class="azienda-card-view" id="aziendaCard">
                 <div class="info-field-group">
+                    <label>Foto Azienda</label>
+                    <div class="field-content">
+                        <div id="view-fotoAzienda" class="view-mode-text">-</div>
+                        <div id="edit-fotoWrapper" class="edit-mode-input hidden">
+                            <button type="button" id="pickFotoAziendaBtn" class="btn-secondary azienda-foto-upload-btn">Carica foto</button>
+                            <input type="file" id="edit-fotoAzienda" accept="image/*" hidden>
+                            <div id="edit-fotoPreview" class="azienda-foto-preview"></div>
+                            <small id="edit-fotoFilename" class="azienda-foto-filename">Nessun file selezionato</small>
+                            <label class="azienda-foto-remove-label">
+                                <input type="checkbox" id="edit-removeFotoAzienda"> Rimuovi foto
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-field-group">
                     <label>Ragione Sociale</label>
                     <div class="field-content">
                         <span id="view-companyName" class="view-mode-text">-</span>

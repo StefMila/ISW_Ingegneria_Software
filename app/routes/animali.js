@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import animale from '../models/animale.js';
+import Mungitura from '../models/munigitura.js';
 import azienda from '../models/azienda.js';
 import { checkAuth, checkUserType } from './auth.js';
 import { assertAziendaOwnedByUser } from './aziende.js';
@@ -191,6 +192,17 @@ export const deleteAnimale = async (req, res) => {
         if (!az) {
             return res.status(403).json({
                 message: 'Questo animale non appartiene alla tua azienda'
+            });
+        }
+
+        const hasRelatedMungiture = await Mungitura.exists({
+            aziendaId: req.params.aziendaId,
+            animaleId: id
+        });
+
+        if (hasRelatedMungiture) {
+            return res.status(409).json({
+                message: 'Impossibile eliminare la mucca: esistono mungiture gia registrate'
             });
         }
         //TODO: controllare se l'animale è associato a lotti prodotto/cartelle cliniche/dati IoT: in caso affermativo, applicare soft delete.

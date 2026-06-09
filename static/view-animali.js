@@ -56,7 +56,13 @@ const deleteAnimaleById = async (animaleId) => {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      renderStatus(data.message || 'Errore durante l\'eliminazione dell\'animale.', 'red');
+      const errorMessage = data.message || 'Errore durante l\'eliminazione dell\'animale.';
+      renderStatus(errorMessage, 'red');
+
+      if (response.status === 409) {
+        window.alert(errorMessage);
+      }
+
       return;
     }
 
@@ -129,6 +135,14 @@ const fetchAnimali = async () => {
 const rowDataMap = new Map();
 // Sanitizza un valore per uso come attributo HTML
 const escAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+const readImageAsDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+  reader.onerror = () => reject(new Error('Impossibile leggere la foto selezionata.'));
+  reader.readAsDataURL(file);
+});
+
 const renderFoto = (foto, name) => {
   if (!foto) {
     return '<span class="animal-photo-placeholder">—</span>';
@@ -210,6 +224,16 @@ document.querySelectorAll('[data-filter]').forEach((el) => {
 });
 // Listener unificato per i pulsanti della tabella (modifica, elimina, salva, annulla)
 animaliBody.addEventListener('click', async (event) => {
+  const pickPhotoButton = event.target.closest('.inline-photo-pick-btn');
+  if (pickPhotoButton) {
+    const row = pickPhotoButton.closest('tr');
+    const photoInput = row?.querySelector('.inline-photo-input');
+    if (photoInput) {
+      photoInput.click();
+    }
+    return;
+  }
+
   const deleteButton = event.target.closest('.delete-animal-btn');
   if (deleteButton) { deleteAnimaleById(deleteButton.dataset.id); return; }
 
@@ -229,6 +253,61 @@ animaliBody.addEventListener('click', async (event) => {
     const animale = rowDataMap.get(cancelButton.dataset.id);
     if (animale) restoreRow(cancelButton.closest('tr'), animale);
     return;
+  }
+});
+
+animaliBody.addEventListener('change', async (event) => {
+  const photoInput = event.target.closest('.inline-photo-input');
+  if (!photoInput) return;
+
+  const row = photoInput.closest('tr');
+  const preview = row?.querySelector('.inline-photo-preview');
+  const fileNameLabel = row?.querySelector('.inline-photo-filename');
+  const removeCheckbox = row?.querySelector('.inline-remove-photo');
+  const file = photoInput.files && photoInput.files[0];
+
+  photoInput.dataset.photoDataUrl = '';
+  if (fileNameLabel) {
+    fileNameLabel.textContent = file?.name || 'Nessun file selezionato';
+  }
+
+  if (!file) {
+    return;
+  }
+
+  if (!file.type.startsWith('image/')) {
+    renderStatus('Seleziona un file immagine valido.', 'red');
+    photoInput.value = '';
+    return;
+  }
+
+  // Base64 aumenta la dimensione: limitiamo il file per restare nel vincolo backend.
+  if (file.size > 1_400_000) {
+    renderStatus('Foto troppo grande. Usa un file sotto 1.4MB.', 'red');
+    photoInput.value = '';
+    return;
+  }
+
+  try {
+    const dataUrl = await readImageAsDataUrl(file);
+    if (!dataUrl) {
+      throw new Error('Foto non valida');
+    }
+
+    photoInput.dataset.photoDataUrl = dataUrl;
+    if (removeCheckbox) {
+      removeCheckbox.checked = false;
+    }
+
+    const currentName = row?.querySelector('[data-field="name"]')?.value || 'animale';
+    if (preview) {
+      preview.innerHTML = renderFoto(dataUrl, currentName);
+    }
+  } catch (err) {
+    console.error('Errore lettura foto animale:', err);
+    renderStatus('Impossibile leggere la foto selezionata.', 'red');
+    photoInput.value = '';
+    photoInput.dataset.photoDataUrl = '';
   }
 });
 
@@ -257,7 +336,17 @@ const openInlineEdit = (tr, a) => {
   if (tr.classList.contains('editing')) return;
   tr.classList.add('editing');
   tr.innerHTML = `
-    <td>${renderFoto(a.foto, a.name)}</td>
+    <td>
+      <div class="inline-photo-editor">
+        <div class="inline-photo-preview">${renderFoto(a.foto, a.name)}</div>
+        <button type="button" class="inline-photo-pick-btn">Carica foto</button>
+        <input class="inline-photo-input" type="file" accept="image/*" hidden>
+        <small class="inline-photo-filename">Nessun file selezionato</small>
+        <label class="inline-remove-photo-label">
+          <input class="inline-remove-photo" type="checkbox"> Rimuovi foto
+        </label>
+      </div>
+    </td>
     <td>${a.matricola || '—'}</td>
     <td><input class="inline-input" data-field="name" value="${escAttr(a.name)}"></td>
     <td>
@@ -302,10 +391,19 @@ const saveInlineEdit = async (tr, animaleId) => {
   }
 // Costruisce l'oggetto con i campi modificati da inviare al server, prendendo i valori dagli input della riga
   const formData = {};
-  tr.querySelectorAll('[data-field]').forEach(el => {
+  tr.querySelectorAll('.inline-input[data-field]').forEach(el => {
     const val = el.value.trim();
     if (val) formData[el.dataset.field] = val;
   });
+
+  const removePhoto = tr.querySelector('.inline-remove-photo')?.checked;
+  const photoDataUrl = tr.querySelector('.inline-photo-input')?.dataset.photoDataUrl || '';
+
+  if (removePhoto) {
+    formData.foto = '';
+  } else if (photoDataUrl) {
+    formData.foto = photoDataUrl;
+  }
 // Invia la richiesta di aggiornamento al server e gestisce la risposta, mostrando messaggi di successo o errore e aggiornando la tabella
   try {
     const response = await fetch(`/api/aziende/${aziendaId}/animali/${animaleId}`, {

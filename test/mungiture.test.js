@@ -5,6 +5,7 @@ import { jest, describe, beforeAll, beforeEach, afterEach, expect } from '@jest/
 import Azienda from '../app/models/azienda.js';
 import Animale from '../app/models/animale.js';
 import Mungitura from '../app/models/munigitura.js';
+import Lavorazione from '../app/models/lavorazione.js';
 import Sensore from '../app/models/sensore.js';
 import { ultimeLettureIot } from '../app/services/mqttService.js';
 // test sulla pagina e script.
@@ -424,6 +425,29 @@ describe('US109-110-111 routes Mungitura', () => {
       });
   });
 
+  test('DELETE /api/mungiture/:id con mungitura gia usata in lavorazione restituisce 409', async () => {
+    jest.spyOn(Mungitura, 'findById').mockResolvedValue({
+      _id: '665f8fd8ad8f8c0012f9c333',
+      aziendaId: '665f8fd8ad8f8c0012f9c111'
+    });
+    jest.spyOn(Azienda, 'findById').mockReturnValue(selectable({
+      _id: '665f8fd8ad8f8c0012f9c111',
+      ownerUserId: '665f8fd8ad8f8c0012f9c999'
+    }));
+    jest.spyOn(Lavorazione, 'exists').mockResolvedValue({ _id: '665f8fd8ad8f8c0012f9d111' });
+    const deleteSpy = jest.spyOn(Mungitura, 'deleteOne').mockResolvedValue({ deletedCount: 1 });
+
+    await request(app)
+      .delete('/api/mungiture/665f8fd8ad8f8c0012f9c333')
+      .set('Authorization', authHeader)
+      .expect(409)
+      .expect(res => {
+        expect(res.body.message).toBe('Impossibile eliminare la mungitura: e gia utilizzata in una lavorazione');
+      });
+
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
+
   test('PATCH /api/mungiture/:id completa manualmente e salva quantity/endedAt/status', async () => {
     const saveMock = jest.fn().mockResolvedValue(undefined);
     const mungituraDoc = {
@@ -447,7 +471,7 @@ describe('US109-110-111 routes Mungitura', () => {
       .send({
         status: 'completata',
         endedAt: '2026-06-04T10:00:00.000Z',
-        quantity: '14.75',
+        quantity: '7.25',
         unit: 'litri',
         notes: 'chiusura manuale'
       })
@@ -458,10 +482,44 @@ describe('US109-110-111 routes Mungitura', () => {
 
     expect(saveMock).toHaveBeenCalledTimes(1);
     expect(mungituraDoc.status).toBe('completata');
-    expect(mungituraDoc.quantity).toBe(14.75);
+    expect(mungituraDoc.quantity).toBe(7.25);
     expect(mungituraDoc.unit).toBe('litri');
     expect(mungituraDoc.notes).toBe('chiusura manuale');
     expect(response.body.mungitura).toBeDefined();
+  });
+
+  test('PATCH /api/mungiture/:id accetta quantity numerica anche fuori range sensore', async () => {
+    const saveMock = jest.fn().mockResolvedValue(undefined);
+    const mungituraDoc = {
+      _id: '665f8fd8ad8f8c0012f9c333',
+      aziendaId: '665f8fd8ad8f8c0012f9c111',
+      status: 'in_corso',
+      quantity: undefined,
+      unit: 'litri',
+      save: saveMock
+    };
+
+    jest.spyOn(Mungitura, 'findById').mockResolvedValue(mungituraDoc);
+    jest.spyOn(Azienda, 'findById').mockReturnValue(selectable({
+      _id: '665f8fd8ad8f8c0012f9c111',
+      ownerUserId: '665f8fd8ad8f8c0012f9c999'
+    }));
+
+    await request(app)
+      .patch('/api/mungiture/665f8fd8ad8f8c0012f9c333')
+      .set('Authorization', authHeader)
+      .send({
+        status: 'completata',
+        endedAt: '2026-06-04T10:00:00.000Z',
+        quantity: '12.01',
+        unit: 'litri'
+      })
+      .expect(200)
+      .expect(res => {
+        expect(res.body.message).toBe('Mungitura aggiornata con successo');
+      });
+
+    expect(saveMock).toHaveBeenCalledTimes(1);
   });
 
   test('PATCH /api/mungiture/:id rifiuta aggiornamento animaleId', async () => {
