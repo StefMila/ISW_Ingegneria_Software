@@ -1883,13 +1883,13 @@ input[type="checkbox"]:invalid {
   align-items: center;
   flex-wrap: wrap; /* permette agli elementi di andare a capo! */
   gap: 15px; /* Aggiunge spazio tra titolo e bottoni se vanno a capo */
-  border-bottom: 2px solid #edf2f7;
+  border-bottom: 2px solid #eef7ed;
   padding-bottom: 20px;
   margin-bottom: 25px;
 }
 
 .azienda-header-inline h2 {
-  color: #2d3748;
+  color: var(--green-dark);
   margin: 0;
   font-size: 1.6rem;
 }
@@ -1977,10 +1977,10 @@ input[type="checkbox"]:invalid {
 }
 
 .btn-primary {
-  background-color: #3182ce;
+  background-color: var(--green-mid);
   color: white;
 }
-.btn-primary:hover { background-color: #2b6cb0; }
+.btn-primary:hover { background-color: var(--green-hover); }
 
 .btn-success {
   background-color: #38a169;
