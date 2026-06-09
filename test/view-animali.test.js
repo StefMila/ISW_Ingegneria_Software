@@ -4,6 +4,7 @@ import { jest, describe, beforeEach, afterEach, beforeAll, expect } from '@jest/
 import jwt from 'jsonwebtoken';
 import Animale from '../app/models/animale.js';
 import Azienda from '../app/models/azienda.js';
+import Mungitura from '../app/models/munigitura.js';
 
 // Verifica che la pagina sia accessibile e che funzioni lo script.
 describe('US49, 48, 50 - View Animali - pagina e script', () => {
@@ -246,6 +247,7 @@ describe('US49, 48, 50 - View Animali - gestione animali', () => {
 			_id: aziendaId,
 			ownerUserId
 		});
+		jest.spyOn(Mungitura, 'exists').mockResolvedValue(null);
 		jest.spyOn(Animale, 'findByIdAndDelete').mockResolvedValue({
 			_id: animaleId
 		});
@@ -264,6 +266,7 @@ describe('US49, 48, 50 - View Animali - gestione animali', () => {
 			_id: aziendaId,
 			ownerUserId
 		});
+		jest.spyOn(Mungitura, 'exists').mockResolvedValue(null);
 		jest.spyOn(Animale, 'findByIdAndDelete').mockResolvedValue(null);
 
 		await request(app)
@@ -273,6 +276,25 @@ describe('US49, 48, 50 - View Animali - gestione animali', () => {
 			.expect((res) => {
 				expect(res.body.message).toBe('Animale non trovato');
 			});
+	});
+
+	test('DELETE /api/aziende/:aziendaId/animali/:id - errore: mucca con mungiture gia registrate (409)', async () => {
+		jest.spyOn(Azienda, 'findOne').mockResolvedValue({
+			_id: aziendaId,
+			ownerUserId
+		});
+		jest.spyOn(Mungitura, 'exists').mockResolvedValue({ _id: 'mocked_mungitura_id' });
+		const deleteSpy = jest.spyOn(Animale, 'findByIdAndDelete').mockResolvedValue({ _id: animaleId });
+
+		await request(app)
+			.delete(`/api/aziende/${aziendaId}/animali/${animaleId}`)
+			.set('Authorization', `Bearer ${token}`)
+			.expect(409)
+			.expect((res) => {
+				expect(res.body.message).toBe('Impossibile eliminare la mucca: esistono mungiture gia registrate');
+			});
+
+		expect(deleteSpy).not.toHaveBeenCalled();
 	});
 
 	test('DELETE /api/aziende/:aziendaId/animali/:id - errore: utente non autorizzato (403)', async () => {
@@ -291,6 +313,10 @@ describe('US49, 48, 50 - View Animali - gestione animali', () => {
 		jest.spyOn(Azienda, 'findOne').mockResolvedValue({
 			_id: aziendaId,
 			ownerUserId
+		});
+		jest.spyOn(Mungitura, 'exists').mockRejectedValue({
+			name: 'CastError',
+			kind: 'ObjectId'
 		});
 
 		const castError = new Error('Cast to ObjectId failed');

@@ -127,6 +127,21 @@ describe('API Aziende - Integrazione e Controllo Accessi', () => {
     expect(res.body.itemInfo.companyName).toBe(patchData.companyName);
   });
 
+  test('200 - PATCH /api/aziende/:id aggiorna anche la foto azienda', async () => {
+    const authHeader = buildAuthHeader(idAllevatoreProprietario);
+
+    const res = await request(app)
+      .patch(`/api/aziende/${idAziendaValidoEsistente}`)
+      .set('Authorization', authHeader)
+      .send({
+        foto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('itemInfo');
+    expect(res.body.itemInfo.foto).toContain('data:image/png;base64');
+  });
+
   test('400 - PATCH /api/aziende/:id restituisce 400 se l\'id non è un ObjectId valido', async () => {
     const authHeader = buildAuthHeader(idAllevatoreProprietario);
     const invalidObjectId = 'id-non-valido-123';

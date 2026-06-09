@@ -7,7 +7,6 @@ const filterMonthYear = document.getElementById('filterMonthYear');
 const filterYear = document.getElementById('filterYear');
 const compareYears = document.getElementById('compareYears');
 const filterCow = document.getElementById('filterCow');
-const refreshStatsBtn = document.getElementById('refreshStatsBtn');
 
 const dailyTotalCard = document.getElementById('dailyTotalCard');
 const monthlyTotalCard = document.getElementById('monthlyTotalCard');
@@ -364,7 +363,7 @@ const buildPieChart = (canvas, existingChart, breakdown, labelElement) => {
 				labels: ['Nessun dato'],
 				datasets: [{
 					data: [1],
-					backgroundColor: ['#d1d5db'],
+					backgroundColor: ['#4f6a59'],
 					borderWidth: 0
 				}]
 			},
@@ -391,7 +390,7 @@ const buildPieChart = (canvas, existingChart, breakdown, labelElement) => {
 			labels: [topCowLabel, 'Altre mucche'],
 			datasets: [{
 				data: [topCowLiters, others],
-				backgroundColor: ['#3f7f1f', '#b9c4cf'],
+				backgroundColor: ['#8fe3a8', '#4f6f86'],
 				borderWidth: 0
 			}]
 		},
@@ -626,7 +625,7 @@ const renderYearsChart = () => {
 		return;
 	}
 	const labels = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-	const palette = ['#3f7f1f', '#9a6a3a', '#6f8497', '#974f86', '#2a7a89', '#6f6f6f'];
+	const palette = ['#8fe3a8', '#ffd27d', '#8ec9ff', '#ff9dc0', '#86eadf', '#c5b3ff'];
 	const series = getMonthlySeriesByYear();
 
 	if (yearsChart) {
@@ -639,6 +638,9 @@ const renderYearsChart = () => {
 		data: monthValues.map((value) => Number(value.toFixed(2))),
 		borderColor: palette[index % palette.length],
 		backgroundColor: palette[index % palette.length],
+		pointBackgroundColor: '#102619',
+		pointBorderColor: palette[index % palette.length],
+		pointBorderWidth: 2,
 		pointRadius: 3,
 		pointHoverRadius: 5,
 		borderWidth: 2,
@@ -693,7 +695,7 @@ const renderYearsChart = () => {
 					position: 'top',
 					labels: {
 						boxWidth: 18,
-						color: '#e8f8e8'
+						color: '#f0fff2'
 					}
 				},
 				tooltip: {
@@ -704,17 +706,17 @@ const renderYearsChart = () => {
 			},
 			scales: {
 				x: {
-					ticks: { color: '#d7eed6' },
+					ticks: { color: '#e3f7e6' },
 					grid: { display: false }
 				},
 				y: {
 					beginAtZero: true,
 					ticks: {
-						color: '#d7eed6',
+						color: '#e3f7e6',
 						callback: (value) => `${Number(value).toFixed(0)} L`
 					},
 					grid: {
-						color: 'rgba(215, 238, 214, 0.2)'
+						color: 'rgba(203, 232, 214, 0.24)'
 					}
 				}
 			}
@@ -769,8 +771,6 @@ const bootstrap = async () => {
 		renderStatus(error.message || 'Errore durante il caricamento.', 'red');
 	}
 };
-
-refreshStatsBtn?.addEventListener('click', refreshStats);
 
 [filterCow, filterDate, filterMonth, filterMonthYear, filterYear, compareYears].forEach((element) => {
 	element?.addEventListener('change', refreshStats);

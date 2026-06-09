@@ -87,6 +87,24 @@ describe('US11 - Aggiungi Azienda', () => {
         expect(res.body.company).toBeDefined(); 
       });
   });
+
+  test('POST /api/aziende accetta foto azienda in formato data URL (201)', async () => {
+    await request(app)
+      .post('/api/aziende')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        companyName: 'Azienda Test Foto',
+        vatNumber: 'IT12345678901',
+        emailAzienda: 'test@example.com',
+        lat: 45.46,
+        lng: 9.19,
+        foto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
+      })
+      .expect(201)
+      .expect((res) => {
+        expect(res.body.company).toBeDefined();
+      });
+  });
 // caso senza token - 401.
   test('POST /api/aziende - errore: tentativo di accesso senza token (401)', async () => {
     // La creazione azienda deve sempre passare dal middleware di autenticazione.

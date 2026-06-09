@@ -1,6 +1,7 @@
 (() => {
   const SELECTED_AZIENDA_ID_KEY = 'selectedAziendaId';
   const SELECTED_AZIENDA_NAME_KEY = 'selectedAziendaName';
+  const VISIBLE_MUNGITURE_LIMIT = 10;
 
   const state = {
     tableBody: null,
@@ -183,6 +184,7 @@
 
   const renderTable = () => {
     const ordered = sortMungiture(state.mungiture);
+    const visibleItems = ordered.slice(0, VISIBLE_MUNGITURE_LIMIT);
 
     if (ordered.length === 0) {
       renderStatus('Nessuna mungitura registrata.', '#b45309');
@@ -191,8 +193,12 @@
       return;
     }
 
-    state.tableBody.innerHTML = ordered.map(buildRow).join('');
-    renderStatus(`${ordered.length} mungitura/e caricate.`, 'green');
+    state.tableBody.innerHTML = visibleItems.map(buildRow).join('');
+    if (ordered.length > VISIBLE_MUNGITURE_LIMIT) {
+      renderStatus(`Mostrate le ultime ${VISIBLE_MUNGITURE_LIMIT} mungiture su ${ordered.length} totali.`, 'green');
+    } else {
+      renderStatus(`${ordered.length} mungitura/e caricate.`, 'green');
+    }
     updateSortHeaders();
   };
 

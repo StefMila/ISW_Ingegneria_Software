@@ -478,8 +478,8 @@ export const getTemplateByCodiceLavorazione = async (req, res) => {
 		const { queryTemplate, codiceLavorazione, descrizioneTemplate, aziendaId } = req.query;
 
 		if (!aziendaId) {
-            return res.status(400).json({ message: 'Il parametro aziendaId è obbligatorio' });
-        }
+			return res.status(400).json({ message: 'Il parametro aziendaId è obbligatorio' });
+		}
 
 		const queryValue = typeof queryTemplate === 'string' ? queryTemplate.trim() : '';
 		const codiceValue = typeof codiceLavorazione === 'string' ? codiceLavorazione.trim() : '';
@@ -495,7 +495,7 @@ export const getTemplateByCodiceLavorazione = async (req, res) => {
 		}
 
 		const filter = {
-			aziendaId: aziendaId,
+			aziendaId,
 			isTemplate: true
 		};
 

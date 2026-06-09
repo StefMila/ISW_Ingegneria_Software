@@ -41,7 +41,7 @@ router.get('/public', async (req, res) => {
     try {
         // Solo i campi pubblici
         const items = await azienda.find({})
-            .select('_id companyName address geo location categories emailAzienda phoneNumber website')
+            .select('_id companyName address geo location categories emailAzienda phoneNumber website foto')
             .sort({ createdAt: 1 });
         return res.status(200).json({ items });
     } catch (error) {
@@ -57,7 +57,7 @@ router.use(checkUserType('allevatore'));
 // Handler per la registrazione di una nuova azienda
 const registerAzienda = async (req, res) => {
     try {
-        const { vatNumber, companyName, address, emailAzienda, phoneNumber, website, lat, lng, categories, productCategories } = req.body;
+        const { vatNumber, companyName, address, emailAzienda, phoneNumber, website, lat, lng, categories, productCategories, foto } = req.body;
 
         if (req.user.userType !== 'allevatore') {
             return res.status(403).json({
@@ -71,6 +71,7 @@ const registerAzienda = async (req, res) => {
         const normalizedAddress = typeof address === 'string' ? address.trim() : '';
         const normalizedPhoneNumber = typeof phoneNumber === 'string' ? phoneNumber.trim() : '';
         const normalizedWebsite = typeof website === 'string' ? website.trim() : '';
+        const normalizedFoto = typeof foto === 'string' ? foto.trim() : '';
         const normalizedCategories = normalizeCategories(productCategories ?? categories);
         const latitude = Number(lat);
         const longitude = Number(lng);
@@ -93,6 +94,9 @@ const registerAzienda = async (req, res) => {
                 message: 'Email azienda non valida.'
             });
         }
+        if (normalizedFoto && normalizedFoto.length > 2_000_000) {
+            return res.status(400).json({ message: 'Foto troppo grande' });
+        }
         // Controllo se esiste già un'azienda con la stessa partita IVA
         const existingAzienda = await azienda.findOne({ vatNumber: normalizedVatNumber });
 
@@ -111,6 +115,7 @@ const registerAzienda = async (req, res) => {
             address: normalizedAddress || undefined,
             phoneNumber: normalizedPhoneNumber,
             website: normalizedWebsite || undefined,
+            foto: normalizedFoto || undefined,
             categories: normalizedCategories,
             // Copia semplice per usi applicativi
             geo: {
@@ -137,6 +142,7 @@ const registerAzienda = async (req, res) => {
                 address: newAzienda.address,
                 phoneNumber: newAzienda.phoneNumber,
                 website: newAzienda.website,
+                foto: newAzienda.foto,
                 categories: newAzienda.categories,
                 geo: newAzienda.geo,
                 location: newAzienda.location
@@ -180,7 +186,7 @@ router.post('/', checkAuth, checkUserType(['allevatore']), registerAzienda);
 router.get('/mine', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
         const items = await azienda.find({ ownerUserId: req.user.userId })
-            .select('_id companyName vatNumber address emailAzienda createdAt')
+            .select('_id companyName vatNumber address emailAzienda foto createdAt')
             .sort({ createdAt: 1 })
 
         const itemsId = items.map(az => {
@@ -239,13 +245,20 @@ router.patch('/:id', checkAuth, checkUserType(['allevatore']), async (req, res) 
             return res.status(ownership.status).json({message: ownership.message });
         }
 
-        const { companyName, vatNumber, emailAzienda, address } = req.body;
+        const { companyName, vatNumber, emailAzienda, address, foto } = req.body;
 
         const updateData = {}
         if (companyName !== undefined) updateData.companyName = companyName.trim();
         if (vatNumber !== undefined) updateData.vatNumber = vatNumber.trim().toUpperCase();
         if (emailAzienda !== undefined) updateData.emailAzienda = emailAzienda.trim().toLowerCase();
         if (address !== undefined) updateData.address = address.trim();
+        if (foto !== undefined) {
+            const normalizedFoto = typeof foto === 'string' ? foto.trim() : '';
+            if (normalizedFoto && normalizedFoto.length > 2_000_000) {
+                return res.status(400).json({ message: 'Foto troppo grande' });
+            }
+            updateData.foto = normalizedFoto || undefined;
+        }
 
         const updatedAzienda = await azienda.findByIdAndUpdate(
             id,

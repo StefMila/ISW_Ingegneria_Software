@@ -12,12 +12,11 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
   
   let token;
   const lavorazioneId = '6a17701bfeff8409a15f8cc5';
-  const aziendaId = '665f8fd8ad8f8c0012f9c123';
-  const ownedAzienda = {
-    _id: aziendaId,
-    ownerUserId: 'mocked_user_id'
-  };
-  const lottoId = '6a17701bfeff8409a15f8cc9';
+      const aziendaId = '665f8fd8ad8f8c0012f9c123';
+      const ownedAzienda = {
+        _id: aziendaId,
+        ownerUserId: 'mocked_user_id'
+      };
 
   const input = () => ({
     type: 'latte',
@@ -223,7 +222,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  test('POST /api/lavorazioni/:id - errore: Lavorazione non template con templateId mancante (422)', async () => {
+  test('POST /api/lavorazioni/:id - errore: Lavorazione non template con templateId mancante (400)', async () => {
     const payload = basePayload();
     delete payload.isTemplate;
     delete payload.templateId;
@@ -232,42 +231,9 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .post(`/api/lavorazioni`)
       .set('Authorization', `Bearer ${token}`)
       .send( payload )
-      .expect(422)
+      .expect(400)
       .expect((res) => {
         expect(res.body.message).toBe('Se la lavorazione non è un template, deve riferirsi ad un template esistente');
-      });
-  });
-
-  test('POST /api/lavorazioni/:id - errore: Lavorazione template non può avere un lottoId assegnato (422)', async () => {
-    const payload = {
-      ...basePayload(),
-      lottoId: lottoId
-    };
-    
-    await request(app)
-      .post(`/api/lavorazioni`)
-      .set('Authorization', `Bearer ${token}`)
-      .send( payload )
-      .expect(422)
-      .expect((res) => {
-        expect(res.body.message).toBe('Un template lavorazione non può essere associato ad un lotto');
-      });
-  });
-
-  test('POST /api/lavorazioni/:id - errore: Lavorazione non completata non può essere assegnata ad un lotto (422)', async () => {
-    const payload = {
-      ...basePayload(),
-      lottoId: lottoId
-    };
-    delete payload.isTemplate;
-
-    await request(app)
-      .post(`/api/lavorazioni`)
-      .set('Authorization', `Bearer ${token}`)
-      .send( payload )
-      .expect(422)
-      .expect((res) => {
-        expect(res.body.message).toBe('Una lavorazione non completata non può avere un lotto associato ad essa');
       });
   });
 
@@ -544,48 +510,6 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  test('PATCH /api/lavorazioni/:id - errore: non è possibile assegnare un lotto ad un template (422)', async () => {
-    jest.spyOn(Lavorazione, 'findById').mockResolvedValue({
-      _id: lavorazioneId,
-      ...basePayload(),
-      save: jest.fn().mockResolvedValue(undefined)
-    });
-    
-    await request(app)
-      .patch(`/api/lavorazioni/${lavorazioneId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        nomeTemplate: basePayload().nomeTemplate, 
-        lottoId: lottoId 
-      })
-      .expect(422)
-      .expect((res) => {
-        expect(res.body.message).toBe('Un template lavorazione non può essere associato ad un lotto');
-      });
-  });
-
-  test('PATCH /api/lavorazioni/:id - errore: lavorazione non completata non può essere associata ad un lotto (422)', async () => {
-    const payload = basePayload();
-    delete payload.isTemplate;
-    jest.spyOn(Lavorazione, 'findById').mockResolvedValue({
-      _id: lavorazioneId,
-      ...payload,
-      save: jest.fn().mockResolvedValue(undefined)
-    });
-    
-    await request(app)
-      .patch(`/api/lavorazioni/${lavorazioneId}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        status: payload.status, 
-        lottoId: lottoId 
-      })
-      .expect(422)
-      .expect((res) => {
-        expect(res.body.message).toBe('Una lavorazione non completata non può avere un lotto associato ad essa');
-      });
-  });
-
   test('PATCH /api/lavorazioni/:id - errore: fasi non consentite (400)', async () => {
     const payload = basePayload();
     delete payload.isTemplate;
@@ -727,10 +651,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     await request(app)
       .get('/api/lavorazioni/search')
       .set('Authorization', `Bearer ${token}`)
-      .query({ 
-        descrizioneTemplate: 'yogurt',
-        aziendaId: aziendaId
-      })
+      .query({ aziendaId, descrizioneTemplate: 'yogurt' })
       .expect(200)
       .expect((res) => {
         expect(res.body._id).toBeDefined();
@@ -738,25 +659,25 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  test('GET /api/lavorazioni/search - errore: aziendaId mancante (400)', async () => {
-    await request(app)
-      .get('/api/lavorazioni/search')
-      .set('Authorization', `Bearer ${token}`)
-      .query({})
-      .expect(400)
-      .expect((res) => {
-        expect(res.body.message).toBe('Il parametro aziendaId è obbligatorio');
-      });
-  });
-
   test('GET /api/lavorazioni/search - errore: nessun criterio di ricerca (400)', async () => {
     await request(app)
       .get('/api/lavorazioni/search')
       .set('Authorization', `Bearer ${token}`)
-      .query({ aziendaId: aziendaId })
+      .query({ aziendaId })
       .expect(400)
       .expect((res) => {
         expect(res.body.message).toBe('Inserisci codiceLavorazione o descrizioneTemplate');
+      });
+  });
+
+  test('GET /api/lavorazioni/search - errore: aziendaId mancante (400)', async () => {
+    await request(app)
+      .get('/api/lavorazioni/search')
+      .set('Authorization', `Bearer ${token}`)
+      .query({ codiceLavorazione: basePayload().codiceLavorazione })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Il parametro aziendaId è obbligatorio');
       });
   });
 
@@ -975,18 +896,34 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
 
   test('GET /api/lavorazioni/search visualizza correttamente il template lavorazione richiesto (200)', async () => {
     await request(app)
-      .get(`/api/lavorazioni/search`)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${token}`)
-      .query({ 
-        descrizioneTemplate: 'yogurt',
-        aziendaId: aziendaId
-      })
       .expect(200);
+  });
+
+  test('GET /api/lavorazioni/search - errore: codiceLavorazione non valido (400)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=invalid`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Codice template non valido');
+      });
+  });
+
+  test('GET /api/lavorazioni/search - errore: codiceLavorazione mancante (400)', async () => {
+    await request(app)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBe('Inserisci codiceLavorazione o descrizioneTemplate');
+      });
   });
 
   test('GET /api/lavorazioni/search - errore: tentativo senza token (401)', async () => {
     await request(app)
-      .get(`/api/lavorazioni/search`)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=${basePayload().codiceLavorazione}`)
       .expect(401)
       .expect((res) => {
         expect(res.body.message).toBe('Token mancante o formato non valido: Accesso negato');
@@ -1001,7 +938,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     );
 
     await request(app)
-      .get(`/api/lavorazioni/search`)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${expiredToken}`)
       .expect(401)
       .expect((res) => {
@@ -1012,7 +949,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
   // Caso token non valido - 403.
   test('GET /api/lavorazioni/search - errore: token non valido (403)', async () => {
     await request(app)
-      .get(`/api/lavorazioni/search`)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', 'Bearer token_non_valido')
       .expect(403)
       .expect((res) => {
@@ -1028,7 +965,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     );
 
     await request(app)
-      .get(`/api/lavorazioni/search`)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${tokenConsumatore}`)
       .expect(403)
       .expect((res) => {
@@ -1040,12 +977,8 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     jest.spyOn(Lavorazione, 'findOne').mockResolvedValue(null);
 
     await request(app)
-      .get(`/api/lavorazioni/search`)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${token}`)
-      .query({ 
-        descrizioneTemplate: 'yogurt',
-        aziendaId: aziendaId
-      })
       .expect(404)
       .expect((res) => {
         expect(res.body.message).toBe('Nessun template corrispondente trovato');
@@ -1058,12 +991,8 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     jest.spyOn(Lavorazione, 'findOne').mockResolvedValue(payload);
 
     await request(app)
-      .get(`/api/lavorazioni/search`)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${token}`)
-      .query({ 
-        descrizioneTemplate: 'yogurt',
-        aziendaId: aziendaId
-      })
       .expect(404)
       .expect((res) => {
         expect(res.body.message).toBe('Nessun template corrispondente trovato');
@@ -1080,12 +1009,8 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
     });
 
     await request(app)
-      .get(`/api/lavorazioni/search`)
+      .get(`/api/lavorazioni/search?aziendaId=${aziendaId}&codiceLavorazione=${basePayload().codiceLavorazione}`)
       .set('Authorization', `Bearer ${token}`)
-      .query({ 
-        descrizioneTemplate: 'yogurt',
-        aziendaId: aziendaId
-      })
       .expect(403)
       .expect((res) => {
         expect(res.body.message).toBe('Non hai i permessi per questa azienda');

@@ -13,8 +13,16 @@ const listViewSection = document.getElementById('listViewSection');
 const detailViewSection = document.getElementById('detailViewSection');
 const farmsTableBody = document.getElementById('farmsTableBody');
 const backToListBtn = document.getElementById('backToListBtn');
+const viewFotoAzienda = document.getElementById('view-fotoAzienda');
+const editFotoWrapper = document.getElementById('edit-fotoWrapper');
+const editFotoAziendaInput = document.getElementById('edit-fotoAzienda');
+const editFotoPreview = document.getElementById('edit-fotoPreview');
+const editFotoFilename = document.getElementById('edit-fotoFilename');
+const editRemoveFotoAzienda = document.getElementById('edit-removeFotoAzienda');
+const pickFotoAziendaBtn = document.getElementById('pickFotoAziendaBtn');
 
 const campiAzienda = ['companyName', 'vatNumber', 'emailAzienda', 'address'];
+let selectedFotoAziendaDataUrl = '';
 
 //  Utility per formattazione e rendering
 const formatDate = (iso) => {
@@ -52,6 +60,23 @@ const renderStatus = (text, color = '#1f2937') => {
   statusMsg.style.color = color;
   statusMsg.textContent = text;
 };
+
+const escAttr = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+const renderFotoAzienda = (foto, companyName) => {
+  if (!foto) {
+    return '<span class="animal-photo-placeholder">—</span>';
+  }
+
+  return `<img class="animal-photo-thumb" src="${escAttr(foto)}" alt="Foto ${escAttr(companyName || 'azienda')}">`;
+};
+
+const readImageAsDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+  reader.onerror = () => reject(new Error('Impossibile leggere la foto selezionata.'));
+  reader.readAsDataURL(file);
+});
 
 const getAziendaIdFromUrl = () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -171,6 +196,25 @@ const mostraDatiAzienda = (azienda) => {
     document.getElementById(`edit-${campo}`).value = azienda[campo] || '';
   });
 
+  if (viewFotoAzienda) {
+    viewFotoAzienda.innerHTML = renderFotoAzienda(azienda?.foto, azienda?.companyName);
+  }
+
+  if (editFotoPreview) {
+    editFotoPreview.innerHTML = renderFotoAzienda(azienda?.foto, azienda?.companyName);
+  }
+
+  selectedFotoAziendaDataUrl = '';
+  if (editFotoFilename) {
+    editFotoFilename.textContent = 'Nessun file selezionato';
+  }
+  if (editRemoveFotoAzienda) {
+    editRemoveFotoAzienda.checked = false;
+  }
+  if (editFotoAziendaInput) {
+    editFotoAziendaInput.value = '';
+  }
+
   if(azienda.createdAt) {
     const d = new Date(azienda.createdAt);
     document.getElementById('view-createdAt').textContent = isNaN(d) ? '-' : d.toLocaleDateString('it-IT');
@@ -193,6 +237,16 @@ const toggleEditMode = (editing) => {
       inputField.classList.add('hidden');
     }
   });
+
+  if (viewFotoAzienda && editFotoWrapper) {
+    if (isEditing) {
+      viewFotoAzienda.classList.add('hidden');
+      editFotoWrapper.classList.remove('hidden');
+    } else {
+      viewFotoAzienda.classList.remove('hidden');
+      editFotoWrapper.classList.add('hidden');
+    }
+  }
 
   if(isEditing) {
     actionButtonsDiv.innerHTML = `
@@ -224,6 +278,12 @@ const salvaModificheAzienda = async() => {
   campiAzienda.forEach(campo => {
     formData[campo] = document.getElementById(`edit-${campo}`).value.trim();
   });
+
+  if (editRemoveFotoAzienda?.checked) {
+    formData.foto = '';
+  } else if (selectedFotoAziendaDataUrl) {
+    formData.foto = selectedFotoAziendaDataUrl;
+  }
 
   try {
     const response = await fetch(`/api/aziende/${aziendaId}`, {
@@ -320,6 +380,60 @@ document.addEventListener('click', (e) => {
     navigateBackToList();
   }
 });
+
+if (pickFotoAziendaBtn && editFotoAziendaInput) {
+  pickFotoAziendaBtn.addEventListener('click', () => {
+    editFotoAziendaInput.click();
+  });
+}
+
+if (editFotoAziendaInput) {
+  editFotoAziendaInput.addEventListener('change', async () => {
+    const file = editFotoAziendaInput.files && editFotoAziendaInput.files[0];
+    selectedFotoAziendaDataUrl = '';
+    if (editFotoFilename) {
+      editFotoFilename.textContent = file?.name || 'Nessun file selezionato';
+    }
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      renderStatus('Seleziona un file immagine valido.', 'red');
+      editFotoAziendaInput.value = '';
+      return;
+    }
+
+    if (file.size > 1_400_000) {
+      renderStatus('Foto azienda troppo grande. Usa un file sotto 1.4MB.', 'red');
+      editFotoAziendaInput.value = '';
+      return;
+    }
+
+    try {
+      const dataUrl = await readImageAsDataUrl(file);
+      if (!dataUrl) {
+        throw new Error('Foto non valida');
+      }
+
+      selectedFotoAziendaDataUrl = dataUrl;
+      if (editRemoveFotoAzienda) {
+        editRemoveFotoAzienda.checked = false;
+      }
+
+      if (editFotoPreview) {
+        const companyName = document.getElementById('edit-companyName')?.value || 'azienda';
+        editFotoPreview.innerHTML = renderFotoAzienda(dataUrl, companyName);
+      }
+    } catch (error) {
+      console.error('Errore lettura foto azienda:', error);
+      renderStatus('Impossibile leggere la foto selezionata.', 'red');
+      editFotoAziendaInput.value = '';
+      selectedFotoAziendaDataUrl = '';
+    }
+  });
+}
 
 if (backToListBtn) {
   backToListBtn.addEventListener('click', navigateBackToList);
