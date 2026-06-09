@@ -55,7 +55,7 @@ const formatDate = (iso) => {
 // Capitalizza la prima lettera di una stringa e rende il resto minuscolo, restituendo '—' se la stringa è vuota o non definita
 const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
 // Funzione per renderizzare messaggi di stato all'utente 
-const renderStatus = (text, color = '#1f2937') => {
+const renderStatus = (text, color = '#1a2e05') => {
   if (!statusMsg) return;
   statusMsg.style.color = color;
   statusMsg.textContent = text;
@@ -101,7 +101,7 @@ const initPage = async () => {
 
 const fetchTutteLeAziende = async () => {
   const token = localStorage.getItem('token');
-  renderStatus('Caricamento elenco aziende...', '#3182ce');
+  renderStatus('Caricamento elenco aziende...', '#8a5d07');
 
   try {
     const response = await fetch('/api/aziende/mine', {
@@ -120,7 +120,7 @@ const fetchTutteLeAziende = async () => {
     const aziende = Array.isArray(data.items) ? data.items : [];
 
     if(aziende.length === 0) {
-      farmsTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: #64758b;">Nessuna azienda associata a questo account.</td></tr>`;
+      farmsTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: #6a8b64;">Nessuna azienda associata a questo account.</td></tr>`;
       return;
     }
 
@@ -337,7 +337,7 @@ const deleteAzienda = async (idAzienda) => {
   if (!confermato) return;
 
   const token = localStorage.getItem('token');
-  renderStatus('Eliminazione azienda in corso...', '#3182ce');
+  renderStatus('Eliminazione azienda in corso...', '#8a5d07');
 
   try {
     const response = await fetch(`/api/aziende/${idAzienda}`, {
@@ -356,7 +356,7 @@ const deleteAzienda = async (idAzienda) => {
     }
 
     // Successo: mostra il messaggio verde e ricarica l'elenco aggiornato
-    renderStatus(data.message || 'Azienda eliminata con successo.', '#10b981');
+    renderStatus(data.message || 'Azienda eliminata con successo.', 'green');
     
     // Aspetta un secondo per far leggere il messaggio di successo prima di ricaricare la tabella
     setTimeout(() => {
@@ -449,7 +449,7 @@ window.addEventListener('aziendaChanged', async (e) => {
   
   if (!nuovoId) return;
 
-  renderStatus('Cambio azienda rilevato... Caricamento dati in corso.', '#3182ce');
+  renderStatus('Cambio azienda rilevato... Caricamento dati in corso.', '#8a5d07');
 
   const nuovoUrl = `${window.location.pathname}?id=${nuovoId}`;
   window.history.pushState({ path: nuovoUrl }, '', nuovoUrl);
