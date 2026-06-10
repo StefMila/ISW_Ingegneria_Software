@@ -210,7 +210,7 @@ const loadTraceabilityByLotNumber = async (lotNumber, { statsDays = 7 } = {}) =>
 
     const animaleIds = [...new Set(mungiture.map((item) => String(item.animaleId)))].filter(Boolean);
     const animali = animaleIds.length
-        ? await Animale.find({ _id: { $in: animaleIds } }).select('_id name matricola species sesso')
+        ? await Animale.find({ _id: { $in: animaleIds } }).select('_id name matricola species sesso foto')
         : [];
 
     const animaleById = new Map(animali.map((item) => [String(item._id), item]));
@@ -463,7 +463,18 @@ publicRouter.get('/lotti/:lotNumber', async (req, res) => {
             return res.status(404).json({ message: 'Lotto non trovato' });
         }
 
-        const azienda = await Azienda.findById(trace.lotto.aziendaId).select('_id companyName');
+        const azienda = await Azienda.findById(trace.lotto.aziendaId).select('_id companyName website geo location');
+
+        const mapLat = Number.isFinite(Number(azienda?.geo?.lat))
+            ? Number(azienda.geo.lat)
+            : Number.isFinite(Number(azienda?.location?.coordinates?.[1]))
+                ? Number(azienda.location.coordinates[1])
+                : null;
+        const mapLng = Number.isFinite(Number(azienda?.geo?.lng))
+            ? Number(azienda.geo.lng)
+            : Number.isFinite(Number(azienda?.location?.coordinates?.[0]))
+                ? Number(azienda.location.coordinates[0])
+                : null;
 
         const animalsPublic = trace.animaleIds.map((animaleId) => {
             const animale = trace.animaleById.get(animaleId);
@@ -473,7 +484,12 @@ publicRouter.get('/lotti/:lotNumber', async (req, res) => {
             const stepsDailyAvg = roundTo(summary.stepsTotal / daysCount, 0);
             const outdoorPercent = roundTo((summary.outdoorHoursTotal / (daysCount * 24)) * 100, 1);
             return {
+                id: animale?._id || animaleId,
                 label: animale?.name || 'Animale',
+                matricola: animale?.matricola || null,
+                species: animale?.species || null,
+                sesso: animale?.sesso || null,
+                foto: animale?.foto || null,
                 benessere: {
                     stepsDailyAvg,
                     outdoorPercent
@@ -491,7 +507,14 @@ publicRouter.get('/lotti/:lotNumber', async (req, res) => {
             },
             producer: {
                 id: azienda?._id || trace.lotto.aziendaId,
-                companyName: azienda?.companyName || 'Azienda produttrice'
+                companyName: azienda?.companyName || 'Azienda produttrice',
+                website: typeof azienda?.website === 'string' && azienda.website.trim()
+                    ? azienda.website.trim()
+                    : null,
+                map: {
+                    lat: mapLat,
+                    lng: mapLng
+                }
             },
             timeline: trace.timeline,
             animals: animalsPublic

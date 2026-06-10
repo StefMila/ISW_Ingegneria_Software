@@ -1,6 +1,6 @@
 /**
  * Script di seeding del database.
- * Popola MongoDB con dati di test: 4 utenti, 3 aziende per l'allevatore, 20 animali su 1 azienda.
+ * Popola MongoDB con dati di test: 1 utente allevatore, aziende/allevamento e filiera produzione.
  *
  * Uso:
  *   node scripts/seed.js
@@ -45,27 +45,12 @@ const seedUsers = [
     userType: 'allevatore',
     acceptedTerms: true ,
   },
-  {
-    name: 'Sara',
-    surname: 'Bianchi',
-    email: 'distributore@muccapp.it',
-    userType: 'distributore',
-    acceptedTerms: true ,
-  },
-  {
-    name: 'Luca',
-    surname: 'Verdi',
-    email: 'veterinario@muccapp.it',
-    userType: 'veterinario',
-    acceptedTerms: true ,
-  },
-  {
-    name: 'Giulia',
-    surname: 'Neri',
-    email: 'consumatore@muccapp.it',
-    userType: 'consumatore',
-    acceptedTerms: true ,
-  },
+];
+
+const legacySeedUsersToDelete = [
+  'distributore@muccapp.it',
+  'veterinario@muccapp.it',
+  'consumatore@muccapp.it'
 ];
 
 const seedAziendeAllevatore = [
@@ -406,6 +391,12 @@ async function seed() {
   console.log('✅  Connesso.');
 
   const passwordHash = await bcrypt.hash('Password123!', 12);
+
+  // 0. Pulizia utenti seed legacy non più necessari
+  const deletedLegacyUsers = await User.deleteMany({
+    email: { $in: legacySeedUsersToDelete }
+  });
+  console.log(`🧹  Utenti seed legacy rimossi: ${deletedLegacyUsers.deletedCount}`);
 
   // 1. Utenti di test
   const usersByType = {};
@@ -752,7 +743,29 @@ async function seed() {
 
   console.log(`📡  Sensori IoT creati: ${sensoriCreati}  |  aggiornati: ${sensoriAggiornati}  |  già presenti (riutilizzati): ${sensoriRiutilizzati}`);
 
-  // 5. Mungiture demo (idempotente): prerequisito per legare il latte alle lavorazioni.
+  // 4b. Verifica copertura: ogni mucca deve avere un indossabile attivo
+  const wearableSensors = await Sensore.find({
+    aziendaId: aziendaMandria._id,
+    tipoDispositivo: 'indossabile',
+    stato: 'attivo',
+    animaleId: { $in: muccheAzienda.map((mucca) => mucca._id) }
+  }).select('_id animaleId');
+
+  const cowIdsSet = new Set(muccheAzienda.map((mucca) => String(mucca._id)));
+  const coveredCowIdsSet = new Set(
+    wearableSensors
+      .map((sensor) => String(sensor.animaleId || ''))
+      .filter(Boolean)
+  );
+
+  const missingWearableCount = [...cowIdsSet].filter((id) => !coveredCowIdsSet.has(id)).length;
+  if (missingWearableCount > 0) {
+    throw new Error(`Verifica sensori fallita: ${missingWearableCount} mucca/he senza sensore indossabile attivo`);
+  }
+
+  console.log(`✅  Verifica sensori indossabili completata: ${coveredCowIdsSet.size}/${cowIdsSet.size} mucche coperte`);
+
+  // 5. Mungiture demo (idempotente): garantisce almeno 1 mungitura completata al giorno negli ultimi 60 giorni.
   let mungiturePool = await Mungitura.find({
     aziendaId: aziendaMandria._id,
     status: 'completata'
@@ -762,45 +775,94 @@ async function seed() {
     .select('_id animaleId quantity unit status startedAt endedAt');
 
   let mungitureCreateCount = 0;
-  if (mungiturePool.length === 0) {
-    const mucchePerMungiture = muccheAzienda.slice(0, 10);
-    const docs = [];
-    for (const [index, mucca] of mucchePerMungiture.entries()) {
-      for (let monthOffset = 0; monthOffset < 3; monthOffset += 1) {
-        const startedAt = asDateShifted({
-          daysAgo: (monthOffset * 14) + (index % 6) + 1,
-          hour: 5 + (index % 4),
-          minute: 10 + (monthOffset * 7)
-        });
-        const endedAt = new Date(startedAt.getTime() + (70 + (index % 5) * 8) * 60000);
-        docs.push({
-          aziendaId: aziendaMandria._id,
-          animaleId: mucca._id,
-          startedAt,
-          endedAt,
-          quantity: Number((16 + (index * 1.25) + (monthOffset * 0.9)).toFixed(2)),
-          unit: 'litri',
-          status: 'completata',
-          notes: '[seed] Mungitura demo per filiera latte'
-        });
-      }
+
+  const toIsoDay = (date) => {
+    const d = new Date(date);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const startRange = new Date();
+  startRange.setHours(0, 0, 0, 0);
+  startRange.setDate(startRange.getDate() - 59);
+
+  const endRange = new Date();
+  endRange.setHours(23, 59, 59, 999);
+
+  const recentCompletedMungiture = await Mungitura.find({
+    aziendaId: aziendaMandria._id,
+    status: 'completata',
+    startedAt: { $gte: startRange, $lte: endRange }
+  })
+    .select('_id startedAt')
+    .sort({ startedAt: -1, createdAt: -1 });
+
+  const coveredDays = new Set(
+    recentCompletedMungiture
+      .map((row) => toIsoDay(row.startedAt))
+      .filter(Boolean)
+  );
+
+  const docsMissingDays = [];
+  for (let offset = 59; offset >= 0; offset -= 1) {
+    const dayDate = new Date();
+    dayDate.setHours(0, 0, 0, 0);
+    dayDate.setDate(dayDate.getDate() - offset);
+    const dayKey = toIsoDay(dayDate);
+
+    if (coveredDays.has(dayKey)) {
+      continue;
     }
 
-    if (docs.length > 0) {
-      await Mungitura.insertMany(docs, { ordered: true });
-      mungitureCreateCount = docs.length;
+    const mucca = muccheAzienda[(59 - offset) % Math.max(muccheAzienda.length, 1)] || null;
+    if (!mucca) {
+      continue;
     }
 
-    mungiturePool = await Mungitura.find({
+    const startedAt = new Date(dayDate);
+    startedAt.setHours(6 + ((59 - offset) % 4), 15, 0, 0);
+    const endedAt = new Date(startedAt.getTime() + (55 + ((59 - offset) % 5) * 7) * 60000);
+
+    docsMissingDays.push({
       aziendaId: aziendaMandria._id,
-      status: 'completata'
-    })
-      .sort({ startedAt: -1, createdAt: -1 })
-      .limit(240)
-      .select('_id animaleId quantity unit status startedAt endedAt');
+      animaleId: mucca._id,
+      startedAt,
+      endedAt,
+      quantity: Number((18 + ((59 - offset) % 6) * 1.1).toFixed(2)),
+      unit: 'litri',
+      status: 'completata',
+      notes: '[seed] Copertura giornaliera mungiture ultimi 60 giorni'
+    });
   }
 
-  console.log(`🥛  Mungiture disponibili per la filiera: ${mungiturePool.length}  |  create ora: ${mungitureCreateCount}`);
+  if (docsMissingDays.length > 0) {
+    await Mungitura.insertMany(docsMissingDays, { ordered: true });
+    mungitureCreateCount += docsMissingDays.length;
+  }
+
+  mungiturePool = await Mungitura.find({
+    aziendaId: aziendaMandria._id,
+    status: 'completata'
+  })
+    .sort({ startedAt: -1, createdAt: -1 })
+    .limit(240)
+    .select('_id animaleId quantity unit status startedAt endedAt');
+
+  const postRecentCompleted = await Mungitura.find({
+    aziendaId: aziendaMandria._id,
+    status: 'completata',
+    startedAt: { $gte: startRange, $lte: endRange }
+  }).select('_id startedAt');
+
+  const postCoveredDays = new Set(postRecentCompleted.map((row) => toIsoDay(row.startedAt)).filter(Boolean));
+  const requiredDays = 60;
+  if (postCoveredDays.size < requiredDays) {
+    throw new Error(`Verifica mungiture fallita: coperti ${postCoveredDays.size}/${requiredDays} giorni negli ultimi 2 mesi`);
+  }
+
+  console.log(`🥛  Mungiture disponibili per la filiera: ${mungiturePool.length}  |  create ora: ${mungitureCreateCount}  |  copertura ultimi 60 giorni: ${postCoveredDays.size}/${requiredDays}`);
 
   // 6. Lavorazioni operative demo (idempotente) e collegamento latte -> mungitureIds.
   let lavorazioniOperative = await Lavorazione.find({

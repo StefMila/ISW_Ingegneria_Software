@@ -84,7 +84,7 @@ function initAutocomplete() {
         });
     }
 }
-
+// Inizializza il menu pubblico e carica la chiave Google Maps al caricamento della pagina
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/config')
         .then((res) => res.json())

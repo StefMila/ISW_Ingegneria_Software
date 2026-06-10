@@ -52,6 +52,19 @@
         <label for="out">Output:</label>
         <input type="text" id="out" name="out" readonly>
 
+        <label for="semiLavoratoCode">Codice semi-lavorato (mungitura):</label>
+        <div class="template-search-row">
+          <input class="template-search-input" type="text" id="semiLavoratoCode" name="semiLavoratoCode" placeholder="Es: SL-... (manuale o scansione)">
+          <button type="button" id="scanSemiLavoratoBtn">Scansiona codice</button>
+        </div>
+        <section id="semiScanPanel" class="card hidden semi-scan-panel" aria-live="polite">
+          <p id="semiScanStatus" class="status">Inquadra il codice del semi-lavorato. Se non hai ancora QR disponibile, inserisci il codice manualmente.</p>
+          <video id="semiScanVideo" autoplay muted playsinline class="semi-scan-video"></video>
+          <div class="form-actions-inline semi-scan-actions">
+            <button type="button" id="stopSemiScanBtn">Ferma scansione</button>
+          </div>
+        </section>
+
         <label for="addedNotes">Note sulla lavorazione:</label>
         <textarea id="addedNotes" name="addedNotes"></textarea>
 

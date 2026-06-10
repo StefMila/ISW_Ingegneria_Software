@@ -13,13 +13,18 @@ const lotProductValue = document.getElementById('lotProductValue');
 const lotQuantityValue = document.getElementById('lotQuantityValue');
 const lotCreatedAtValue = document.getElementById('lotCreatedAtValue');
 const lotProducerValue = document.getElementById('lotProducerValue');
+const lotProducerWebsiteValue = document.getElementById('lotProducerWebsiteValue');
+const lotOpenMapBtn = document.getElementById('lotOpenMapBtn');
 const traceTimelineList = document.getElementById('traceTimelineList');
 const traceAnimalsList = document.getElementById('traceAnimalsList');
+const traceAnimalDetail = document.getElementById('traceAnimalDetail');
 
 let qrStream = null;
 let qrScanIntervalId = null;
 let qrIsActive = false;
 let qrDetector = null;
+let currentAnimals = [];
+let activeAnimalId = '';
 
 const getLotFromQuery = () => {
   const params = new URLSearchParams(window.location.search);
@@ -32,6 +37,61 @@ const formatDateTime = (value) => {
     return '-';
   }
   return date.toLocaleString('it-IT');
+};
+
+const formatDate = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+  return date.toLocaleDateString('it-IT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const normalizeWebsiteUrl = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://${raw}`;
+};
+
+const getTimelineTitle = (event) => {
+  if (event.type === 'lavorazione') {
+    return 'Fase Lavorazione';
+  }
+  if (event.type === 'mungitura') {
+    return 'Mungitura';
+  }
+  return 'Lotto Creato';
+};
+
+const getTimelineSubtitle = (event) => {
+  if (event.type === 'lavorazione') {
+    if (Number.isFinite(event.outputQuantity)) {
+      return `Output ${event.outputQuantity} ${event.outputUnit || ''}`.trim();
+    }
+    return `Stato: ${event.status || 'n/d'}`;
+  }
+  if (event.type === 'mungitura') {
+    if (Number.isFinite(event.quantity)) {
+      return `${event.quantity} ${event.unit || ''}`.trim();
+    }
+    return `Stato: ${event.status || 'n/d'}`;
+  }
+  if (Number.isFinite(event.quantity)) {
+    return `${event.quantity} ${event.unit || ''}`.trim();
+  }
+  return `Stato: ${event.status || 'n/d'}`;
 };
 
 const setStatus = (message, color = '#3d5a1a') => {
@@ -173,6 +233,7 @@ const startQrScan = async () => {
 const renderTimeline = (timeline = []) => {
   if (!traceTimelineList) return;
   traceTimelineList.innerHTML = '';
+  traceTimelineList.className = 'trace-public-timeline';
 
   if (!Array.isArray(timeline) || timeline.length === 0) {
     const li = document.createElement('li');
@@ -181,50 +242,132 @@ const renderTimeline = (timeline = []) => {
     return;
   }
 
-  timeline.forEach((event) => {
+  timeline.forEach((event, index) => {
     const li = document.createElement('li');
-    const datePart = formatDateTime(event.at);
-    const quantityPart = Number.isFinite(event.quantity) ? ` - ${event.quantity} ${event.unit || ''}` : '';
-    const outputPart = Number.isFinite(event.outputQuantity) ? ` - ${event.outputQuantity} ${event.outputUnit || ''}` : '';
+    li.className = 'trace-public-timeline-item';
+    const datePart = formatDate(event.at);
+    const title = getTimelineTitle(event);
+    const subtitle = getTimelineSubtitle(event);
+    const dotClass = event.type === 'lotto' ? 'is-lotto' : (event.type === 'lavorazione' ? 'is-lavorazione' : 'is-mungitura');
 
-    if (event.type === 'lavorazione') {
-      li.textContent = `[${datePart}] Lavorazione (${event.status || 'n/d'})${outputPart}`;
-    } else if (event.type === 'mungitura') {
-      li.textContent = `[${datePart}] Mungitura (${event.status || 'n/d'})${quantityPart}`;
-    } else {
-      li.textContent = `[${datePart}] Lotto (${event.status || 'n/d'})${quantityPart}`;
+    li.innerHTML = `
+      <div class="trace-public-timeline-dot ${dotClass}" aria-hidden="true"></div>
+      <div class="trace-public-timeline-content">
+        <p class="trace-public-timeline-date">${escapeHtml(datePart)}</p>
+        <p class="trace-public-timeline-title">${escapeHtml(title)}</p>
+        <p class="trace-public-timeline-subtitle">${escapeHtml(subtitle)}</p>
+      </div>
+    `;
+
+    if (index === timeline.length - 1) {
+      li.classList.add('is-last');
     }
 
     traceTimelineList.appendChild(li);
   });
 };
 
+const renderAnimalDetail = (animal) => {
+  if (!traceAnimalDetail) return;
+
+  if (!animal) {
+    traceAnimalDetail.classList.add('hidden');
+    traceAnimalDetail.innerHTML = '';
+    return;
+  }
+
+  const benessere = animal.benessere || {};
+  const stepsDailyAvg = Number.isFinite(benessere.stepsDailyAvg) ? benessere.stepsDailyAvg : '-';
+  const outdoorPercent = Number.isFinite(benessere.outdoorPercent) ? benessere.outdoorPercent : '-';
+  const outdoorHours = Number.isFinite(benessere.outdoorPercent)
+    ? Number(((benessere.outdoorPercent / 100) * 24).toFixed(1))
+    : '-';
+
+  const safeLabel = escapeHtml(animal.label || 'Animale');
+  const safeMatricola = escapeHtml(animal.matricola || '-');
+  const safeSpecies = escapeHtml(animal.species || '-');
+  const safeSesso = escapeHtml(animal.sesso || '-');
+  const safeFoto = typeof animal.foto === 'string' ? animal.foto.trim() : '';
+
+  traceAnimalDetail.innerHTML = `
+    <div class="trace-animal-detail-media">
+      ${safeFoto
+        ? `<img src="${escapeHtml(safeFoto)}" alt="Foto ${safeLabel}" class="trace-animal-photo">`
+        : '<div class="trace-animal-photo-placeholder" aria-hidden="true">🐄</div>'}
+    </div>
+    <div class="trace-animal-detail-body">
+      <h4>${safeLabel}</h4>
+      <p><strong>Matricola:</strong> ${safeMatricola}</p>
+      <p><strong>Specie:</strong> ${safeSpecies}</p>
+      <p><strong>Sesso:</strong> ${safeSesso}</p>
+      <p><strong>Passi giornalieri (media):</strong> ${escapeHtml(String(stepsDailyAvg))}</p>
+      <p><strong>Tempo all'aria aperta:</strong> ${escapeHtml(String(outdoorHours))} h/giorno</p>
+      <p><strong>Aria aperta:</strong> ${escapeHtml(String(outdoorPercent))}%</p>
+    </div>
+  `;
+
+  traceAnimalDetail.classList.remove('hidden');
+};
+
+const handleAnimalSelection = (animalId) => {
+  activeAnimalId = String(animalId || '').trim();
+  const selected = currentAnimals.find((animal) => String(animal.id || animal.label || '') === activeAnimalId) || null;
+  renderAnimalDetail(selected);
+
+  const buttons = traceAnimalsList?.querySelectorAll('.trace-animal-select-btn') || [];
+  buttons.forEach((button) => {
+    const matches = String(button.dataset.animalId || '') === activeAnimalId;
+    button.classList.toggle('is-active', matches);
+  });
+};
+
 const renderAnimals = (animals = []) => {
   if (!traceAnimalsList) return;
   traceAnimalsList.innerHTML = '';
+  if (traceAnimalDetail) {
+    traceAnimalDetail.classList.add('hidden');
+    traceAnimalDetail.innerHTML = '';
+  }
+
+  currentAnimals = Array.isArray(animals) ? animals : [];
+  activeAnimalId = '';
 
   if (!Array.isArray(animals) || animals.length === 0) {
     traceAnimalsList.textContent = 'Nessun dato animale disponibile per questo lotto.';
     return;
   }
 
-  animals.forEach((animal) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.marginBottom = '10px';
-    card.style.textAlign = 'left';
+  const list = document.createElement('div');
+  list.className = 'trace-animal-list';
 
-    const label = animal.label || 'Animale';
+  animals.forEach((animal, index) => {
+    const animalId = String(animal.id || animal.label || `animal-${index}`);
     const benessere = animal.benessere || {};
-
-    card.innerHTML = `
-      <p><strong>Mucca:</strong> ${label}</p>
-      <p><strong>Passi giornalieri (media):</strong> ${benessere.stepsDailyAvg ?? '-'}</p>
-      <p><strong>Aria aperta (%):</strong> ${benessere.outdoorPercent ?? '-'}</p>
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'trace-animal-select-btn';
+    button.dataset.animalId = animalId;
+    button.innerHTML = `
+      <span class="trace-animal-icon" aria-hidden="true">🐄</span>
+      <span class="trace-animal-copy">
+        <span class="trace-animal-name">${escapeHtml(animal.label || 'Animale')}</span>
+        <span class="trace-animal-metrics">${escapeHtml(String(Number.isFinite(benessere.stepsDailyAvg) ? benessere.stepsDailyAvg : '-'))} passi/g • ${escapeHtml(String(Number.isFinite(benessere.outdoorPercent) ? benessere.outdoorPercent : '-'))}% outdoor</span>
+      </span>
     `;
 
-    traceAnimalsList.appendChild(card);
+    button.addEventListener('click', () => {
+      handleAnimalSelection(animalId);
+    });
+
+    list.appendChild(button);
   });
+
+  traceAnimalsList.appendChild(list);
+
+  const firstAnimalId = String(animals[0]?.id || animals[0]?.label || '').trim();
+  if (firstAnimalId) {
+    handleAnimalSelection(firstAnimalId);
+  }
 };
 
 const hideResult = () => {
@@ -267,6 +410,38 @@ const loadTraceability = async (lotNumber) => {
     lotCreatedAtValue.textContent = formatDateTime(lotto.createdAt);
     if (lotProducerValue) {
       lotProducerValue.textContent = producer.companyName || '-';
+    }
+
+    if (lotProducerWebsiteValue) {
+      const websiteUrl = normalizeWebsiteUrl(producer.website);
+      if (websiteUrl) {
+        lotProducerWebsiteValue.innerHTML = `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(producer.website)}</a>`;
+      } else {
+        lotProducerWebsiteValue.textContent = '-';
+      }
+    }
+
+    if (lotOpenMapBtn) {
+      const producerId = String(producer.id || '').trim();
+      const params = new URLSearchParams();
+      if (producerId) {
+        params.set('aziendaId', producerId);
+      }
+
+      const lat = Number(producer?.map?.lat);
+      const lng = Number(producer?.map?.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        params.set('lat', String(lat));
+        params.set('lng', String(lng));
+      }
+
+      if (params.toString()) {
+        lotOpenMapBtn.href = `/esplora.html?${params.toString()}`;
+        lotOpenMapBtn.classList.remove('hidden');
+      } else {
+        lotOpenMapBtn.href = '/esplora.html';
+        lotOpenMapBtn.classList.add('hidden');
+      }
     }
 
     renderTimeline(data.timeline || []);
