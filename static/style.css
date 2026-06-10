@@ -3637,7 +3637,7 @@ button:active {
 
 @media (max-width: 1200px) {
   :root {
-    --compact-ui-scale: 0.94;
+    --compact-ui-scale: 0.9;
   }
 }
 
@@ -3659,9 +3659,6 @@ button,
 [class*=" btn-"],
 .quick-search-link,
 .public-fixed-menu__nav a,
-.nav-home-btn,
-.dashboard-header button,
-.dashboard-header .nav-dropdown-toggle,
 .home-consumatore-page .sidebar-menu a,
 .home-consumatore-page .sidebar-menu .menu-title {
   white-space: nowrap;
@@ -3672,14 +3669,22 @@ button,
 [class^="btn-"],
 [class*=" btn-"],
 .quick-search-link,
-.public-fixed-menu__nav a,
-.nav-home-btn,
-.dashboard-header button,
-.dashboard-header .nav-dropdown-toggle {
+.public-fixed-menu__nav a {
   padding-top: calc(10px * var(--compact-ui-scale));
   padding-bottom: calc(10px * var(--compact-ui-scale));
   padding-left: calc(12px * var(--compact-ui-scale));
   padding-right: calc(12px * var(--compact-ui-scale));
+}
+
+.nav-home-btn,
+.dashboard-header button,
+.dashboard-header .nav-dropdown-toggle {
+  white-space: nowrap;
+  font-size: calc(0.9rem * var(--compact-ui-scale));
+  padding-top: calc(8px * var(--compact-ui-scale));
+  padding-bottom: calc(8px * var(--compact-ui-scale));
+  padding-left: calc(10px * var(--compact-ui-scale));
+  padding-right: calc(10px * var(--compact-ui-scale));
 }
 
 @media (max-width: 900px) {
