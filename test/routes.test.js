@@ -131,3 +131,20 @@ describe('Routes - IoT Sensori', () => {
       .expect(401);
   });
 });
+
+describe('Routes - Prodotti Salvati (guard)', () => {
+  // Test POST: Verifica che un utente non loggato non possa scansionare un lotto
+  test('POST /api/prodotti-salvati/scansiona senza token restituisce 401', async () => {
+    await request(app)
+      .post('/api/prodotti-salvati/scansiona')
+      .send({ lotNumber: 'L-12345' })
+      .expect(401);
+  });
+
+  // Test GET: Verifica che un utente non loggato non possa vedere la collezione di prodotti
+  test('GET /api/prodotti-salvati senza token restituisce 401', async () => {
+    await request(app)
+      .get('/api/prodotti-salvati')
+      .expect(401);
+  });
+});

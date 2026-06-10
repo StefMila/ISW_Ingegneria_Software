@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prodotti Acquistati - MuccApp</title>
+    <script src="/auth-control.js"></script> 
+    <script>
+        protectRoute(['consumatore']);
+    </script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="home-consumatore-page">
+    <div id="menu-root"></div>
+
+    <main class="consumer-content">
+        <section class="section">
+        <div class="container-prodotti">
+            
+            <div class="sezione-badges-profilo" style="margin-bottom: 35px;">
+                <h2>I Tuoi Traguardi Fedeltà</h2>
+                <div id="listaBadge" class="badge-grid-profilo">
+                    <p>Caricamento traguardi...</p>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
+            <h2>I Tuoi Prodotti Acquistati</h2>
+            <p>Ecco la tua dispensa personale tracciata in filiera.</p>
+
+            <div id="listaProdotti" class="grid-prodotti">
+                <p id="caricamento">Caricamento dello storico...</p>
+            </div>
+        </div>
+    </section>
+    </main>
+
+    <script src="/public-menu.js"></script>
+    <script src="/prodotti-scansionati.js"></script>
+</body>
+</html>

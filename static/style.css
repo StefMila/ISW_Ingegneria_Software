@@ -861,9 +861,9 @@ input[type="checkbox"]:invalid {
 
 .home-consumatore-page .top-left-actions {
   position: fixed;
-  top: 16px;
+  top: 90px;
   left: 16px;
-  z-index: 1200;
+  z-index: 999;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -986,12 +986,19 @@ input[type="checkbox"]:invalid {
 .home-consumatore-page .consumer-content {
   padding: 92px 20px 20px;
   max-width: 900px;
+
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (max-width: 520px) {
   .home-consumatore-page .top-left-actions {
     top: 10px;
-    left: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
+    max-width: 1200px;
+    width: 90%;
     gap: 8px;
   }
 
@@ -1007,6 +1014,8 @@ input[type="checkbox"]:invalid {
   }
 
   .home-consumatore-page .sidebar {
+    position: fixed;
+    height: calc(100vh - 60px);
     width: 88vw;
     padding-top: 66px;
   }
@@ -3268,4 +3277,30 @@ button:active {
     width: 100%;
     text-align: left;
   }
+}
+
+.badge-item {
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+/* Se il badge è bloccato, lo mostriamo semitrasparente e in bianco e nero */
+.badge-item.locked {
+    opacity: 0.4;
+    filter: grayscale(100%);
+    background-color: #f9f9f9;
+}
+/* Se sbloccato ha un bordo verde illuminato ed è colorato */
+.badge-item.unlocked {
+    opacity: 1;
+    filter: none;
+    background-color: #f0fff4;
+    border-color: #2ecc71;
+    box-shadow: 0 4px 10px rgba(46, 204, 113, 0.15);
+}
+.badge-medal {
+    font-size: 40px;
+    margin-bottom: 10px;
 }

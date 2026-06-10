@@ -4189,7 +4189,7 @@ paths:
                     type: string
                   item:
                     type: object
-                   # Ritorna il sensore creato con l'array capacita
+                    description: Ritorna il sensore creato con l'array capacita
         '400':
           description: Campi non validi o mancanti
           content:
@@ -4239,7 +4239,6 @@ paths:
           name: aziendaId
           schema: 
             type: string
-          
           required: true
       responses:
         '200':
@@ -4252,7 +4251,7 @@ paths:
                   items:
                     type: array
                     items:
-                      type: object # Ora include l'array "capacita"
+                      type: object 
         '400':
           description: Campi non validi o mancanti
           content:
@@ -4312,7 +4311,6 @@ paths:
           name: aziendaId
           schema: 
             type: string
-          
           required: true
       responses:
         '200':
@@ -4325,7 +4323,6 @@ paths:
                   timestamp: 
                     type: string 
                     format: date-time
-                    
                   items:
                     type: array
                     items:
@@ -4333,19 +4330,25 @@ paths:
                       properties:
                         sensoreId: 
                           type: string
-                        
                         nome: 
                           type: string 
-                        
+                        tipoDispositivo:
+                          type: string
+                        animaleId:
+                          type: string
+                          nullable: true
                         capacita: 
                           type: array
-                         # Le capacità dichiarate
+                          items:
+                            type: object
                         valori: 
-                          type: object # L'oggetto JSON dinamico arrivato da MQTT
+                          type: object 
+                          nullable: true
                           description: "es. { 'temperatura': 38.5, 'frequenza_cardiaca': 60 }"
                         ultimoAggiornamento: 
                           type: string 
                           format: date-time 
+                          nullable: true
         '400':
           description: Campi non validi o mancanti
           content:
@@ -4672,6 +4675,237 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/prodotti-salvati/scansiona:
+    post:
+      summary: Registra la scansione e l'acquisto di un nuovo prodotto
+      description: Consente a un consumatore di salvare nel proprio profilo un lotto di prodotto tramite codice manuale o QR code, calcolando in tempo reale lo sblocco di badge fedeltà.
+      tags:
+        - Prodotti Salvati
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lotNumber
+              properties:
+                lotNumber:
+                  type: string
+                  example: "LOT-FORMAGGIO-20260608-001"
+      responses:
+        '201':
+          description: Prodotto salvato con successo nel profilo di filiera
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Prodotto salvato nel tuo profilo di filiera!"
+                  badgeSbloccato:
+                    type: object
+                    nullable: true
+                    description: "Restituisce l'oggetto del badge sbloccato se coincide con la scansione esatta di un traguardo, altrimenti null"
+                    properties:
+                      titolo:
+                        type: string
+                        enum: ["Esploratore di Filiera", "Consumatore Consapevole", "Custode della Terra"]
+                        example: "Esploratore di Filiera"
+                      icona:
+                        type: string
+                        example: "🌱"
+                      descrizione:
+                        type: string
+                        example: "Hai scansionato il tuo primo prodotto tracciato!"
+                      stile:
+                        type: string
+                        enum: ["badge-bronzo", "badge-argento", "badge-oro"]
+                        example: "badge-bronzo"
+                  scansione:
+                    type: object
+                    properties:
+                      scansionatoAt:
+                        type: string
+                        format: date-time
+                        example: "2026-06-09T17:45:00.000Z"
+                      totaleScansioniUtente:
+                        type: integer
+                        example: 1
+                      badgeSbloccato:
+                        type: object
+                        nullable: true
+                        example: null
+                  prodotto:
+                    type: object
+                    properties:
+                      lotNumber:
+                        type: string
+                        example: "LOT-FORMAGGIO-20260608-001"
+                      nomeProdotto:
+                        type: string
+                        example: "Caciotta di Filiera"
+                      quantity:
+                        type: number
+                        example: 1.2
+                      unit:
+                        type: string
+                        example: "chilogrammi"
+                      companyName:
+                        type: string
+                        example: "Caseificio della Valle"
+        '400':
+          description: Campi non validi o mancanti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingValues:
+                  value:
+                    message: "lotNumber obbligatorio"
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo consumatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
+        '404':
+          description: Prodotto o lotto non trovato nel sistema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    message: "Prodotto o lotto non trovato nel sistema"
+        '409':
+          description: Conflitto di database (indice univoco composto violato)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateScan:
+                  value:
+                    message: "Hai già scansionato e salvato questo specifico lotto di prodotto in passato!"
+        '500':
+          description: Errore interno del server durante il salvataggio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/prodotti-salvati:
+    get:
+      summary: Visualizza la collezione dei prodotti acquistati e i badge sbloccati
+      description: Recupera la dispensa personale dell'utente autenticato ordinata per data di scansione decrescente con il calcolo dei traguardi fedeltà attivi.
+      tags:
+        - Prodotti Salvati
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Storico e bacheca dei badge recuperati con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "654321abc123456def789099"
+                        utenteId:
+                          type: string
+                          example: "654321abc123456def789012"
+                        lottoProdottoId:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                              example: "654321abc123456def789044"
+                            lotNumber:
+                              type: string
+                              example: "LOT-FORMAGGIO-20260608-001"
+                            nomeProdotto:
+                              type: string
+                              example: "Caciotta di Filiera"
+                            quantity:
+                              type: number
+                              example: 1.2
+                            unit:
+                              type: string
+                              example: "chilogrammi"
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: "2026-06-08T10:00:00.000Z"
+                        scansionatoAt:
+                          type: string
+                          format: date-time
+                          example: "2026-06-09T17:45:00.000Z"
+                  badges:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        titolo:
+                          type: string
+                          enum: ["Esploratore di Filiera", "Consumatore Consapevole", "Custode della Terra"]
+                          example: "Esploratore di Filiera"
+                        icona:
+                          type: string
+                          example: "🌱"
+                        stile:
+                          type: string
+                          enum: ["badge-bronzo", "badge-argento", "badge-oro"]
+                          example: "badge-bronzo"
+                  totale:
+                    type: integer
+                    description: Contatore totale degli acquisti tracciati effettuati dall'utente
+                    example: 1
+        '401':
+          description: Token mancante, non valido o scaduto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permessi insufficienti (solo consumatore)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                forbiddenRole:
+                  value:
+                    message: "Permessi insufficienti: Accesso negato"
         '500':
           description: Errore interno del server
           content:
