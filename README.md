@@ -57,9 +57,6 @@ Server: `http://localhost:3000`
 - `npm test`: esegue i test con Jest
 - `npm run gen-env`: aggiorna la specifica env
 - `npm run seed`: popola il database con dati di test completi (utenti, aziende, animali, mungiture, lavorazioni, lotti, eventi)
-- `npm run seed:lavorazioni`: popola template/run lavorazioni demo
-- `npm run seed:mungiture`: popola mungiture demo distribuite su piu anni (2024-2026)
-- `npm run seed:eventi`: popola eventi demo distribuiti su piu anni (2024-2026)
 
 ## Seed database
 
@@ -73,41 +70,19 @@ Lo script crea/riutilizza la catena base completa della filiera:
 - utenti
 - aziende
 - animali (mucche)
-- mungiture completate
+- mungiture completate (con copertura giornaliera degli ultimi 60 giorni)
 - lavorazioni completate con input latte collegato tramite `inputs[].mungituraIds`
 - lotti prodotto in output dalle lavorazioni
+- eventi calendario demo
+- sensori IoT completi (ogni mucca ha un indossabile attivo)
 
 Se nel database esistono già lavorazioni completate senza link alle mungiture, il seed prova ad allinearle aggiungendo il collegamento nel campo `mungituraIds` dell'input `latte`.
 Credenziali principali seed:
 | Tipo         | Email                       | Password     |
 |--------------|-----------------------------|--------------|
 | allevatore   | allevatore@muccapp.it       | Password123! |
-| distributore | distributore@muccapp.it     | Password123! |
-| veterinario  | veterinario@muccapp.it      | Password123! |
-| consumatore  | consumatore@muccapp.it      | Password123! |
 
-### Seed modulari per dominio (opzionali)
-
-Per avere dati realistici e verificare grafici/filtri, sono disponibili seed separati:
-
-- `npm run seed:mungiture`
-	- inserisce mungiture `completata` con date distribuite sui mesi e su piu anni
-	- utile per testare dashboard statistiche giornaliere/mensili/annuali
-- `npm run seed:eventi`
-	- inserisce eventi distribuiti sui mesi e su piu anni
-	- utile per testare calendario e filtri eventi
-
-Entrambi i seed sono idempotenti: rimuovono prima i dati demo creati da seed precedenti e poi li reinseriscono.
-
-Ordine consigliato (se usi il seed principale, basta il primo comando):
-
-```bash
-npm run seed
-npm run seed:mungiture
-npm run seed:eventi
-```
-
-Nota: `seed:mungiture`, `seed:lavorazioni` e `seed:eventi` sono script opzionali di dominio e richiedono che il seed base (`npm run seed`) sia gia stato eseguito almeno una volta.
+Nota: il seed rimuove gli utenti demo legacy `distributore`, `veterinario` e `consumatore` creati in versioni precedenti e mantiene il dataset coerente con il flusso principale allevatore.
 
 ## Documentazione API
 

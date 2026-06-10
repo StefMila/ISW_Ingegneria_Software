@@ -2690,7 +2690,7 @@ paths:
   /api/lavorazioni:
     post:
       summary: Crea lavorazione
-      description: Crea una nuova lavorazione o un template di lavorazione per l'azienda indicata. Se `isTemplate=true`, la risposta usa il messaggio dedicato al template.
+      description: 'Crea una nuova lavorazione o un template di lavorazione per l''azienda indicata. Se `isTemplate=true`, la risposta usa il messaggio dedicato al template. Per le lavorazioni non template, il `lottoId` non è accettato in input: viene generato automaticamente quando la lavorazione passa a `completata`.'
       tags:
         - Lavorazione
       security:
@@ -2818,6 +2818,9 @@ paths:
                 invalidTemplateFlag:
                   value:
                     message: isTemplate deve essere true o false
+                manualLotNotAllowed:
+                  value:
+                    message: lottoId viene generato automaticamente quando la lavorazione è completata
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -2850,12 +2853,9 @@ paths:
                 missingTemplateId:
                   value: 
                     message: Se la lavorazione non è un template, deve riferirsi ad un template esistente
-                invalidLotConnectionTemplate:
+                invalidAutoLotData:
                   value: 
-                    message: Un template lavorazione non può essere associato ad un lotto
-                invalidLotConnectionStatus:
-                  value: 
-                    message: Una lavorazione non completata non può avere un lotto associato ad essa
+                    message: Per terminare la lavorazione servono outputName, outputUnit e outputQuantity validi per creare il lotto prodotto
         '500':
           description: Errore interno del server
           content:
@@ -3065,7 +3065,7 @@ paths:
   /api/lavorazioni/{id}:
     patch:
       summary: Aggiorna lavorazione
-      description: Aggiorna i campi della lavorazione esistente. I campi non passati non vengono modificati.
+      description: Aggiorna i campi della lavorazione esistente. I campi non passati non vengono modificati. Se una lavorazione non template viene portata a `completata` e non ha ancora un lotto, il backend crea automaticamente il lotto prodotto e valorizza `lottoId`.
       tags:
         - Lavorazione
       security:
@@ -3096,7 +3096,6 @@ paths:
                     - name: Confezionamento
                       completed: true             
                   status: completata
-                  lottoId: LOT-FORMAGGI-STAGION-007
                   outputQuantity: 45
       responses:
         '200':
@@ -3215,6 +3214,9 @@ paths:
                 invalidLotConnectionStatus:
                   value:
                     message: Una lavorazione non completata non può avere un lotto associato ad essa
+                invalidAutoLotData:
+                  value:
+                    message: Per terminare la lavorazione servono outputName, outputUnit e outputQuantity validi per creare il lotto prodotto
         '500':
           description: Errore interno del server
           content:
@@ -3224,7 +3226,7 @@ paths:
 
     delete:
       summary: Elimina lavorazione
-      description: Elimina una lavorazione esistente dell'azienda dell'utente autenticato.
+      description: Elimina una lavorazione esistente dell'azienda dell'utente autenticato. Se è presente un lotto prodotto collegato alla lavorazione, viene eliminato automaticamente.
       tags:
         - Lavorazione
       security:
@@ -3840,7 +3842,7 @@ paths:
 
     get:
       summary: Elenco mungiture
-      description: Restituisce le mungiture dell'azienda autenticata con filtri opzionali per animale, stato e intervallo di avvio.
+      description: Restituisce le mungiture dell'azienda autenticata con filtri opzionali per animale, semi-lavorato, stato e intervallo di avvio.
       tags:
         - Mungitura
       security:
@@ -3854,6 +3856,12 @@ paths:
         - in: query
           name: animaleId
           required: false
+          schema:
+            type: string
+        - in: query
+          name: semiLavoratoId
+          required: false
+          description: Codice semi-lavorato associato alla mungitura.
           schema:
             type: string
         - in: query
@@ -3910,6 +3918,9 @@ paths:
                 invalidAnimalId:
                   value:
                     message: ID animale non valido
+                invalidSemiLavoratoId:
+                  value:
+                    message: semiLavoratoId non valido
         '401':
           description: Token mancante, non valido o scaduto
           content:
@@ -4557,7 +4568,7 @@ paths:
   /api/tracciabilita/public/lotti/{lotNumber}:
     get:
       summary: Tracciabilità pubblica di un lotto
-      description: Restituisce tracciabilità pubblica del lotto con azienda produttrice e indicatori minimi per animale (passi giornalieri medi e percentuale aria aperta).
+      description: Restituisce tracciabilità pubblica del lotto con azienda produttrice (inclusi sito web e coordinate mappa) e indicatori minimi per animale (passi giornalieri medi e percentuale aria aperta).
       tags:
         - Tracciabilita
       parameters:
@@ -4596,6 +4607,18 @@ paths:
                         type: string
                       companyName:
                         type: string
+                      website:
+                        type: string
+                        nullable: true
+                      map:
+                        type: object
+                        properties:
+                          lat:
+                            type: number
+                            nullable: true
+                          lng:
+                            type: number
+                            nullable: true
                   timeline:
                     type: array
                     items:
@@ -4605,8 +4628,22 @@ paths:
                     items:
                       type: object
                       properties:
+                        id:
+                          type: string
                         label:
                           type: string
+                        matricola:
+                          type: string
+                          nullable: true
+                        species:
+                          type: string
+                          nullable: true
+                        sesso:
+                          type: string
+                          nullable: true
+                        foto:
+                          type: string
+                          nullable: true
                         benessere:
                           type: object
                           properties:
@@ -5296,6 +5333,11 @@ components:
           example: 
             createTemplate: vasetti
             createLavorazione: pezzi
+        lottoId:
+          type: string
+          nullable: true
+          description: Numero lotto assegnato automaticamente quando una lavorazione non template viene completata.
+          example: LOT-FORMAGGI-STAGION-007
         createdAt:
           type: string
           format: date-time
@@ -5337,7 +5379,7 @@ components:
 
     CreateLavorazioneRequest:
       type: object
-      description: Corpo richiesta per creare una nuova lavorazione o template.
+      description: Corpo richiesta per creare una nuova lavorazione o template. Il campo `lottoId` non è supportato in input.
       required:
         - aziendaId
         - tipoLavorazione
@@ -5405,8 +5447,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LavorazioneFaseItem'
-        lottoId:
-          type: string
         outputName:
           type: string
         outputQuantity:
@@ -5417,7 +5457,7 @@ components:
 
     UpdateLavorazioneRequest:
       type: object
-      description: Corpo richiesta per aggiornare una lavorazione esistente.
+      description: 'Corpo richiesta per aggiornare una lavorazione esistente. Il campo `lottoId` non è supportato in input: viene valorizzato dal backend quando la lavorazione è completata.'
       properties:
         nomeTemplate:
           type: string
@@ -5436,8 +5476,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LavorazioneFaseItem'
-        lottoId:
-          type: string
         outputQuantity:
           type: number
           minimum: 0

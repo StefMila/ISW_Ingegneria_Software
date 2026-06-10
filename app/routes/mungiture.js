@@ -271,7 +271,7 @@ export const getIotLitersReading = async (req, res) => {
 // GET /api/mungiture - recupera le mungiture dell'azienda con filtri opzionali per animale, stato e intervallo date
 export const getMungitura = async (req, res) => {
     try {
-        const { aziendaId, animaleId, status, startedAtFrom, startedAtTo } = req.query;
+        const { aziendaId, animaleId, semiLavoratoId, status, startedAtFrom, startedAtTo } = req.query;
         const startedAtFilter = {};
 
         if (!aziendaId) {
@@ -309,6 +309,14 @@ export const getMungitura = async (req, res) => {
         }
         if (status) {
             filter.status = status;
+        }
+
+        if (semiLavoratoId) {
+            const normalizedSemi = String(semiLavoratoId).trim();
+            if (!normalizedSemi) {
+                return res.status(400).json({ message: 'semiLavoratoId non valido' });
+            }
+            filter.semiLavoratoId = normalizedSemi;
         }
 
         if (Object.keys(startedAtFilter).length > 0) {

@@ -650,6 +650,23 @@ button:disabled {
   color: #4d6a50;
 }
 
+.semi-scan-panel {
+  margin-top: 8px;
+  padding: 10px;
+}
+
+.semi-scan-video {
+  width: 100%;
+  max-width: 460px;
+  border-radius: 10px;
+  border: 1px solid #b5c9a0;
+  background: #000;
+}
+
+.semi-scan-actions {
+  margin-top: 10px;
+}
+
 #loginForm > div {
   margin-bottom: 8px;
 }
@@ -1380,6 +1397,40 @@ input[type="checkbox"]:invalid {
   border: 1px solid #9a6700;
   background: #fff5d7;
   color: #7a4e00;
+}
+
+.lotto-cell-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lotto-cell-value {
+  word-break: break-word;
+}
+
+.copy-lotto-btn {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid #b5c9a0;
+  background: #ffffff;
+  color: #1f2937;
+  cursor: pointer;
+  padding: 0;
+}
+
+.copy-lotto-btn:hover {
+  background: #eef7e5;
+  border-color: #7ea24f;
+}
+
+.copy-lotto-icon {
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 /* Azioni sulla riga animale: modifica ed elimina affiancati */
@@ -2389,6 +2440,173 @@ button:active {
   margin-bottom: 10px;
 }
 
+.trace-public-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.trace-public-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  padding: 0 0 14px;
+}
+
+.trace-public-timeline-item::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 20px;
+  bottom: -2px;
+  width: 2px;
+  background: #c9d9c0;
+}
+
+.trace-public-timeline-item.is-last::after {
+  display: none;
+}
+
+.trace-public-timeline-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #0f766e;
+  background: #ffffff;
+  margin-top: 2px;
+}
+
+.trace-public-timeline-dot.is-lavorazione {
+  border-color: #0284c7;
+}
+
+.trace-public-timeline-dot.is-mungitura {
+  border-color: #0f766e;
+}
+
+.trace-public-timeline-dot.is-lotto {
+  border-color: #2563eb;
+}
+
+.trace-public-timeline-content {
+  min-width: 0;
+}
+
+.trace-public-timeline-date {
+  margin: 0;
+  color: #556b63;
+  font-size: 0.92rem;
+}
+
+.trace-public-timeline-title {
+  margin: 1px 0 0;
+  color: #102a43;
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.15;
+}
+
+.trace-public-timeline-subtitle {
+  margin: 3px 0 0;
+  color: #4b5563;
+  font-size: 1rem;
+}
+
+.trace-animal-list {
+  display: grid;
+  gap: 8px;
+}
+
+.trace-animal-select-btn {
+  width: 100%;
+  border: 1px solid #d7dfca;
+  border-radius: 10px;
+  background: #f7fbf1;
+  text-align: left;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.trace-animal-select-btn:hover {
+  background: #eef7e5;
+  border-color: #b9c9a8;
+}
+
+.trace-animal-select-btn.is-active {
+  border-color: #7ea24f;
+  box-shadow: inset 0 0 0 1px #bfd9a0;
+  background: #e8f3d9;
+}
+
+.trace-animal-icon {
+  font-size: 1.25rem;
+}
+
+.trace-animal-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.trace-animal-name {
+  font-weight: 700;
+  color: #1d3510;
+}
+
+.trace-animal-metrics {
+  color: #48652a;
+  font-size: 0.9rem;
+}
+
+.trace-animal-detail {
+  margin-top: 12px;
+  border: 1px solid #d7dfca;
+  border-radius: 10px;
+  background: #fbfdf8;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.trace-animal-detail-media {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.trace-animal-photo {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #d7dfca;
+}
+
+.trace-animal-photo-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
+  border: 1px dashed #c7d4b3;
+  background: #f2f8ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.1rem;
+}
+
+.trace-animal-detail-body h4 {
+  margin: 0 0 6px;
+  color: #102a43;
+}
+
+.trace-animal-detail-body p {
+  margin: 3px 0;
+}
+
 @media (max-width: 768px) {
   .trace-dialog {
     padding: 8px;
@@ -2401,6 +2619,22 @@ button:active {
 
   .trace-dialog-body {
     grid-template-columns: 1fr;
+  }
+
+  .trace-public-timeline-title {
+    font-size: 1.1rem;
+  }
+
+  .trace-public-timeline-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .trace-animal-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .trace-animal-detail-media {
+    justify-content: flex-start;
   }
 
   .trace-dialog-tree {

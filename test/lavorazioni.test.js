@@ -4,9 +4,11 @@ import app from '../app/app.js';
 import { jest, describe, beforeEach, afterEach, beforeAll, expect } from '@jest/globals';
 import Azienda from '../app/models/azienda.js';
 import Lavorazione from '../app/models/lavorazione.js';
+import LottoProdotto from '../app/models/lottoProdotto.js';
 import { normalizeInputs, normalizeFasi, parseBooleanLike } from '../app/routes/lavorazioni.js';
 import Sensore from '../app/models/sensore.js';
 import { ultimeLettureIot } from '../app/services/mqttService.js';
+import QRcode from 'qrcode';
 
 describe('US72 - US74 - US75 Lavorazioni', () => {
   
@@ -78,6 +80,17 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       createdAt: new Date(),
       updatedAt: new Date()
     });
+    jest.spyOn(LottoProdotto, 'findOne').mockReturnValue({
+      select: jest.fn().mockResolvedValue(null)
+    });
+    jest.spyOn(LottoProdotto, 'countDocuments').mockResolvedValue(0);
+    jest.spyOn(LottoProdotto, 'exists').mockResolvedValue(false);
+    jest.spyOn(LottoProdotto, 'deleteMany').mockResolvedValue({ acknowledged: true, deletedCount: 1 });
+    jest.spyOn(LottoProdotto.prototype, 'save').mockResolvedValue({
+      _id: '665f8fd8ad8f8c0012f9c124',
+      lotNumber: 'LOT-YOGURT-20260610-001'
+    });
+    jest.spyOn(QRcode, 'toDataURL').mockResolvedValue('data:image/png;base64,mockedqrcode');
     jest.spyOn(Sensore, 'find').mockReturnValue({
       sort: jest.fn().mockResolvedValue([
         {
@@ -222,7 +235,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       });
   });
 
-  test('POST /api/lavorazioni/:id - errore: Lavorazione non template con templateId mancante (400)', async () => {
+  test('POST /api/lavorazioni - errore: Lavorazione non template con templateId mancante (422)', async () => {
     const payload = basePayload();
     delete payload.isTemplate;
     delete payload.templateId;
@@ -231,7 +244,7 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .post(`/api/lavorazioni`)
       .set('Authorization', `Bearer ${token}`)
       .send( payload )
-      .expect(400)
+      .expect(422)
       .expect((res) => {
         expect(res.body.message).toBe('Se la lavorazione non è un template, deve riferirsi ad un template esistente');
       });
@@ -247,6 +260,64 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
           expect(res.body.message).toBe('Lavorazione aggiornata con successo');
           expect(res.body.lavorazione).toBeDefined();
         });
+  });
+
+  test('PATCH /api/lavorazioni/:id - chiusura crea automaticamente il lotto (200)', async () => {
+    const nonTemplateLavorazione = {
+      _id: lavorazioneId,
+      ...basePayload(),
+      isTemplate: false,
+      status: 'in_corso',
+      lottoId: undefined,
+      outputName: 'Vasetti di yogurt',
+      outputQuantity: 20,
+      outputUnit: 'pezzi',
+      fasi: [{ name: 'Ricevimento', completed: true }],
+      save: jest.fn().mockResolvedValue(undefined)
+    };
+
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue(nonTemplateLavorazione);
+    jest.spyOn(LottoProdotto, 'findOne').mockReturnValue({
+      select: jest.fn().mockResolvedValue(null)
+    });
+    jest.spyOn(LottoProdotto.prototype, 'save').mockImplementation(async function saveMock() {
+      this.lotNumber = 'LOT-YOGURT-20260610-009';
+      return this;
+    });
+
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'completata' })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.lavorazione.lottoId).toBe('LOT-YOGURT-20260610-009');
+      });
+  });
+
+  test('PATCH /api/lavorazioni/:id - modifica mantiene il lotto esistente (200)', async () => {
+    const completedLavorazione = {
+      _id: lavorazioneId,
+      ...basePayload(),
+      isTemplate: false,
+      status: 'completata',
+      lottoId: 'LOT-YOGURT-20260610-002',
+      fasi: [{ name: 'Ricevimento', completed: true }],
+      save: jest.fn().mockResolvedValue(undefined)
+    };
+
+    jest.spyOn(Lavorazione, 'findById').mockResolvedValue(completedLavorazione);
+
+    await request(app)
+      .patch(`/api/lavorazioni/${lavorazioneId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ notes: 'Aggiornamento note post-chiusura' })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.lavorazione.lottoId).toBe('LOT-YOGURT-20260610-002');
+      });
+
+    expect(LottoProdotto.findOne).not.toHaveBeenCalled();
   });
 
   test('PATCH /api/lavorazioni/:id - errore: lavorazioneId non valido (400)', async () => {
@@ -1028,6 +1099,8 @@ describe('US72 - US74 - US75 Lavorazioni', () => {
       .expect((res) => {
         expect(res.body.message).toBe('Lavorazione eliminata con successo');
       });
+
+    expect(LottoProdotto.deleteMany).toHaveBeenCalled();
   });
 
   test('DELETE /api/lavorazioni/:id - errore: lavorazioneId non valido (400)', async () => {

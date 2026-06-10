@@ -20,6 +20,10 @@ let aroundMeEnabled = false;
 let aroundMeCoords = null;
 let mapInstanceGlobal = null;
 let showAllResultsMode = true;
+let pendingFocusAziendaId = '';
+let pendingFocusLat = null;
+let pendingFocusLng = null;
+let focusRequestConsumed = false;
 
 const CATEGORY_FILTER_TERMS = {
 	latte: ['latte'],
@@ -260,6 +264,9 @@ function shouldShowAllResults() {
 function initQuickFilters() {
 	const params = new URLSearchParams(window.location.search);
 	const initialCategory = normalizeFilterKey(params.get('category'));
+	pendingFocusAziendaId = normalizeEntityId(params.get('aziendaId') || '').trim();
+	pendingFocusLat = parseCoordinate(params.get('lat'));
+	pendingFocusLng = parseCoordinate(params.get('lng'));
 	if (initialCategory && Object.prototype.hasOwnProperty.call(activeFilters, initialCategory)) {
 		activeFilters[initialCategory] = true;
 	}
@@ -295,6 +302,34 @@ function initQuickFilters() {
 	});
 
 	updateFilterButtonStates();
+}
+
+function focusRequestedAziendaOnMap(aziendeDaVisualizzare = []) {
+	if (focusRequestConsumed) {
+		return;
+	}
+
+	const requestedId = normalizeEntityId(pendingFocusAziendaId || '').trim();
+	const dataset = Array.isArray(aziendeDaVisualizzare) && aziendeDaVisualizzare.length
+		? aziendeDaVisualizzare
+		: (Array.isArray(databaseAziende) ? databaseAziende : []);
+
+	let target = null;
+	if (requestedId) {
+		target = dataset.find((item) => normalizeEntityId(item?.id) === requestedId) || null;
+	}
+
+	if (target) {
+		setMapView(target.lat, target.lng, 13);
+		mostraDettagliAzienda(target, null, null);
+		focusRequestConsumed = true;
+		return;
+	}
+
+	if (hasUsableCoordinates(pendingFocusLat, pendingFocusLng)) {
+		setMapView(pendingFocusLat, pendingFocusLng, 13);
+		focusRequestConsumed = true;
+	}
 }
 
 function setElencoCollapsed(collapsed) {
@@ -781,10 +816,12 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 
 	if (onlyEventMode) {
 		mostraElencoEventi(eventiVisibili);
+		focusRequestedAziendaOnMap(aziendeDaVisualizzare);
 		return;
 	}
 
 	mostraElencoRisultati(aziendeDaVisualizzare, showMixedEvents ? eventiVisibili : eventiPerElenco);
+	focusRequestedAziendaOnMap(aziendeDaVisualizzare);
 }
 
 function getEventiPerElenco(aziende, eventi) {
