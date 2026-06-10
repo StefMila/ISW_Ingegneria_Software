@@ -14,6 +14,7 @@ import mungitureRoutes from './routes/mungiture.js';
 import lottiProdottoRoutes from './routes/lottiProdotto.js';
 import lavorazioniRoutes from './routes/lavorazioni.js';
 import { publicTracciabilitaRoutes, tracciabilitaRoutes } from './routes/tracciabilita.js';
+import prodottiSalvatiRoutes from './routes/prodottiSalvati.js';
 
 import './services/mqttService.js'; // Fa partire la connessione e la simulazione MQTT all'avvio
 import iotSensoriRoutes from './routes/sensori.js';
@@ -49,6 +50,7 @@ app.use('/api/aziende/:aziendaId/eventi', publicEventiRoutes);
 app.use('/api/aziende/:aziendaId/eventi', aziendeEventiRoutes);
 app.use('/api/eventi', publicEventiRoutes);
 app.use('/api/google-calendar', googleCalendarRoutes);
+app.use('/api/prodotti-salvati', prodottiSalvatiRoutes);
 
 // Swagger
 app.get('/api-docs/spec.json', (req, res) => res.json(swaggerDocument));

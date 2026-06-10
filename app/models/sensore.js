@@ -46,7 +46,10 @@ const sensoreSchema = new mongoose.Schema(
     animaleId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Animale',
-      default: null
+      default: null,
+      index: { unique: true, sparse: true } // Questo dovrebbe risolvere i problemi avuti coi sensori
+                            // sparse: true: Dice a MongoDB di ignorare tutti i sensori che hanno animaleId: null. Potrai creare infiniti sensori a magazzino senza alcun errore.
+                            // unique: true: Dice a MongoDB che se un animaleId è presente (quindi il sensore è occupato), non può essere usato da nessun altro sensore.
     }
   },
   { timestamps: true }

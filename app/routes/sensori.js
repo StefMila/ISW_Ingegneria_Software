@@ -50,6 +50,12 @@ router.post('/sensori', checkAuth, checkUserType(['allevatore']), async (req, re
             });
         }
 
+        if (tipoDispositivo === 'indossabile' && !animaleId) {
+            return res.status(400).json({ 
+                message: 'Per i dispositivi indossabili è obbligatorio specificare un animaleId in fase di creazione' 
+            });
+        }
+
         if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
             return res.status(400).json({ message: 'aziendaId non è un ObjectId valido' });
         }
@@ -71,7 +77,7 @@ router.post('/sensori', checkAuth, checkUserType(['allevatore']), async (req, re
             aziendaId,
             animaleId: tipoDispositivo === 'indossabile' ? animaleId : null
         });
-        
+
         await newSensore.save();
 
         return res.status(201).json({
@@ -84,132 +90,7 @@ router.post('/sensori', checkAuth, checkUserType(['allevatore']), async (req, re
     }
 });
 
-// Associa automaticamente il primo sensore indossabile disponibile a un animale.
-router.patch('/sensori/auto-associa-indossabile', checkAuth, checkUserType(['allevatore']), async (req, res) => {
-    try {
-        const { aziendaId, animaleId } = req.body;
-
-        if (!aziendaId || !animaleId) {
-            return res.status(400).json({ message: 'aziendaId e animaleId sono obbligatori' });
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
-            return res.status(400).json({ message: 'aziendaId non è un ObjectId valido' });
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(animaleId)) {
-            return res.status(400).json({ message: 'animaleId non è un ObjectId valido' });
-        }
-
-        const ownership = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
-        if (!ownership.ok) {
-            return res.status(ownership.status).json({ message: ownership.message });
-        }
-
-        const animal = await Animale.findById(animaleId).select('_id aziendaId');
-        if (!animal) {
-            return res.status(404).json({ message: 'Animale non trovato' });
-        }
-
-        if (String(animal.aziendaId) !== String(aziendaId)) {
-            return res.status(403).json({ message: 'Animale non associato a questa azienda' });
-        }
-
-        const alreadyAssigned = await Sensore.findOne({
-            aziendaId,
-            tipoDispositivo: 'indossabile',
-            animaleId
-        });
-
-        if (alreadyAssigned) {
-            return res.status(200).json({
-                message: 'Animale ha già un sensore indossabile associato',
-                item: alreadyAssigned
-            });
-        }
-
-        const assigned = await Sensore.findOneAndUpdate(
-            {
-                aziendaId,
-                tipoDispositivo: 'indossabile',
-                stato: 'attivo',
-                $or: [{ animaleId: null }, { animaleId: { $exists: false } }]
-            },
-            { $set: { animaleId } },
-            { new: true, sort: { createdAt: 1 } }
-        );
-
-        if (!assigned) {
-            return res.status(404).json({ message: 'Nessun sensore indossabile disponibile' });
-        }
-
-        return res.status(200).json({
-            message: 'Sensore indossabile associato con successo',
-            item: assigned
-        });
-    } catch (error) {
-        console.error('Errore durante l\'associazione automatica del sensore:', error);
-        return res.status(500).json({ message: 'Errore interno del server' });
-    }
-});
-
 // Genera e restituisce le letture dei sensori in tempo reale
-// router.get('/sensori/dati', checkAuth, checkUserType(['allevatore']), async (req, res) => {
-//     try {
-//         const { aziendaId } = req.query;
-
-//         if (!aziendaId) {
-//             return res.status(400).json({ message: 'Il parametro query aziendaId è obbligatorio' });
-//         }
-
-//         if (!mongoose.Types.ObjectId.isValid(aziendaId)) {
-//             return res.status(400).json({ message: 'aziendaId non è un ObjectId valido' });
-//         }
-
-//         const ownership = await assertAziendaOwnedByUser(aziendaId, req.user.userId);
-//         if (!ownership.ok) {
-//             return res.status(ownership.status).json({ message: ownership.message });
-//         }
-
-//         const sensoriAttivi = await Sensore.find({ aziendaId, stato: 'attivo' });
-
-//         const generaValoreSimulato = (tipoDato) => {
-//             switch (tipoDato) {
-//                 case 'temperatura':
-//                     return parseFloat((Math.random() * (5.0 - 3.0) + 3.0).toFixed(1));
-//                 case 'umidità':
-//                     return parseFloat((Math.random() * (80 - 60) + 60).toFixed(1));
-//                 case 'peso_corporeo':
-//                     return Math.floor(Math.random() * (650 - 550) + 550);
-//                 case 'livello_passi':
-//                     return Math.floor(Math.random() * (12000 - 4000) + 4000);
-//                 case 'livello_ammoniaca':
-//                     return parseFloat((Math.random() * (25 - 10) + 10).toFixed(1));
-//                 default:
-//                     return 0;
-//             }
-//         };
-
-//         const items = sensoriAttivi.map(sensore => ({
-//             sensoreId: sensore._id,
-//             nome: sensore.nome,
-//             tipoDispositivo: sensore.tipoDispositivo,
-//             tipoDatoRaccolto: sensore.tipoDatoRaccolto,
-//             animaleId: sensore.animaleId,
-//             valore: generaValoreSimulato(sensore.tipoDatoRaccolto),
-//             unitaMisura: sensore.unitaMisura
-//         }));
-
-//         return res.status(200).json({ 
-//             timestamp: new Date(),
-//             items 
-//         });
-//     } catch (error) {
-//         console.error("Errore durante la generazione dei dati IoT:", error);
-//         return res.status(500).json({ message: 'Errore interno del server' });
-//     }
-// });
-
 router.get('/sensori/dati', checkAuth, checkUserType(['allevatore']), async (req, res) => {
     try {
         const { aziendaId } = req.query;

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiche Acquisti - MuccApp</title>
+    <script src="/auth-control.js"></script> 
+    <script>
+        protectRoute(['consumatore']);
+    </script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="home-consumatore-page">
+    <div id="menu-root"></div>
+
+    <main class="consumer-content">
+        <section class="section">
+            <div class="container-statistiche">
+                <h2>Le Tue Statistiche di Consumo</h2>
+                
+                <div class="stats-overview">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totaleSpesaKm0">0</span>
+                        <span class="stat-label">Prodotti Locali Tracciati</span>
+                    </div>
+                </div>
+
+                <h2 style="margin-top: 40px;">Bacheca dei Badge</h2>
+                <p>Scansiona più lotti per sbloccare tutti i traguardi di sostenibilità!</p>
+
+                <div class="badge-grid">
+                    <div id="badge-1" class="badge-item locked">
+                        <div class="badge-medal">🌱</div>
+                        <h4>Esploratore di Filiera</h4>
+                        <p>Assegnato al 1° acquisto tracciato</p>
+                    </div>
+
+                    <div id="badge-5" class="badge-item locked">
+                        <div class="badge-medal">🚜</div>
+                        <h4>Consumatore Consapevole</h4>
+                        <p>Assegnato a 5 acquisti tracciati</p>
+                    </div>
+
+                    <div id="badge-10" class="badge-item locked">
+                        <div class="badge-medal">👑</div>
+                        <h4>Custode della Terra</h4>
+                        <p>Assegnato a 10 acquisti tracciati</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <script src="/public-menu.js"></script>
+    <script src="/statistiche-acquisti.js"></script> </body>
+</html>

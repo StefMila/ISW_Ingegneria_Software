@@ -9,8 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const formSensore = document.getElementById('formNuovoSensore');
     const statusForm = document.getElementById('formSensoreStatus');
     const selectAnimale = document.getElementById('iotAnimaleId');
-    
-    // Inizializziamo Choices.js all'esterno della funzione
+    const selectTipoDispositivo = document.getElementById('iotTipoDispositivo');
+
+    // Inizializziamo Choices.js
     let choicesAnimale = null;
     if (selectAnimale) {
         choicesAnimale = new Choices(selectAnimale, {
@@ -20,6 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
             noResultsText: 'Nessuna mucca trovata',
             placeholder: true,
         });
+    }
+
+    if (selectTipoDispositivo && choicesAnimale) {
+        selectTipoDispositivo.addEventListener('change', (e) => {
+            if (e.target.value === 'indossabile') {
+                choicesAnimale.enable();
+            } else {
+                // Se non è indossabile, puliamo la selezione e disabilitiamo il menu
+                choicesAnimale.removeActiveItems();
+                choicesAnimale.disable();
+            }
+        });
+
+        // Controllo iniziale al caricamento della pagina
+        if (selectTipoDispositivo.value !== 'indossabile') {
+            choicesAnimale.disable();
+        }
     }
 
     // Ascolto del cambio azienda
@@ -122,7 +140,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const tipoDispositivo = document.getElementById('iotTipoDispositivo').value;
             let animaleId = document.getElementById('iotAnimaleId').value.trim();
 
-            if (tipoDispositivo !== 'indossabile') {
+            if (tipoDispositivo === 'indossabile') {
+                if (!animaleId || animaleId === '') {
+                    statusForm.style.color = 'red';
+                    statusForm.textContent = 'Errore: Per i dispositivi indossabili è obbligatorio selezionare una mucca.';
+                    return; // Blocca l'invio della Fetch inutile
+                }
+            } else {
+                // Se è di altro tipo (ambientale, stoccaggio...), forziamo a null
                 animaleId = null;
             }
 
@@ -144,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tipoDispositivo: tipoDispositivo,
                 capacita: capacitaArray,
                 animaleId: animaleId,
-                aziendaId: aziendaId // Userà l'aziendaId aggiornato!
+                aziendaId: aziendaId
             };
 
             try {

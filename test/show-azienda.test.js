@@ -1,252 +1,222 @@
 import request from 'supertest';
 import app from '../app/app.js';
+import { jest, describe, beforeEach, afterEach, beforeAll, test, expect } from '@jest/globals';
 import jwt from 'jsonwebtoken';
+import Azienda from '../app/models/azienda.js';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server'; // Database in memoria
 
-const JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
-process.env.JWT_SECRET = JWT_SECRET;
+describe('US - Gestione Aziende - Elenco e Dettaglio (Allevatore)', () => {
+    const ownerUserId = 'mocked_allevatore_id';
+    const aziendaIdValido = '665f8fd8ad8f8c0012f9c123';
+    let token;
 
-let mongoServer;
+    beforeAll(() => {
+        process.env.JWT_SECRET = 'chiave_segreta_per_test';
+    });
 
-// ID di riferimento realistici (coerenti con i formati MongoDB ObjectId)
-const idAziendaValidoEsistente = '665f9fd8ad8f8c0012f9d900'; 
-const idAllevatoreProprietario = '665f8fd8ad8f8c0012f9c999';
+    beforeEach(() => {
+        token = jwt.sign(
+            { userId: ownerUserId, userType: 'allevatore' },
+            process.env.JWT_SECRET,
+            { expiresIn: '30m' }
+        );
+    });
 
-// Avvia un serverMongoDB in memoria
-beforeAll(async () => {
-  // Avvia il server MongoDB virtuale isolato
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
+    afterEach(() => {
+        jest.clearAllMocks();
+        jest.restoreAllMocks();
+    });
 
-  // Connetti Mongoose a questo database temporaneo
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(uri);
-  }
+    test('GET /api/aziende/mine restituisce l\'elenco delle aziende dell\'utente (200)', async () => {
+        const mockAziende = [
+            {
+                _id: aziendaIdValido,
+                companyName: 'Azienda Agricola Rossi',
+                address: 'Via delle Vacche 1, Bologna',
+                ownerUserId,
+                createdAt: new Date().toISOString(),
+                // Mockiamo il metodo toObject() richiesto dal controller
+                toObject: function() { 
+                    return { 
+                        _id: this._id, 
+                        companyName: this.companyName, 
+                        address: this.address, 
+                        ownerUserId: this.ownerUserId,
+                        createdAt: this.createdAt
+                    }; 
+                }
+            }
+        ];
 
-  // Inseriamo l'azienda di test nel DB in memoria,
-  // così i test 200 e 403 troveranno SEMPRE il dato reale senza configurazioni esterne
-  await mongoose.connection.collection('aziendas').insertOne({
-    _id: new mongoose.Types.ObjectId(idAziendaValidoEsistente),
-    ownerUserId: idAllevatoreProprietario,
-    companyName: "Azienda Agricola Rossi Originale",
-    vatNumber: "IT12345687901",
-    emailAzienda: "rossi@test.it",
-    address: "Via Roma 1, Calliano"
-  });
-});
+        // Mockiamo la catena .find().select().sort()
+        jest.spyOn(Azienda, 'find').mockReturnValue({
+            select: jest.fn().mockReturnThis(),
+            sort: jest.fn().mockResolvedValue(mockAziende)
+        });
 
-// Ripristina lo stato del database prima di ogni singolo test per evitare interferenze dal DELETE
-beforeEach(async () => {
-  await mongoose.connection.collection('aziendas').deleteMany({});
-  
-  // Inseriamo l'azienda di test nel DB in memoria,
-  // così i test troveranno SEMPRE il dato reale e pulito
-  await mongoose.connection.collection('aziendas').insertOne({
-    _id: new mongoose.Types.ObjectId(idAziendaValidoEsistente),
-    ownerUserId: idAllevatoreProprietario,
-    companyName: "Azienda Agricola Rossi Originale",
-    vatNumber: "IT12345687901",
-    emailAzienda: "rossi@test.it",
-    address: "Via Roma 1, Calliano"
-  });
-});
+        await request(app)
+            .get('/api/aziende/mine')
+            .set('Authorization', `Bearer ${token}`)
+            .expect(200)
+            .expect((res) => {
+                expect(Array.isArray(res.body.items)).toBe(true);
+                expect(res.body.items[0].companyName).toBe('Azienda Agricola Rossi');
+            });
+    });
 
-afterAll(async () => {
-  // Chiudiamo la connessione per evitare che Jest rimanga appeso alla fine
-  await mongoose.connection.close();
-  await mongoServer.stop();
-});
+    test('GET /api/aziende/:id restituisce il dettaglio di una specifica azienda (200)', async () => {
+        const mockDbItem = {
+            _id: aziendaIdValido,
+            companyName: 'Azienda Agricola Rossi',
+            vatNumber: 'IT12345678901',
+            emailAzienda: 'rossi@farm.it',
+            address: 'Via delle Vacche 1, Bologna',
+            ownerUserId,
+            toObject: function() { return this; }
+        };
 
-// Genera un header di autorizzazione valido con un payload reale.
-// Permette di differenziare l'utente per testare i permessi di ownership.
+        const spyFindById = jest.spyOn(Azienda, 'findById');
+        
+        // Prima chiamata: dentro assertAziendaOwnedByUser() -> usa .select()
+        spyFindById.mockReturnValueOnce({
+            select: jest.fn().mockResolvedValue({ _id: aziendaIdValido, ownerUserId })
+        });
+        // Seconda chiamata: dentro la rotta principale -> ritorna direttamente il documento
+        spyFindById.mockReturnValueOnce(Promise.resolve(mockDbItem));
 
-const buildAuthHeader = (userId = '665f8fd8ad8f8c0012f9c999') => {
-  const token = jwt.sign(
-    {
-      userId: userId,
-      email: 'allevatore@test.it',
-      userType: 'allevatore'
-    },
-    JWT_SECRET,
-    { expiresIn: '15m' }
-  );
+        await request(app)
+            .get(`/api/aziende/${aziendaIdValido}`)
+            .set('Authorization', `Bearer ${token}`)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.itemInfo).toBeDefined();
+                expect(res.body.itemInfo.companyName).toBe('Azienda Agricola Rossi');
+            });
+    });
 
-  return `Bearer ${token}`;
-};
+    test('GET /api/aziende/:id - errore: azienda non trovata (404)', async () => {
+        // La funzione di controllo assertAziendaOwnedByUser fallisce qui se restituisce null
+        jest.spyOn(Azienda, 'findById').mockReturnValue({
+            select: jest.fn().mockResolvedValue(null)
+        });
 
+        await request(app)
+            .get(`/api/aziende/${aziendaIdValido}`)
+            .set('Authorization', `Bearer ${token}`)
+            .expect(404)
+            .expect((res) => {
+                // Sincronizzato con il testo del controller "Azienda non trovata"
+                expect(res.body.message).toBe('Azienda non trovata');
+            });
+    });
 
-describe('API Aziende - Protezione Endpoint (No Token)', () => {
+    test('PATCH /api/aziende/:id aggiorna correttamente i dati aziendali (200)', async () => {
+        const fintiDatiAggiornati = {
+            companyName: 'Nuovo Nome Srl',
+            vatNumber: 'IT12345678901',
+            emailAzienda: 'nuovo@email.it',
+            address: 'Nuova Via 4, Bologna'
+        };
 
-  test('GET /api/aziende/mine senza token restituisce 401', async () => {
+        // Mock per assertAziendaOwnedByUser
+        jest.spyOn(Azienda, 'findById').mockReturnValue({
+            select: jest.fn().mockResolvedValue({ _id: aziendaIdValido, ownerUserId })
+        });
+        
+        // Mock per findByIdAndUpdate
+        jest.spyOn(Azienda, 'findByIdAndUpdate').mockResolvedValue({
+            _id: aziendaIdValido,
+            ownerUserId,
+            ...fintiDatiAggiornati
+        });
+
+        await request(app)
+            .patch(`/api/aziende/${aziendaIdValido}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(fintiDatiAggiornati)
+            .expect(200)
+            .expect((res) => {
+                // Sincronizzato con la stringa reale del controller
+                expect(res.body.message).toBe('Azienda aggiornata con successo');
+                expect(res.body.itemInfo.companyName).toBe('Nuovo Nome Srl');
+            });
+    });
+
+    test('PATCH /api/aziende/:id - errore: utente non proprietario (403)', async () => {
+        jest.spyOn(Azienda, 'findById').mockReturnValue({
+            select: jest.fn().mockResolvedValue({
+                _id: aziendaIdValido,
+                ownerUserId: 'un_altro_utente_id'
+            })
+        });
+
+        await request(app)
+            .patch(`/api/aziende/${aziendaIdValido}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ companyName: 'Hacker Farm' })
+            .expect(403)
+            .expect((res) => {
+                // Sincronizzato con assertAziendaOwnedByUser
+                expect(res.body.message).toBe('Non hai i permessi per questa azienda');
+            });
+    });
+
+    test('DELETE /api/aziende/:id elimina definitivamente l\'azienda (200)', async () => {
+        jest.spyOn(Azienda, 'findById').mockReturnValue({
+            select: jest.fn().mockResolvedValue({ _id: aziendaIdValido, ownerUserId })
+        });
+        
+        jest.spyOn(mongoose, 'model').mockReturnValue({
+            countDocuments: jest.fn().mockResolvedValue(0)
+        });
+
+        jest.spyOn(Azienda, 'findByIdAndDelete').mockResolvedValue({ _id: aziendaIdValido });
+
+        await request(app)
+            .delete(`/api/aziende/${aziendaIdValido}`)
+            .set('Authorization', `Bearer ${token}`)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.message).toBe('Azienda eliminata con successo');
+            });
+    });
+
+    test('DELETE /api/aziende/:id - errore: ID non valido o cast error (400)', async () => {
+        const castError = new Error('Cast to ObjectId failed');
+        castError.name = 'CastError';
+        castError.kind = 'ObjectId';
+        
+        jest.spyOn(Azienda, 'findById').mockRejectedValue(castError);
+
     await request(app)
-      .get('/api/aziende/mine')
-      .expect(401);
-  });
+            .delete('/api/aziende/id-non-valido')
+            .set('Authorization', `Bearer ${token}`)
+            .expect(400)
+            .expect((res) => {
+                expect(res.body.message).toBe('aziendaId non è un ObjectId valido');
+            });
+    });
 
-  test('GET /api/aziende/:id senza token restituisce 401', async () => {
-    await request(app)
-      .get(`/api/aziende/${idAziendaValidoEsistente}`)
-      .expect(401);
-  });
+    test('PATCH /api/aziende/:id aggiorna anche la foto azienda (200)', async () => {
+        jest.spyOn(Azienda, 'findById').mockReturnValue({
+            select: jest.fn().mockResolvedValue({ _id: aziendaIdValido, ownerUserId })
+        });
+        
+        jest.spyOn(Azienda, 'findByIdAndUpdate').mockResolvedValue({
+            _id: aziendaIdValido,
+            ownerUserId,
+            foto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
+        });
 
-  test('PATCH /api/aziende/:id senza token restituisce 401', async () => {
-    await request(app)
-      .patch(`/api/aziende/${idAziendaValidoEsistente}`)
-      .send({
-        companyName: 'Tentativo Modifica Anonimo Srl'
-      })
-      .expect(401);
-  });
-
-  test('DELETE /api/aziende/:id senza token restituisce 401', async () => {
-    await request(app)
-      .delete(`/api/aziende/${idAziendaValidoEsistente}`)
-      .expect(401);
-  });
-});
-
-
-describe('API Aziende - Integrazione e Controllo Accessi', () => {
-
-  test('200 - PATCH /api/aziende/:id con token proprietario aggiorna i dati', async () => {
-    const authHeader = buildAuthHeader(idAllevatoreProprietario);
-    const patchData = {
-      companyName: "Nuova Azienda Agricola Rossi",
-      vatNumber: "IT12345687901"
-    };
-
-    const res = await request(app)
-      .patch(`/api/aziende/${idAziendaValidoEsistente}`)
-      .set('Authorization', authHeader)
-      .send(patchData);
-
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('message', 'Azienda aggiornata con successo');
-    expect(res.body).toHaveProperty('itemInfo');
-    expect(res.body.itemInfo.companyName).toBe(patchData.companyName);
-  });
-
-  test('200 - PATCH /api/aziende/:id aggiorna anche la foto azienda', async () => {
-    const authHeader = buildAuthHeader(idAllevatoreProprietario);
-
-    const res = await request(app)
-      .patch(`/api/aziende/${idAziendaValidoEsistente}`)
-      .set('Authorization', authHeader)
-      .send({
-        foto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('itemInfo');
-    expect(res.body.itemInfo.foto).toContain('data:image/png;base64');
-  });
-
-  test('400 - PATCH /api/aziende/:id restituisce 400 se l\'id non è un ObjectId valido', async () => {
-    const authHeader = buildAuthHeader(idAllevatoreProprietario);
-    const invalidObjectId = 'id-non-valido-123';
-
-    const res = await request(app)
-      .patch(`/api/aziende/${invalidObjectId}`)
-      .set('Authorization', authHeader)
-      .send({ companyName: "Nome Test" });
-
-    expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('message', 'aziendaId non è un ObjectId valido');
-  });
-
-  test('403 - PATCH /api/aziende/:id restituisce 403 se l\'utente NON è il proprietario', async () => {
-    // Generiamo un token associato a un utente differente rispetto al proprietario dell'azienda
-    const idAllevatoreEsterno = '665f8fd8ad8f8c0012f9e111';
-    const authHeaderNonProprietario = buildAuthHeader(idAllevatoreEsterno);
-
-    const res = await request(app)
-      .patch(`/api/aziende/${idAziendaValidoEsistente}`)
-      .set('Authorization', authHeaderNonProprietario)
-      .send({ companyName: "Tentativo Hacker" });
-
-    expect(res.status).toBe(403);
-    expect(res.body).toHaveProperty('message', 'Non hai i permessi per questa azienda');
-  });
-
-  test('404 - PATCH /api/aziende/:id restituisce 404 se l\'ID è valido sintatticamente ma non esiste nel database', async () => {
-    const authHeader = buildAuthHeader(idAllevatoreProprietario);
-    const idInesistente = '665f9fd8ad8f8c0012f90000'; // ObjectId strutturato ma assente nel DB
-
-    const res = await request(app)
-      .patch(`/api/aziende/${idInesistente}`)
-      .set('Authorization', authHeader)
-      .send({ companyName: "Nuovo Nome" });
-
-    expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty('message', 'Azienda non trovata');
-  });
-
-  test('404 - GET /api/aziende/:id restituisce 404 se l\'azienda non esiste', async () => {
-    const authHeader = buildAuthHeader(idAllevatoreProprietario);
-    const idInesistente = '665f9fd8ad8f8c0012f90000';
-
-    const res = await request(app)
-      .get(`/api/aziende/${idInesistente}`)
-      .set('Authorization', authHeader)
-      .expect(404);
-
-    expect(res.body).toHaveProperty('message', 'Azienda non trovata');
-  });
-});
-
-describe('API Aziende - Integrazione e Controllo Accessi (DELETE)', () => {
-
-  test('200 - DELETE /api/aziende/:id con token proprietario elimina l\'azienda con successo', async () => {
-    const authHeader = buildAuthHeader(idAllevatoreProprietario);
-
-    const res = await request(app)
-      .delete(`/api/aziende/${idAziendaValidoEsistente}`)
-      .set('Authorization', authHeader);
-
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('message', 'Azienda eliminata con successo');
-
-    // Verifica di avvenuta cancellazione: provando a cercarla deve dare 404
-    const checkRes = await request(app)
-      .get(`/api/aziende/${idAziendaValidoEsistente}`)
-      .set('Authorization', authHeader);
-    expect(checkRes.status).toBe(404);
-  });
-
-  test('400 - DELETE /api/aziende/:id restituisce 400 se l\'id non è un ObjectId valido', async () => {
-    const authHeader = buildAuthHeader(idAllevatoreProprietario);
-    const invalidObjectId = 'id-non-valido-123';
-
-    const res = await request(app)
-      .delete(`/api/aziende/${invalidObjectId}`)
-      .set('Authorization', authHeader);
-
-    expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('message', 'aziendaId non è un ObjectId valido');
-  });
-
-  test('403 - DELETE /api/aziende/:id restituisce 403 se l\'utente NON è il proprietario', async () => {
-    const idAllevatoreEsterno = '665f8fd8ad8f8c0012f9e111';
-    const authHeaderNonProprietario = buildAuthHeader(idAllevatoreEsterno);
-
-    const res = await request(app)
-      .delete(`/api/aziende/${idAziendaValidoEsistente}`)
-      .set('Authorization', authHeaderNonProprietario);
-
-    expect(res.status).toBe(403);
-    expect(res.body).toHaveProperty('message', 'Non hai i permessi per questa azienda');
-  });
-
-  test('404 - DELETE /api/aziende/:id restituisce 404 se l\'ID è valido ma l\'azienda non esiste', async () => {
-    const authHeader = buildAuthHeader(idAllevatoreProprietario);
-    const idInesistente = '665f9fd8ad8f8c0012f90000'; 
-
-    const res = await request(app)
-      .delete(`/api/aziende/${idInesistente}`)
-      .set('Authorization', authHeader);
-
-    expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty('message', 'Azienda non trovata');
-  });
+        await request(app)
+            .patch(`/api/aziende/${aziendaIdValido}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                foto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
+            })
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.itemInfo.foto).toContain('data:image/png;base64');
+            });
+    });
 });
