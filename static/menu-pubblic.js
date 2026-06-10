@@ -1,4 +1,10 @@
 (() => {
+  const isAuthenticatedConsumer = () => {
+    const token = localStorage.getItem('token');
+    const userType = localStorage.getItem('userType');
+    return Boolean(token) && userType === 'consumatore';
+  };
+
   const ensureFontAwesome = () => {
     if (document.querySelector('link[data-public-menu-fa="1"]')) return;
     if (document.querySelector('link[href*="font-awesome"]')) return;
@@ -38,6 +44,10 @@
 
   const mountPublicMenu = async () => {
     if (document.querySelector('.public-fixed-menu')) return;
+
+    if (isAuthenticatedConsumer()) {
+      return;
+    }
 
     const body = document.body;
     if (!body) return;

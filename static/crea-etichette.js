@@ -45,7 +45,7 @@ let lastShiftSelectionIndex = null;
 let activeDetailLot = null;
 let pendingReprintLotFromQuery = null;
 let pendingReprintLotIdFromQuery = null;
-const PRINT_LOGO_SRC = '/logo-muccapp.svg';
+const PRINT_LOGO_SRC = '/logo-muccapp.png';
 // Stato per evitare più richieste di ristampa contemporanee
 const labelSetStatus = (message, color = '#3d5a1a') => {
   if (!labelBuilderStatus) return;
@@ -662,7 +662,7 @@ const buildPrintHtml = (labels = []) => {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      min-width: 44mm;
+      min-width: 34mm;
     }
     .print-logo-wrap.is-hidden { min-width: 0; }
     .print-logo-wrap img {

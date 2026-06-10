@@ -188,7 +188,7 @@ describe('US - Gestione Aziende - Elenco e Dettaglio (Allevatore)', () => {
         
         jest.spyOn(Azienda, 'findById').mockRejectedValue(castError);
 
-await request(app)
+    await request(app)
             .delete('/api/aziende/id-non-valido')
             .set('Authorization', `Bearer ${token}`)
             .expect(400)
@@ -197,7 +197,6 @@ await request(app)
             });
     });
 
-    // --- TEST INTEGRATO DA ORIGIN/MASTER (Adattato ai mock locali) ---
     test('PATCH /api/aziende/:id aggiorna anche la foto azienda (200)', async () => {
         jest.spyOn(Azienda, 'findById').mockReturnValue({
             select: jest.fn().mockResolvedValue({ _id: aziendaIdValido, ownerUserId })
