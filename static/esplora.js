@@ -24,6 +24,9 @@ let pendingFocusAziendaId = '';
 let pendingFocusLat = null;
 let pendingFocusLng = null;
 let focusRequestConsumed = false;
+let elencoHandlersBound = false;
+let elencoAziendeById = new Map();
+let elencoEventiById = new Map();
 
 const CATEGORY_FILTER_TERMS = {
 	latte: ['latte'],
@@ -416,6 +419,81 @@ function getEventStartDate(evento) {
 	return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function getRenderedEventId(evento, index) {
+	return normalizeEntityId(evento.id || evento._id || `${evento.title}-${index}`);
+}
+
+function bindElencoHandlersOnce() {
+	if (elencoHandlersBound) {
+		return;
+	}
+
+	const elenco = document.getElementById('elencoAziende');
+	if (!elenco) {
+		return;
+	}
+
+	const openEventDetails = (itemEl, domEvent) => {
+		const eventId = itemEl?.dataset?.eventId || '';
+		const evento = elencoEventiById.get(eventId);
+		if (!evento) {
+			return;
+		}
+
+		setMapView(evento.lat, evento.lng, 12);
+		mostraDettagliEvento(evento, domEvent, itemEl);
+	};
+
+	const openAziendaDetails = (itemEl, domEvent) => {
+		const entityId = itemEl?.dataset?.entityId || '';
+		const azienda = elencoAziendeById.get(entityId);
+		if (!azienda) {
+			return;
+		}
+
+		setMapView(azienda.lat, azienda.lng, 12);
+		mostraDettagliAzienda(azienda, domEvent, itemEl);
+	};
+
+	elenco.addEventListener('click', (event) => {
+		if (event?.target?.closest && event.target.closest('a')) {
+			return;
+		}
+
+		const eventItem = event.target.closest('.elenco-event-item');
+		if (eventItem) {
+			openEventDetails(eventItem, event);
+			return;
+		}
+
+		const aziendaItem = event.target.closest('.elenco-result-item');
+		if (aziendaItem) {
+			openAziendaDetails(aziendaItem, event);
+		}
+	});
+
+	elenco.addEventListener('keydown', (event) => {
+		if (event.key !== 'Enter' && event.key !== ' ') {
+			return;
+		}
+
+		const targetItem = event.target.closest('.elenco-event-item, .elenco-result-item');
+		if (!targetItem) {
+			return;
+		}
+
+		event.preventDefault();
+		if (targetItem.classList.contains('elenco-event-item')) {
+			openEventDetails(targetItem, event);
+			return;
+		}
+
+		openAziendaDetails(targetItem, event);
+	});
+
+	elencoHandlersBound = true;
+}
+
 function getEventAddressForGeocoding(evento) {
 	return [evento?.location, evento?.companyAddress, evento?.city]
 		.map((value) => String(value || '').trim())
@@ -690,7 +768,8 @@ function initApp() {
 
 	Promise.all([
 		fetch('/api/aziende/public').then((res) => res.json()),
-		fetch('/api/punti-vendita/public').then((res) => res.json()),
+		fetch('/api/punti-vendita/public').then((res) => res.json())
+		,
 		loadEventiPubbliciSettimana()
 	])
 		.then(([aziendeData, puntiVenditaData]) => {
@@ -849,16 +928,21 @@ function getEventiPerElenco(aziende, eventi) {
 }
 
 function mostraElencoEventi(eventi) {
+	bindElencoHandlersOnce();
 	const elenco = document.getElementById('elencoAziende');
-	if (!Array.isArray(eventi) || !eventi.length) {
+	const eventiList = Array.isArray(eventi) ? eventi : [];
+	elencoAziendeById = new Map();
+	elencoEventiById = new Map(eventiList.map((evento, index) => [getRenderedEventId(evento, index), evento]));
+
+	if (!eventiList.length) {
 		elenco.innerHTML = '<em>nessun evento trovato</em>';
 		return;
 	}
 
-	elenco.innerHTML = '<b>Eventi trovati:</b><ul style="padding-left:18px;">' + eventi
+	elenco.innerHTML = '<b>Eventi trovati:</b><ul style="padding-left:18px;">' + eventiList
 		.map((evento, index) => {
 			const rowBackground = index % 2 === 0 ? '#f8fbf2' : '#eef5e1';
-			const eventId = normalizeEntityId(evento.id || evento._id || `${evento.title}-${index}`);
+			const eventId = getRenderedEventId(evento, index);
 			const eventDate = getEventStartDate(evento);
 			const dateLabel = eventDate
 				? eventDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -872,58 +956,44 @@ function mostraElencoEventi(eventi) {
 				'</li>';
 		})
 		.join('') + '</ul>';
-
-	elenco.querySelectorAll('.elenco-event-item').forEach((itemEl) => {
-		const openDialog = (event) => {
-			if (event?.target?.closest && event.target.closest('a')) {
-				return;
-			}
-
-			const eventId = itemEl.dataset.eventId;
-			const evento = eventi.find((ev, idx) => {
-				const currentId = normalizeEntityId(ev.id || ev._id || `${ev.title}-${idx}`);
-				return currentId === eventId;
-			});
-
-			if (!evento) {
-				return;
-			}
-
-			setMapView(evento.lat, evento.lng, 12);
-			mostraDettagliEvento(evento, null, itemEl);
-		};
-
-		itemEl.addEventListener('click', openDialog);
-		itemEl.addEventListener('keydown', (event) => {
-			if (event.key === 'Enter' || event.key === ' ') {
-				event.preventDefault();
-				openDialog(event);
-			}
-		});
-	});
 }
 
 function mostraElencoRisultati(aziende, eventi) {
+	bindElencoHandlersOnce();
 	const elenco = document.getElementById('elencoAziende');
 	const aziendeList = Array.isArray(aziende) ? aziende : [];
 	const eventiList = Array.isArray(eventi) ? eventi : [];
+	elencoAziendeById = new Map(aziendeList.map((az) => [normalizeEntityId(az.id), az]));
+	elencoEventiById = new Map(eventiList.map((evento, index) => [getRenderedEventId(evento, index), evento]));
 
 	if (!aziendeList.length && !eventiList.length) {
 		elenco.innerHTML = '<em>nessun risultato</em>';
 		return;
 	}
 
-	mostraElencoAziende(aziendeList);
+	const aziendeMarkup = '<b>Risultati trovati:</b><ul style="padding-left:18px;">' + aziendeList
+		.map((az, index) => {
+			const rowBackground = index % 2 === 0 ? '#f8fbf2' : '#eef5e1';
+			return `\n\t\t\t<li class="elenco-result-item" data-entity-id="${escapeHtml(normalizeEntityId(az.id))}" role="button" tabindex="0" style="cursor:pointer;padding:6px 4px;border-radius:6px;background:${rowBackground};"><b>${az.nome}</b> ${az.entityType === 'puntoVendita' ? '(Punto vendita)' : '(Azienda)'}<br>` +
+			(az.categoria ? `<b>Categoria:</b> ${az.categoria}<br>` : '') +
+			(az.indirizzo ? `${az.indirizzo}<br>` : '') +
+			(az.citta ? `${az.citta}<br>` : '') +
+			(az.email ? `Email: ${az.email}<br>` : '') +
+			(az.telefono ? `Tel: ${az.telefono}<br>` : '') +
+			(az.sito ? `Sito: <a href="${az.sito}" target="_blank">${az.sito}</a>` : '') +
+			'</li>';
+		})
+		.join('') + '</ul>';
 
 	if (!eventiList.length) {
+		elenco.innerHTML = aziendeMarkup;
 		return;
 	}
 
-	const aziendeMarkup = elenco.innerHTML;
 	const eventiMarkup = '<div style="margin-top:12px;"><b>Eventi trovati:</b><ul style="padding-left:18px;">' + eventiList
 		.map((evento, index) => {
 			const rowBackground = index % 2 === 0 ? '#f8fbf2' : '#eef5e1';
-			const eventId = normalizeEntityId(evento.id || evento._id || `${evento.title}-${index}`);
+			const eventId = getRenderedEventId(evento, index);
 			const eventDate = getEventStartDate(evento);
 			const dateLabel = eventDate
 				? eventDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -939,45 +1009,21 @@ function mostraElencoRisultati(aziende, eventi) {
 		.join('') + '</ul></div>';
 
 	elenco.innerHTML = aziendeMarkup + eventiMarkup;
-
-	elenco.querySelectorAll('.elenco-event-item').forEach((itemEl) => {
-		const openDialog = (event) => {
-			if (event?.target?.closest && event.target.closest('a')) {
-				return;
-			}
-
-			const eventId = itemEl.dataset.eventId;
-			const evento = eventiList.find((ev, idx) => {
-				const currentId = normalizeEntityId(ev.id || ev._id || `${ev.title}-${idx}`);
-				return currentId === eventId;
-			});
-
-			if (!evento) {
-				return;
-			}
-
-			setMapView(evento.lat, evento.lng, 12);
-			mostraDettagliEvento(evento, null, itemEl);
-		};
-
-		itemEl.addEventListener('click', openDialog);
-		itemEl.addEventListener('keydown', (event) => {
-			if (event.key === 'Enter' || event.key === ' ') {
-				event.preventDefault();
-				openDialog(event);
-			}
-		});
-	});
 }
 
 function mostraElencoAziende(aziende) {
+	bindElencoHandlersOnce();
 	const elenco = document.getElementById('elencoAziende');
-	if (!aziende.length) {
+	const aziendeList = Array.isArray(aziende) ? aziende : [];
+	elencoAziendeById = new Map(aziendeList.map((az) => [normalizeEntityId(az.id), az]));
+	elencoEventiById = new Map();
+
+	if (!aziendeList.length) {
 		elenco.innerHTML = '<em>nessun risultato</em>';
 		return;
 	}
 
-	elenco.innerHTML = '<b>Risultati trovati:</b><ul style="padding-left:18px;">' + aziende
+	elenco.innerHTML = '<b>Risultati trovati:</b><ul style="padding-left:18px;">' + aziendeList
 		.map((az, index) => {
 			const rowBackground = index % 2 === 0 ? '#f8fbf2' : '#eef5e1';
 			return `\n\t\t\t<li class="elenco-result-item" data-entity-id="${escapeHtml(normalizeEntityId(az.id))}" role="button" tabindex="0" style="cursor:pointer;padding:6px 4px;border-radius:6px;background:${rowBackground};"><b>${az.nome}</b> ${az.entityType === 'puntoVendita' ? '(Punto vendita)' : '(Azienda)'}<br>` +
@@ -990,31 +1036,6 @@ function mostraElencoAziende(aziende) {
 			'</li>';
 		})
 		.join('') + '</ul>';
-
-	elenco.querySelectorAll('.elenco-result-item').forEach((itemEl) => {
-		const openDialog = (event) => {
-			if (event?.target?.closest && event.target.closest('a')) {
-				return;
-			}
-
-			const entityId = itemEl.dataset.entityId;
-			const azienda = aziende.find((az) => normalizeEntityId(az.id) === entityId);
-			if (!azienda) {
-				return;
-			}
-
-			setMapView(azienda.lat, azienda.lng, 12);
-			mostraDettagliAzienda(azienda, null, itemEl);
-		};
-
-		itemEl.addEventListener('click', openDialog);
-		itemEl.addEventListener('keydown', (event) => {
-			if (event.key === 'Enter' || event.key === ' ') {
-				event.preventDefault();
-				openDialog(event);
-			}
-		});
-	});
 }
 
 function distanzaKm(lat1, lng1, lat2, lng2) {
