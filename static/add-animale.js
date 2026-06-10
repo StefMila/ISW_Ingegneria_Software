@@ -16,14 +16,14 @@ const wearableWizardMessage = document.getElementById('wearableWizardMessage');
 
 let selectedFotoDataUrl = '';
 let pendingAnimalForSensor = null;
-
+// Capacità predefinite per i sensori indossabili associati agli animali
 const DEFAULT_WEARABLE_CAPACITA = [
     { tipoDato: 'temperatura', unitaMisura: '°C' },
     { tipoDato: 'frequenza_cardiaca', unitaMisura: 'bpm' },
     { tipoDato: 'livello_passi', unitaMisura: 'passi' },
     { tipoDato: 'esposizione_solare', unitaMisura: 'ore' }
 ];
-
+// Mostra il nome dell'azienda attiva se presente
 const selectedAziendaName = localStorage.getItem('selectedAziendaName') || 'non selezionata';
 if (currentAziendaBadge) {
     currentAziendaBadge.textContent = `Azienda attiva: ${selectedAziendaName}`;
@@ -78,9 +78,9 @@ if (fotoInput) {
         reader.readAsDataURL(file);
     });
 }
-
+// Funzione per gestire la risposta del server, cercando di parseare il JSON e restituendo un oggetto vuoto in caso di errore
 const parseResponseBody = async (response) => response.json().catch(() => ({}));
-
+// Funzione per aggiornare il conteggio dei sensori indossabili
 const refreshAvailableWearableSensorsCount = async () => {
     if (!availableWearableSensorsInfo) return;
 
@@ -117,7 +117,7 @@ const refreshAvailableWearableSensorsCount = async () => {
         availableWearableSensorsInfo.textContent = 'Sensori indossabili disponibili: non disponibili';
     }
 };
-
+// crea un indossabile per un animale specifico, restituendo un oggetto con le informazioni sulla risposta del server
 const createWearableSensorForAnimal = async ({ aziendaId, animaleId, nome, stato, token }) => {
     const response = await fetch('/api/iot/sensori', {
         method: 'POST',
@@ -138,7 +138,7 @@ const createWearableSensorForAnimal = async ({ aziendaId, animaleId, nome, stato
     const data = await parseResponseBody(response);
     return { ok: response.ok, status: response.status, data };
 };
-
+// Funzione per chiudere il wizard di configurazione del sensore indossabile, con opzione per resettare il form di aggiunta animale
 const closeWearableWizard = ({ resetForm = false } = {}) => {
     if (wearableWizard) {
         wearableWizard.classList.add('hidden');
@@ -171,7 +171,8 @@ const closeWearableWizard = ({ resetForm = false } = {}) => {
 
     pendingAnimalForSensor = null;
 };
-
+// Dopo aver creato l'animale, apre il wizard del sensore (già compilato con i suoi dati) 
+// e blocca il form di inserimento dell'animale.
 const openWearableWizard = ({ animaleId, aziendaId, matricola, nomeAnimale }) => {
     pendingAnimalForSensor = { animaleId, aziendaId, matricola, nomeAnimale };
     if (wearableWizardAnimalInfo) {
@@ -254,7 +255,7 @@ if (wizardCreateSensorBtn) {
         }
     });
 }
-
+// Aggiorna il conteggio dei sensori indossabili disponibili all'apertura della pagina
 refreshAvailableWearableSensorsCount();
 // Handler per la registrazione di un nuovo animale
 if (addAnimaleForm) {

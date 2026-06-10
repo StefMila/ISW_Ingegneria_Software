@@ -28,7 +28,7 @@ const renderStatus = (text, color = '#1f2937') => {
   statusMsg.textContent = text;
   statusMsg.style.color = color;
 };
-
+// Funzione per aggiornare il badge dell'azienda attiva, recuperando il nome dell'azienda dal localStorage o dall'ID e mostrando un messaggio predefinito se non è selezionata
 const setAziendaBadge = () => {
   if (!currentAziendaBadge) {
     return;
@@ -37,7 +37,7 @@ const setAziendaBadge = () => {
   const aziendaName = localStorage.getItem(SELECTED_AZIENDA_NAME_KEY) || getAziendaId() || 'non selezionata';
   currentAziendaBadge.textContent = `Azienda attiva: ${aziendaName} ▾`;
 };
-
+// Funzione per aggiornare lo stato della scansione con un messaggio e un colore specificati, utilizzata per fornire feedback all'utente durante il processo di scansione
 const setScanStatus = (text, color = '#1f2937') => {
   if (!scanStatus) {
     return;
@@ -46,7 +46,7 @@ const setScanStatus = (text, color = '#1f2937') => {
   scanStatus.textContent = text;
   scanStatus.style.color = color;
 };
-
+// Funzione per trovare un'opzione dell'animale corrispondente al valore scansionato, cercando prima una corrispondenza esatta con il valore dell'opzione e poi una corrispondenza parziale con il testo dell'opzione
 const findAnimaleOptionByScannedValue = (rawValue) => {
   const value = String(rawValue || '').trim();
   if (!value || !animaleSelect) {
@@ -61,7 +61,7 @@ const findAnimaleOptionByScannedValue = (rawValue) => {
   const lowerValue = value.toLowerCase();
   return Array.from(animaleSelect.options).find((option) => String(option.textContent || '').toLowerCase().includes(lowerValue));
 };
-
+// Funzione per fermare la scansione, rilasciare le risorse della fotocamera, cancellare l'animazione e nascondere il pannello di scansione
 const stopScanner = () => {
   scannerActive = false;
 
@@ -83,7 +83,7 @@ const stopScanner = () => {
     scanPanel.style.display = 'none';
   }
 };
-
+// Funzione per applicare il valore scansionato al form, cercando una corrispondenza tra le opzioni degli animali e aggiornando lo stato con un messaggio di successo o errore
 const applyScannedValue = (rawValue) => {
   const matchedOption = findAnimaleOptionByScannedValue(rawValue);
   if (!matchedOption) {
@@ -96,7 +96,7 @@ const applyScannedValue = (rawValue) => {
   renderStatus('Mucca selezionata tramite scansione.', 'green');
   return true;
 };
-
+// Funzione per avviare la scansione, gestire l'accesso alla fotocamera, rilevare i codici a barre in tempo reale e aggiornare lo stato con feedback appropriati durante il processo
 const startScanner = async () => {
   if (!scanPanel || !scanVideo) {
     return;
@@ -156,7 +156,7 @@ const startScanner = async () => {
     setScanStatus('Impossibile avviare la fotocamera.', 'red');
   }
 };
-
+// Funzione per popolare la select degli animali associati all'azienda attiva, effettuando una chiamata API per recuperare i dati, gestendo gli errori e aggiornando lo stato con messaggi informativi
 const populateAnimali = async () => {
   const aziendaId = getAziendaId();
   const token = getToken();
@@ -219,7 +219,7 @@ const populateAnimali = async () => {
     animaleSelect.disabled = true;
   }
 };
-
+// Funzione per avviare la mungitura, raccogliere i dati dal form, effettuare una chiamata API per creare una nuova mungitura, gestire la risposta e aggiornare lo stato con messaggi di successo o errore
 const startMungitura = async () => {
   const aziendaId = getAziendaId();
   const token = getToken();
@@ -240,7 +240,7 @@ const startMungitura = async () => {
     renderStatus('Seleziona una mucca prima di avviare.', 'red');
     return;
   }
-
+// Costruzione del payload per la richiesta API, includendo l'azienda, l'animale e eventuali appunti, e invio della richiesta per creare una nuova mungitura, con gestione della risposta e aggiornamento dello stato dell'interfaccia utente di conseguenza
   const payload = { aziendaId, animaleId };
   if (notes) {
     payload.notes = notes;
@@ -305,7 +305,7 @@ if (stopScanBtn) {
     stopScanner();
   });
 }
-
+// Aggiunta di un event listener al corpo della tabella delle mungiture per gestire i click sugli elementi dinamici, delegando la gestione a una funzione definita globalmente se esiste
 const mungitureTableBody = document.getElementById('mungitureTableBody');
 if (mungitureTableBody) {
   mungitureTableBody.addEventListener('click', async (event) => {

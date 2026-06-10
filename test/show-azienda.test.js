@@ -188,12 +188,36 @@ describe('US - Gestione Aziende - Elenco e Dettaglio (Allevatore)', () => {
         
         jest.spyOn(Azienda, 'findById').mockRejectedValue(castError);
 
-        await request(app)
+await request(app)
             .delete('/api/aziende/id-non-valido')
             .set('Authorization', `Bearer ${token}`)
             .expect(400)
             .expect((res) => {
                 expect(res.body.message).toBe('aziendaId non è un ObjectId valido');
+            });
+    });
+
+    // --- TEST INTEGRATO DA ORIGIN/MASTER (Adattato ai mock locali) ---
+    test('PATCH /api/aziende/:id aggiorna anche la foto azienda (200)', async () => {
+        jest.spyOn(Azienda, 'findById').mockReturnValue({
+            select: jest.fn().mockResolvedValue({ _id: aziendaIdValido, ownerUserId })
+        });
+        
+        jest.spyOn(Azienda, 'findByIdAndUpdate').mockResolvedValue({
+            _id: aziendaIdValido,
+            ownerUserId,
+            foto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
+        });
+
+        await request(app)
+            .patch(`/api/aziende/${aziendaIdValido}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                foto: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB'
+            })
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.itemInfo.foto).toContain('data:image/png;base64');
             });
     });
 });

@@ -17,8 +17,8 @@
     <style>
         .hidden { display: none !important; }
         .azienda-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .azienda-table th, .azienda-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        .azienda-table th { background-color: #f8fafc; font-weight: 600; color: #475569; }
+        .azienda-table th, .azienda-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #5a8f2c; }
+        .azienda-table th { background-color: #f8fcf8; font-weight: 600; color: #1a2e05; }
         .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; margin-right: 8px; transition: transform 0.1s; }
         .btn-icon:hover { transform: scale(1.15); }
         .btn-disabled { opacity: 0.4; cursor: not-allowed; }
@@ -68,6 +68,22 @@
             </div>
 
             <div class="azienda-card-view" id="aziendaCard">
+                <div class="info-field-group">
+                    <label>Foto Azienda</label>
+                    <div class="field-content">
+                        <div id="view-fotoAzienda" class="view-mode-text">-</div>
+                        <div id="edit-fotoWrapper" class="edit-mode-input hidden">
+                            <button type="button" id="pickFotoAziendaBtn" class="btn-secondary azienda-foto-upload-btn">Carica foto</button>
+                            <input type="file" id="edit-fotoAzienda" accept="image/*" hidden>
+                            <div id="edit-fotoPreview" class="azienda-foto-preview"></div>
+                            <small id="edit-fotoFilename" class="azienda-foto-filename">Nessun file selezionato</small>
+                            <label class="azienda-foto-remove-label">
+                                <input type="checkbox" id="edit-removeFotoAzienda"> Rimuovi foto
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="info-field-group">
                     <label>Ragione Sociale</label>
                     <div class="field-content">

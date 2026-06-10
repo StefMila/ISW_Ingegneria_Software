@@ -181,6 +181,8 @@ const loadEvents = async () => {
 // Renderizzazione della lista eventi: per ogni evento creiamo una card con i dettagli e i pulsanti di azione, disabilitando il pulsante di sincronizzazione se Google Calendar non è connesso.
 	eventsList.innerHTML = items.map((event) => {
 		const statusSync = event.googleSyncedAt ? 'Sincronizzato' : 'Non sincronizzato';
+		const isAlreadySynced = Boolean(event.googleCalendarEventId || event.googleSyncedAt);
+		const disableSyncButton = !isGoogleConnected || isAlreadySynced;
 		const visibilityLabel = event.visibilityLabel || (event.visibility === 'public' ? 'Pubblico' : 'Privato');
 		const recurrenceLabel = event.recurrenceLabel || 'Evento singolo';
 		const eventLinkHtml = event.link
@@ -201,7 +203,7 @@ const loadEvents = async () => {
 				<p><strong>Google:</strong> ${statusSync}</p>
 				<p>${event.description || 'Nessuna descrizione inserita.'}</p>
 				<div class="event-card-actions">
-					<button type="button" class="event-sync-btn" data-sync-id="${event.id}" ${isGoogleConnected ? '' : 'disabled'}>
+					<button type="button" class="event-sync-btn" data-sync-id="${event.id}" ${disableSyncButton ? 'disabled' : ''} title="${isAlreadySynced ? 'Evento gia sincronizzato su Google Calendar' : ''}">
 						Sincronizza su Google Calendar
 					</button>
 					<button type="button" class="event-delete-btn" data-delete-id="${event.id}">Elimina</button>

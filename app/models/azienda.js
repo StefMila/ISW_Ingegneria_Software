@@ -56,6 +56,12 @@ const aziendaSchema = new Schema({
         required: false,
         trim: true
     },
+    foto: {
+        type: String,
+        required: false,
+        trim: true,
+        default: undefined
+    },
     //descrizione da esporre nel sito
     description: {
         type: String,

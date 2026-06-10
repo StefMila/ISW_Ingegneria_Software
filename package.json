@@ -49,10 +49,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "gen-env": "node generate-env-spec.js",
-    "seed": "node scripts/seed.js",
-    "seed:lavorazioni": "node scripts/seed-lavorazioni.js",
-    "seed:eventi": "node scripts/seed-eventi.js",
-    "seed:mungiture": "node scripts/seed-mungiture.js"
+    "seed": "node scripts/seed.js"
   },
   "devDependencies": {
     "@types/jest": "29.5.12",

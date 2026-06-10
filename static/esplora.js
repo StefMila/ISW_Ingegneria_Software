@@ -19,6 +19,11 @@ let elencoCollapsed = false;
 let aroundMeEnabled = false;
 let aroundMeCoords = null;
 let mapInstanceGlobal = null;
+let showAllResultsMode = true;
+let pendingFocusAziendaId = '';
+let pendingFocusLat = null;
+let pendingFocusLng = null;
+let focusRequestConsumed = false;
 
 const CATEGORY_FILTER_TERMS = {
 	latte: ['latte'],
@@ -111,28 +116,6 @@ function filterAziendeInCurrentViewport(aziende, enabled = false) {
 
 		return bounds.contains(new google.maps.LatLng(lat, lng));
 	});
-}
-
-function loadConsumerMenu() {
-	const token = localStorage.getItem('token');
-	const userType = localStorage.getItem('userType');
-	const menuRoot = document.getElementById('menu-root');
-
-	if (!menuRoot) return;
-
-	if (!token || userType !== 'consumatore') {
-		menuRoot.innerHTML = '';
-		return;
-	}
-
-	fetch('/menu-consumatore.html')
-		.then((res) => res.text())
-		.then((html) => {
-			menuRoot.innerHTML = html;
-		})
-		.catch((err) => {
-			console.error('Errore caricamento menu:', err);
-		});
 }
 
 function loadGoogleMapsApi() {
@@ -274,9 +257,16 @@ function clearActiveFilters() {
 	updateFilterButtonStates();
 }
 
+function shouldShowAllResults() {
+	return showAllResultsMode === true;
+}
+
 function initQuickFilters() {
 	const params = new URLSearchParams(window.location.search);
 	const initialCategory = normalizeFilterKey(params.get('category'));
+	pendingFocusAziendaId = normalizeEntityId(params.get('aziendaId') || '').trim();
+	pendingFocusLat = parseCoordinate(params.get('lat'));
+	pendingFocusLng = parseCoordinate(params.get('lng'));
 	if (initialCategory && Object.prototype.hasOwnProperty.call(activeFilters, initialCategory)) {
 		activeFilters[initialCategory] = true;
 	}
@@ -285,7 +275,7 @@ function initQuickFilters() {
 	if (resetButton) {
 		resetButton.addEventListener('click', () => {
 			clearActiveFilters();
-			activeFilters.eventi = true;
+			showAllResultsMode = true;
 			aroundMeEnabled = false;
 			aroundMeCoords = null;
 			updateAroundMeButtonState();
@@ -304,6 +294,7 @@ function initQuickFilters() {
 			if (!Object.prototype.hasOwnProperty.call(activeFilters, filterKey)) {
 				return;
 			}
+			showAllResultsMode = false;
 			activeFilters[filterKey] = !activeFilters[filterKey];
 			updateFilterButtonStates();
 			filtraAziende({ preserveMapView: true });
@@ -311,6 +302,34 @@ function initQuickFilters() {
 	});
 
 	updateFilterButtonStates();
+}
+
+function focusRequestedAziendaOnMap(aziendeDaVisualizzare = []) {
+	if (focusRequestConsumed) {
+		return;
+	}
+
+	const requestedId = normalizeEntityId(pendingFocusAziendaId || '').trim();
+	const dataset = Array.isArray(aziendeDaVisualizzare) && aziendeDaVisualizzare.length
+		? aziendeDaVisualizzare
+		: (Array.isArray(databaseAziende) ? databaseAziende : []);
+
+	let target = null;
+	if (requestedId) {
+		target = dataset.find((item) => normalizeEntityId(item?.id) === requestedId) || null;
+	}
+
+	if (target) {
+		setMapView(target.lat, target.lng, 13);
+		mostraDettagliAzienda(target, null, null);
+		focusRequestConsumed = true;
+		return;
+	}
+
+	if (hasUsableCoordinates(pendingFocusLat, pendingFocusLng)) {
+		setMapView(pendingFocusLat, pendingFocusLng, 13);
+		focusRequestConsumed = true;
+	}
 }
 
 function setElencoCollapsed(collapsed) {
@@ -535,7 +554,7 @@ function clearEventMarkers() {
 	eventMarkerAttivi = [];
 }
 
-function mostraEventiSettimanaSuMappa(aziendeVisibili) {
+function mostraEventiSettimanaSuMappa(aziendeVisibili, eventiSource = eventiPubbliciSettimana) {
 	if (!mappaComponent) return;
 
 	clearEventMarkers();
@@ -547,7 +566,7 @@ function mostraEventiSettimanaSuMappa(aziendeVisibili) {
 		{ lat: Number(azienda.lat), lng: Number(azienda.lng) }
 	]));
 
-	const eventiConCoordinate = eventiPubbliciSettimana
+	const eventiConCoordinate = (Array.isArray(eventiSource) ? eventiSource : [])
 		.map((evento) => {
 			const directLat = parseCoordinate(evento.lat);
 			const directLng = parseCoordinate(evento.lng);
@@ -724,8 +743,10 @@ function initApp() {
 }
 
 function mostraAziendeSuMappa(aziende, options = {}) {
-	const { preserveMapView = false } = options;
+	const { preserveMapView = false, eventiOverride = null } = options;
 	const aziendeDaVisualizzare = Array.isArray(aziende) ? aziende : [];
+	const onlyEventMode = activeFilters.eventi === true;
+	const showMixedEvents = shouldShowAllResults() && !onlyEventMode;
 	markerAttivi.forEach((marker) => {
 		if (marker && typeof marker.setMap === 'function') {
 			marker.setMap(null);
@@ -738,7 +759,7 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 	markerAttivi = [];
 	const mapInstance = getMapInstance();
 
-	if (mapInstance && window.google && google.maps && google.maps.Marker) {
+	if (!onlyEventMode && mapInstance && window.google && google.maps && google.maps.Marker) {
 		aziendeDaVisualizzare.forEach((azienda) => {
 			const marker = new google.maps.Marker({
 				map: mapInstance,
@@ -755,14 +776,16 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 		});
 	}
 
-	const eventiVisibili = activeFilters.eventi
-		? (mostraEventiSettimanaSuMappa(aziendeDaVisualizzare) || [])
+	const eventiSource = Array.isArray(eventiOverride) ? eventiOverride : eventiPubbliciSettimana;
+	const eventiPerElenco = getEventiPerElenco(aziendeDaVisualizzare, eventiSource);
+	const eventiVisibili = (onlyEventMode || showMixedEvents)
+		? (mostraEventiSettimanaSuMappa(aziendeDaVisualizzare, eventiSource) || [])
 		: [];
 
-	if (!activeFilters.eventi) {
+	if (!onlyEventMode && !showMixedEvents) {
 		clearEventMarkers();
 	}
-	if (!preserveMapView && eventiVisibili.length > 0 && window.google && google.maps) {
+	if (!preserveMapView && !showMixedEvents && eventiVisibili.length > 0 && window.google && google.maps) {
 		if (mapInstance && google.maps.LatLngBounds) {
 			const eventiConCoordinateUtili = eventiVisibili.filter((evento) =>
 				hasUsableCoordinates(parseCoordinate(evento?.lat), parseCoordinate(evento?.lng))
@@ -782,8 +805,8 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 		}
 	}
 
-		if (!preserveMapView && !aziendeDaVisualizzare.length && activeFilters.eventi) {
-			const primoEventoConCoordinate = eventiPubbliciSettimana.find((evento) =>
+		if (!preserveMapView && !aziendeDaVisualizzare.length && onlyEventMode) {
+			const primoEventoConCoordinate = eventiVisibili.find((evento) =>
 				hasUsableCoordinates(parseCoordinate(evento?.lat), parseCoordinate(evento?.lng))
 			);
 			if (primoEventoConCoordinate) {
@@ -791,7 +814,160 @@ function mostraAziendeSuMappa(aziende, options = {}) {
 			}
 		}
 
-	mostraElencoAziende(aziendeDaVisualizzare);
+	if (onlyEventMode) {
+		mostraElencoEventi(eventiVisibili);
+		focusRequestedAziendaOnMap(aziendeDaVisualizzare);
+		return;
+	}
+
+	mostraElencoRisultati(aziendeDaVisualizzare, showMixedEvents ? eventiVisibili : eventiPerElenco);
+	focusRequestedAziendaOnMap(aziendeDaVisualizzare);
+}
+
+function getEventiPerElenco(aziende, eventi) {
+	const eventiCandidati = Array.isArray(eventi) ? eventi : [];
+	const visibleAziendaIds = new Set((aziende || []).map((azienda) => normalizeEntityId(azienda?.id)).filter(Boolean));
+
+	let eventiFiltrati = eventiCandidati.filter((evento) => {
+		const lat = parseCoordinate(evento?.lat);
+		const lng = parseCoordinate(evento?.lng);
+		return hasUsableCoordinates(lat, lng);
+	});
+
+	if (visibleAziendaIds.size > 0) {
+		eventiFiltrati = eventiFiltrati.filter((evento) => {
+			const aziendaId = normalizeEntityId(evento?.aziendaId);
+			return !aziendaId || visibleAziendaIds.has(aziendaId);
+		});
+	}
+
+	return eventiFiltrati.sort((left, right) => {
+		const leftDate = getEventStartDate(left)?.getTime() || 0;
+		const rightDate = getEventStartDate(right)?.getTime() || 0;
+		return leftDate - rightDate;
+	});
+}
+
+function mostraElencoEventi(eventi) {
+	const elenco = document.getElementById('elencoAziende');
+	if (!Array.isArray(eventi) || !eventi.length) {
+		elenco.innerHTML = '<em>nessun evento trovato</em>';
+		return;
+	}
+
+	elenco.innerHTML = '<b>Eventi trovati:</b><ul style="padding-left:18px;">' + eventi
+		.map((evento, index) => {
+			const rowBackground = index % 2 === 0 ? '#f8fbf2' : '#eef5e1';
+			const eventId = normalizeEntityId(evento.id || evento._id || `${evento.title}-${index}`);
+			const eventDate = getEventStartDate(evento);
+			const dateLabel = eventDate
+				? eventDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+				: (evento.date || '');
+
+			return `\n\t\t\t<li class="elenco-event-item" data-event-id="${escapeHtml(eventId)}" role="button" tabindex="0" style="cursor:pointer;padding:6px 4px;border-radius:6px;background:${rowBackground};"><b>${escapeHtml(evento.title || 'Evento')}</b><br>` +
+				(evento.companyName ? `<b>Azienda:</b> ${escapeHtml(evento.companyName)}<br>` : '') +
+				(dateLabel ? `<b>Data:</b> ${escapeHtml(dateLabel)}<br>` : '') +
+				(evento.startTime ? `<b>Orario:</b> ${escapeHtml(evento.startTime)}${evento.endTime ? ` - ${escapeHtml(evento.endTime)}` : ''}<br>` : '') +
+				(evento.location ? `${escapeHtml(evento.location)}<br>` : '') +
+				'</li>';
+		})
+		.join('') + '</ul>';
+
+	elenco.querySelectorAll('.elenco-event-item').forEach((itemEl) => {
+		const openDialog = (event) => {
+			if (event?.target?.closest && event.target.closest('a')) {
+				return;
+			}
+
+			const eventId = itemEl.dataset.eventId;
+			const evento = eventi.find((ev, idx) => {
+				const currentId = normalizeEntityId(ev.id || ev._id || `${ev.title}-${idx}`);
+				return currentId === eventId;
+			});
+
+			if (!evento) {
+				return;
+			}
+
+			setMapView(evento.lat, evento.lng, 12);
+			mostraDettagliEvento(evento, null, itemEl);
+		};
+
+		itemEl.addEventListener('click', openDialog);
+		itemEl.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
+				openDialog(event);
+			}
+		});
+	});
+}
+
+function mostraElencoRisultati(aziende, eventi) {
+	const elenco = document.getElementById('elencoAziende');
+	const aziendeList = Array.isArray(aziende) ? aziende : [];
+	const eventiList = Array.isArray(eventi) ? eventi : [];
+
+	if (!aziendeList.length && !eventiList.length) {
+		elenco.innerHTML = '<em>nessun risultato</em>';
+		return;
+	}
+
+	mostraElencoAziende(aziendeList);
+
+	if (!eventiList.length) {
+		return;
+	}
+
+	const aziendeMarkup = elenco.innerHTML;
+	const eventiMarkup = '<div style="margin-top:12px;"><b>Eventi trovati:</b><ul style="padding-left:18px;">' + eventiList
+		.map((evento, index) => {
+			const rowBackground = index % 2 === 0 ? '#f8fbf2' : '#eef5e1';
+			const eventId = normalizeEntityId(evento.id || evento._id || `${evento.title}-${index}`);
+			const eventDate = getEventStartDate(evento);
+			const dateLabel = eventDate
+				? eventDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
+				: (evento.date || '');
+
+			return `\n\t\t\t<li class="elenco-event-item" data-event-id="${escapeHtml(eventId)}" role="button" tabindex="0" style="cursor:pointer;padding:6px 4px;border-radius:6px;background:${rowBackground};"><b>${escapeHtml(evento.title || 'Evento')}</b><br>` +
+				(evento.companyName ? `<b>Azienda:</b> ${escapeHtml(evento.companyName)}<br>` : '') +
+				(dateLabel ? `<b>Data:</b> ${escapeHtml(dateLabel)}<br>` : '') +
+				(evento.startTime ? `<b>Orario:</b> ${escapeHtml(evento.startTime)}${evento.endTime ? ` - ${escapeHtml(evento.endTime)}` : ''}<br>` : '') +
+				(evento.location ? `${escapeHtml(evento.location)}<br>` : '') +
+				'</li>';
+		})
+		.join('') + '</ul></div>';
+
+	elenco.innerHTML = aziendeMarkup + eventiMarkup;
+
+	elenco.querySelectorAll('.elenco-event-item').forEach((itemEl) => {
+		const openDialog = (event) => {
+			if (event?.target?.closest && event.target.closest('a')) {
+				return;
+			}
+
+			const eventId = itemEl.dataset.eventId;
+			const evento = eventiList.find((ev, idx) => {
+				const currentId = normalizeEntityId(ev.id || ev._id || `${ev.title}-${idx}`);
+				return currentId === eventId;
+			});
+
+			if (!evento) {
+				return;
+			}
+
+			setMapView(evento.lat, evento.lng, 12);
+			mostraDettagliEvento(evento, null, itemEl);
+		};
+
+		itemEl.addEventListener('click', openDialog);
+		itemEl.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
+				openDialog(event);
+			}
+		});
+	});
 }
 
 function mostraElencoAziende(aziende) {
@@ -873,6 +1049,44 @@ function filtraAziende(options = {}) {
 	const input = document.getElementById('searchInput');
 	const testoCercato = input.value.trim();
 	const testoNorm = testoCercato.toLowerCase();
+
+	if (activeFilters.eventi) {
+		let eventiFiltrati = (Array.isArray(eventiPubbliciSettimana) ? eventiPubbliciSettimana : [])
+			.filter((evento) => hasUsableCoordinates(parseCoordinate(evento?.lat), parseCoordinate(evento?.lng)));
+
+		if (testoNorm) {
+			eventiFiltrati = eventiFiltrati.filter((evento) => {
+				const blob = [evento.title, evento.companyName, evento.location, evento.city, evento.description]
+					.filter(Boolean)
+					.join(' ')
+					.toLowerCase();
+				return blob.includes(testoNorm);
+			});
+		}
+
+		if (aroundMeEnabled && aroundMeCoords) {
+			const raggioKm = getRaggioKm();
+			eventiFiltrati = eventiFiltrati.filter((evento) => distanzaKm(
+				aroundMeCoords.lat,
+				aroundMeCoords.lng,
+				evento.lat,
+				evento.lng
+			) <= raggioKm);
+		}
+
+		mostraAziendeSuMappa([], { preserveMapView, eventiOverride: eventiFiltrati });
+
+		if (!preserveMapView) {
+			if (eventiFiltrati.length === 1) {
+				setMapView(eventiFiltrati[0].lat, eventiFiltrati[0].lng, 12);
+			} else if (!eventiFiltrati.length && aroundMeEnabled && aroundMeCoords) {
+				setMapView(aroundMeCoords.lat, aroundMeCoords.lng, 12);
+			}
+		}
+
+		return;
+	}
+
 	const aziendeFiltratePerToggle = applyActiveFilters(databaseAziende);
 
 	if (!testoCercato) {
@@ -881,7 +1095,9 @@ function filtraAziende(options = {}) {
 			preserveMapView
 		);
 		mostraAziendeSuMappa(risultati, { preserveMapView });
-		if (!preserveMapView && risultati.length > 0) {
+		if (!preserveMapView && shouldShowAllResults() && !aroundMeEnabled) {
+			setMapView(41.8719, 12.5674, 6);
+		} else if (!preserveMapView && risultati.length > 0) {
 			const primo = risultati[0];
 			setMapView(primo.lat, primo.lng, 10);
 		} else if (!preserveMapView && aroundMeEnabled && aroundMeCoords) {
@@ -972,6 +1188,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	initQuickFilters();
 	updateAroundMeButtonState();
-	loadConsumerMenu();
 	loadGoogleMapsApi();
 });

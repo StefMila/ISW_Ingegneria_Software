@@ -66,7 +66,7 @@ export const createLottoProdotto = async (req, res) => {
 
 		newLottoProdotto.qrCodeValue = qrCodeValue;
 		newLottoProdotto.qrCodeImage = qrCodeImage;
-		
+
 		await newLottoProdotto.save();
 
 		// collegamento bilaterale lavorazione <--> lotto
@@ -85,7 +85,7 @@ export const createLottoProdotto = async (req, res) => {
 		if (error.code === 11000) {
 			return res.status(409).json({ message: 'lotNumber o qrCodeValue già esistente' });
 		}
-
+		console.error('Errore del server:', error);
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
@@ -163,7 +163,7 @@ export const updateLottoProdotto = async (req, res) => {
 		if (error.code === 11000) {
 			return res.status(409).json({ message: 'lotNumber o qrCodeValue già esistente' });
 		}
-
+		console.error('Errore del server:', error);
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
@@ -216,6 +216,7 @@ export const getLottiProdotto = async (req, res) => {
 
 		return res.status(200).json(items);
 	} catch (error) {
+		console.error('Errore del server:', error);
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };
@@ -302,6 +303,7 @@ export const markLottiProdottoPrinted = async (req, res) => {
 			updatedLots: lotIds.length
 		});
 	} catch (error) {
+		console.error('Errore del server:', error);
 		return res.status(500).json({ message: 'Errore del server' });
 	}
 };

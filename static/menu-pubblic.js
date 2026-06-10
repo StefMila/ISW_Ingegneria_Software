@@ -13,13 +13,14 @@
 
   const buildMenuMarkup = () => `
     <header class="public-fixed-menu" aria-label="Menu pubblico">
-      <a href="/index2.html" class="public-fixed-menu__brand" aria-label="MuccApp home pubblica">
+      <a href="/index.html" class="public-fixed-menu__brand" aria-label="MuccApp home pubblica">
         <span class="public-fixed-menu__brand-icon" aria-hidden="true"><i class="fa-solid fa-cow public-fixed-menu__brand-cow"></i></span>
         <span class="public-fixed-menu__brand-text">MuccApp</span>
       </a>
       <nav class="public-fixed-menu__nav" aria-label="Navigazione pubblica">
         <a href="/esplora.html" data-menu-link="/esplora.html">Trova gli Allevatori</a>
         <a href="/tracciabilita.html" data-menu-link="/tracciabilita.html">Scansiona i Prodotti</a>
+        <a href="/login.html" data-menu-link="/login.html">Login</a>
         <a class="public-fixed-menu__cta" href="/signup.html" data-menu-link="/signup.html">Registrazione</a>
       </nav>
     </header>
@@ -35,7 +36,7 @@
     });
   };
 
-  const mountPublicMenu = () => {
+  const mountPublicMenu = async () => {
     if (document.querySelector('.public-fixed-menu')) return;
 
     const body = document.body;

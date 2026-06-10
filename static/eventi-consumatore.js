@@ -7,39 +7,20 @@ const resetFiltersButton = document.getElementById('resetPublicEventsFilters');
 const publicEventsStatus = document.getElementById('publicEventsStatus');
 const publicEventsList = document.getElementById('publicEventsList');
 const publicEventsCount = document.getElementById('publicEventsCount');
-
+// Inizializzazione del menu per il consumatore, con evidenziazione della voce attiva e caricamento dinamico dei dati degli eventi pubblici in base ai filtri selezionati, con gestione dello stato di caricamento e degli errori
 const setStatus = (text, color = '#1f2937') => {
 	if (!publicEventsStatus) return;
 	publicEventsStatus.style.color = color;
 	publicEventsStatus.textContent = text;
 };
-
+// Funzione per aggiornare il badge del conteggio degli eventi pubblici, mostrando il numero di eventi trovati e cambiando il colore in base al
 const setCountBadge = (text, success = false) => {
 	if (!publicEventsCount) return;
 	publicEventsCount.textContent = text;
 	publicEventsCount.classList.toggle('status-chip-success', success);
 	publicEventsCount.classList.toggle('status-chip-warning', !success);
 };
-
-const loadConsumerMenu = async () => {
-	if (!menuRoot) return;
-
-	const token = localStorage.getItem('token');
-	const userType = localStorage.getItem('userType');
-	if (!token || userType !== 'consumatore') {
-		menuRoot.innerHTML = '';
-		return;
-	}
-
-	try {
-		const response = await fetch('/menu-consumatore.html');
-		const html = await response.text();
-		menuRoot.innerHTML = html;
-	} catch (error) {
-		console.error('Errore caricamento menu consumatore:', error);
-	}
-};
-
+// Funzione per formattare la data e l'orario di un evento in modo leggibile, mostrando il giorno della settimana, la data e l'orario di inizio e fine, o restituendo i valori originali se non sono validi
 const formatDateTime = (item) => {
 	const startDate = item.date ? new Date(`${item.date}T${item.startTime || '00:00'}`) : null;
 	if (!startDate || Number.isNaN(startDate.getTime())) {
@@ -83,7 +64,7 @@ const renderEvents = (items = []) => {
 
 	setCountBadge(`${items.length} eventi`, true);
 };
-
+// Funzione per caricare l'elenco delle aziende pubbliche dal server e popolare il filtro a tendina, ordinando le aziende per nome e gestendo eventuali errori di caricamento
 const loadCompanies = async () => {
 	if (!companyFilter) return;
 
@@ -105,7 +86,7 @@ const loadCompanies = async () => {
 		console.error('Errore caricamento aziende pubbliche:', error);
 	}
 };
-
+// Funzione per costruire l'URL della richiesta API per gli eventi pubblici in base ai filtri selezionati, aggiungendo i parametri di query solo se i filtri sono valorizzati, e impostando un limite massimo di 100 eventi per evitare sovraccarichi
 const buildPublicEventsUrl = () => {
 	const params = new URLSearchParams();
 	const aziendaId = companyFilter?.value?.trim() || '';
@@ -120,7 +101,7 @@ const buildPublicEventsUrl = () => {
 	const query = params.toString();
 	return query ? `/api/eventi/pubblici?${query}` : '/api/eventi/pubblici';
 };
-
+// Funzione principale per caricare gli eventi pubblici in base ai filtri selezionati, gestendo lo stato di caricamento, gli errori e l'aggiornamento dell'interfaccia utente con i risultati ottenuti dal server
 const loadPublicEvents = async () => {
 	setStatus('Caricamento eventi pubblici...');
 	setCountBadge('Caricamento...', false);
@@ -161,7 +142,6 @@ if (resetFiltersButton) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-	await loadConsumerMenu();
 	await loadCompanies();
 	await loadPublicEvents();
 });

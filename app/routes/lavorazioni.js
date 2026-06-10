@@ -4,8 +4,10 @@ import { checkAuth, checkUserType } from './auth.js';
 import { assertAziendaOwnedByUser } from './aziende.js';
 import Azienda from '../models/azienda.js';
 import Lavorazione from '../models/lavorazione.js';
+import LottoProdotto from '../models/lottoProdotto.js';
 import Sensore from '../models/sensore.js';
 import { ultimeLettureIot } from '../services/mqttService.js';
+import QRcode from 'qrcode';
 
 const router = express.Router();
 router.use(checkAuth);
@@ -31,6 +33,8 @@ const UNIT_TO_SENSORE = {
 	'L': 'litri',
 	'Kg': 'chilogrammi'
 };
+
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
 
 const ALLOWED_FASI_SET = new Set(ALLOWED_FASI);
 //valida ObjectId di MongoDB
@@ -113,6 +117,53 @@ const parseQuantity = (value) => {
     }
 
     return null;
+};
+
+const ensureLottoForCompletedLavorazione = async (lavorazione) => {
+	if (!lavorazione || lavorazione.isTemplate || lavorazione.status !== 'completata') {
+		return;
+	}
+
+	if (typeof lavorazione.lottoId === 'string' && lavorazione.lottoId.trim()) {
+		return;
+	}
+
+	const existingLotto = await LottoProdotto.findOne({ lavorazioneId: lavorazione._id }).select('_id lotNumber');
+	if (existingLotto) {
+		lavorazione.lottoId = existingLotto.lotNumber;
+		await lavorazione.save();
+		return;
+	}
+
+	const nomeProdotto = typeof lavorazione.outputName === 'string' ? lavorazione.outputName.trim() : '';
+	const unit = typeof lavorazione.outputUnit === 'string' ? lavorazione.outputUnit.trim() : '';
+	const quantity = parseQuantity(lavorazione.outputQuantity);
+
+	if (!nomeProdotto || !unit || quantity === null) {
+		const error = new Error('Per terminare la lavorazione servono outputName, outputUnit e outputQuantity validi per creare il lotto prodotto');
+		error.status = 422;
+		throw error;
+	}
+
+	const newLotto = new LottoProdotto({
+		aziendaId: lavorazione.aziendaId,
+		lavorazioneId: lavorazione._id,
+		nomeProdotto,
+		quantity,
+		unit,
+		qrCodeValue: 'PENDING'
+	});
+
+	await newLotto.validate();
+
+	const qrCodeValue = `${PUBLIC_BASE_URL}/tracciabilita.html?lotto=${encodeURIComponent(newLotto.lotNumber)}`;
+	newLotto.qrCodeValue = qrCodeValue;
+	newLotto.qrCodeImage = await QRcode.toDataURL(qrCodeValue);
+
+	await newLotto.save();
+
+	lavorazione.lottoId = newLotto.lotNumber;
+	await lavorazione.save();
 };
 
 const hasNonSequentialCompletedFasi = (fasi = []) => {
@@ -203,16 +254,12 @@ export const createLavorazione = async (req, res) => {
 			return res.status(400).json({ message: 'isTemplate deve essere true o false' });
 		}
 
+		if (lottoId !== undefined) {
+			return res.status(400).json({ message: 'lottoId viene generato automaticamente quando la lavorazione è completata' });
+		}
+
 		if(!parsedIsTemplate && !templateId) {
 			return res.status(422).json({ message: 'Se la lavorazione non è un template, deve riferirsi ad un template esistente' });
-		}
-
-		if(parsedIsTemplate && lottoId){
-			return res.status(422).json({ message: 'Un template lavorazione non può essere associato ad un lotto'});
-		}
-
-		if(status !== 'completata' && lottoId){
-			return res.status(422).json({ message: 'Una lavorazione non completata non può avere un lotto associato ad essa'});
 		}
 
 		const newLavorazione = new Lavorazione({
@@ -235,6 +282,7 @@ export const createLavorazione = async (req, res) => {
 		});
 
 		await newLavorazione.save();
+		await ensureLottoForCompletedLavorazione(newLavorazione);
 		const creationMessage = newLavorazione.isTemplate
 			? 'Template lavorazione creato con successo'
 			: 'Lavorazione creata con successo';
@@ -244,6 +292,14 @@ export const createLavorazione = async (req, res) => {
 			lavorazione: newLavorazione
 		});
 	} catch (error) {
+		if (error?.status) {
+			return res.status(error.status).json({ message: error.message });
+		}
+
+		if (error.code === 11000) {
+			return res.status(409).json({ message: 'lotNumber o qrCodeValue già esistente' });
+		}
+
 		if (error.name === 'ValidationError') {
 			console.error('Errore del server:', error);
 			return res.status(400).json({ message: 'dati lavorazione non validi' });
@@ -353,16 +409,24 @@ export const updateLavorazione = async (req, res) => {
 		if (status !== undefined) existingLavorazione.status = status;
 		if (notes !== undefined) existingLavorazione.notes = typeof notes === 'string' ? notes.trim() : undefined;
 		if (normalizedFasi.value !== undefined) existingLavorazione.fasi = normalizedFasi.value;
-		if (lottoId !== undefined) existingLavorazione.lottoId = lottoId;
 		if (outputQuantity !== undefined) existingLavorazione.outputQuantity = outputQuantity;
 
 		await existingLavorazione.save();
+		await ensureLottoForCompletedLavorazione(existingLavorazione);
 
 		return res.status(200).json({
 			message: 'Lavorazione aggiornata con successo',
 			lavorazione: existingLavorazione
 		});
 	} catch (error) {
+		if (error?.status) {
+			return res.status(error.status).json({ message: error.message });
+		}
+
+		if (error.code === 11000) {
+			return res.status(409).json({ message: 'lotNumber o qrCodeValue già esistente' });
+		}
+
 		if (error.name === 'ValidationError') {
 			return res.status(400).json({ message: 'dati lavorazione non validi' });
 		}
@@ -478,8 +542,8 @@ export const getTemplateByCodiceLavorazione = async (req, res) => {
 		const { queryTemplate, codiceLavorazione, descrizioneTemplate, aziendaId } = req.query;
 
 		if (!aziendaId) {
-            return res.status(400).json({ message: 'Il parametro aziendaId è obbligatorio' });
-        }
+			return res.status(400).json({ message: 'Il parametro aziendaId è obbligatorio' });
+		}
 
 		const queryValue = typeof queryTemplate === 'string' ? queryTemplate.trim() : '';
 		const codiceValue = typeof codiceLavorazione === 'string' ? codiceLavorazione.trim() : '';
@@ -495,7 +559,7 @@ export const getTemplateByCodiceLavorazione = async (req, res) => {
 		}
 
 		const filter = {
-			aziendaId: aziendaId,
+			aziendaId,
 			isTemplate: true
 		};
 
@@ -558,6 +622,13 @@ export const deleteLavorazione = async (req, res) => {
 		if (!ownershipCheck.ok) {
 			return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
 		}
+
+		await LottoProdotto.deleteMany({
+			$or: [
+				{ lavorazioneId: existingLavorazione._id },
+				(existingLavorazione.lottoId ? { lotNumber: existingLavorazione.lottoId } : null)
+			].filter(Boolean)
+		});
 
 		await Lavorazione.deleteOne({ _id: id });
 

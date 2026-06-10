@@ -87,6 +87,8 @@ describe('US - Tracciabilita - endpoint privati e pubblici', () => {
 		jest.spyOn(Azienda, 'findById').mockReturnValue(makeSelectable({
 			_id: AZIENDA_ID,
 			companyName: 'Fattoria Felice',
+			website: 'https://fattoria-felice.example.it',
+			geo: { lat: 45.0677, lng: 7.6825 },
 			ownerUserId: USER_ID,
 			authorizedVeterinarianIds: [VET_ID]
 		}));
@@ -427,6 +429,9 @@ describe('US - Tracciabilita - endpoint privati e pubblici', () => {
 
 			expect(response.body.lotto.lotNumber).toBe('LOT-001');
 			expect(response.body.producer.companyName).toBe('Fattoria Felice');
+			expect(response.body.producer.website).toBe('https://fattoria-felice.example.it');
+			expect(response.body.producer.map.lat).toBe(45.0677);
+			expect(response.body.producer.map.lng).toBe(7.6825);
 			expect(response.body.animals).toHaveLength(1);
 			expect(response.body.animals[0].label).toBe('Bruna');
 			expect(response.body.animals[0].benessere.stepsDailyAvg).toBe(50);

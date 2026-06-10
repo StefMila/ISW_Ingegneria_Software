@@ -25,13 +25,13 @@ const labelCloseReprintDialogBtn = document.getElementById('labelCloseReprintDia
 const labelPrevBtn = document.getElementById('labelPrevBtn');
 const labelNextBtn = document.getElementById('labelNextBtn');
 const labelPrintBtn = document.getElementById('labelPrintBtn');
-
+// Stato globale dei lotti caricati, dei lotti selezionati per la stampa, del lotto attivo nel dettaglio e di eventuali target di ristampa provenienti dalla query string
 const stepPanels = {
   1: document.getElementById('labelStep1'),
   2: document.getElementById('labelStep2'),
   3: document.getElementById('labelStep3')
 };
-
+// Funzione per aggiornare lo stato del builder di etichette, mostrando un messaggio e cambiando il colore del testo in base al contesto (default verde scuro, rosso per errori)
 const stepButtons = {
   1: document.getElementById('labelStep1Btn'),
   2: document.getElementById('labelStep2Btn'),
@@ -45,6 +45,7 @@ let lastShiftSelectionIndex = null;
 let activeDetailLot = null;
 let pendingReprintLotFromQuery = null;
 let pendingReprintLotIdFromQuery = null;
+const PRINT_LOGO_SRC = '/logo-muccapp.svg';
 // Stato per evitare più richieste di ristampa contemporanee
 const labelSetStatus = (message, color = '#3d5a1a') => {
   if (!labelBuilderStatus) return;
@@ -103,7 +104,7 @@ const loadReprintTargetFromQuery = () => {
   pendingReprintLotFromQuery = String(params.get('reprintLot') || '').trim();
   pendingReprintLotIdFromQuery = String(params.get('reprintLotId') || '').trim();
 };
-
+// Funzione per consumare i parametri di query relativi a un lotto da ristampare, cercare il lotto corrispondente tra quelli caricati e aprire il dettaglio se trovato, altrimenti mostrare un messaggio di errore, e infine pulire i parametri di query per evitare comportamenti indesiderati in futuro
 const consumeReprintTargetFromQuery = () => {
   if (!pendingReprintLotFromQuery && !pendingReprintLotIdFromQuery) {
     return;
@@ -131,13 +132,13 @@ const consumeReprintTargetFromQuery = () => {
   pendingReprintLotFromQuery = null;
   pendingReprintLotIdFromQuery = null;
 };
-
+// Funzione per chiudere la finestra di dialogo del dettaglio del lotto, nascondendo il pannello e ripristinando lo scroll della pagina
 const closeLotDetailDialog = () => {
   if (!labelLotDetailCard) return;
   labelLotDetailCard.classList.add('hidden');
   document.body.style.overflow = '';
 };
-
+// Funzione per ottenere un testo riassuntivo dello stato di stampa di un lotto, indicando quante volte è stato stampato e quando è stata l'ultima stampa, o se non è mai stato stampato
 const getPrintedSummaryText = (lot) => {
   const printedCount = Number.isFinite(lot?.labelsPrintedCount) ? lot.labelsPrintedCount : 0;
   if (printedCount <= 0) {
@@ -267,7 +268,7 @@ const buildLabelsForSingleLot = (lot, copies, expiryDate) => {
   }
   return labels;
 };
-
+// render dell'elenco dei lotti filtrati, con gestione della selezione tramite checkbox, click sulla riga per aprire il dettaglio, e supporto per selezioni multiple con Shift, oltre a indicare visivamente i lotti già stampati e quelli ristampabili
 const renderLotsSelectionTable = () => {
   if (!labelLotsTableBody) return;
   labelLotsTableBody.innerHTML = '';
@@ -607,8 +608,14 @@ const buildPrintHtml = (labels = []) => {
       <p><strong>Prodotto:</strong> ${escapeHtml(label.product)}</p>
       <p><strong>Creato:</strong> ${escapeHtml(label.createdAt)}</p>
       <p><strong>Scadenza:</strong> ${escapeHtml(label.expiryDate)}</p>
-      <div class="print-qr-wrap">
-        ${label.qrCodeImage ? `<img src="${escapeHtml(label.qrCodeImage)}" alt="QR ${escapeHtml(label.lotNumber)}">` : '<span>QR non disponibile</span>'}
+      <div class="print-brand-qr-row">
+        <div class="print-logo-wrap">
+          <img src="${PRINT_LOGO_SRC}" alt="Logo MuccApp" onerror="this.style.display='none'; this.parentElement.classList.add('is-hidden');">
+          <span class="print-logo-fallback">MuccApp</span>
+        </div>
+        <div class="print-qr-wrap">
+          ${label.qrCodeImage ? `<img src="${escapeHtml(label.qrCodeImage)}" alt="QR ${escapeHtml(label.lotNumber)}">` : '<span>QR non disponibile</span>'}
+        </div>
       </div>
     </article>
   `).join('');
@@ -644,7 +651,38 @@ const buildPrintHtml = (labels = []) => {
     }
     h1 { margin: 0 0 1mm; font-size: 2.8mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     p { margin: 0.3mm 0; font-size: 2.4mm; line-height: 1.15; }
-    .print-qr-wrap { text-align: right; }
+    .print-brand-qr-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2mm;
+      margin-top: 0.6mm;
+    }
+    .print-logo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 44mm;
+    }
+    .print-logo-wrap.is-hidden { min-width: 0; }
+    .print-logo-wrap img {
+      width: 34mm;
+      height: 15mm;
+      object-fit: contain;
+      display: block;
+    }
+    .print-logo-fallback {
+      font-size: 2.1mm;
+      font-weight: 700;
+      letter-spacing: 0.06mm;
+      color: #14532d;
+      line-height: 1;
+      margin-top: 0.4mm;
+    }
+    .print-logo-wrap img:not([style*="display: none"]) + .print-logo-fallback {
+      display: none;
+    }
+    .print-qr-wrap { text-align: right; margin-left: auto; }
     .print-qr-wrap img { width: 12mm; height: 12mm; object-fit: contain; }
     .print-qr-wrap span { font-size: 2.1mm; }
   </style>

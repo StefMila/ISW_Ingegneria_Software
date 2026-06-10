@@ -94,6 +94,55 @@ const hasSequentialCompletedFasi = (fasi = []) => {
 };
 
 const areAllFasiCompleted = (fasi = []) => Array.isArray(fasi) && fasi.length > 0 && fasi.every((fase) => Boolean(fase?.completed));
+
+const copyTextToClipboard = async (text) => {
+    const value = String(text || '').trim();
+    if (!value) {
+        return false;
+    }
+
+    try {
+        if (navigator?.clipboard?.writeText) {
+            await navigator.clipboard.writeText(value);
+            return true;
+        }
+    } catch (_) {
+        // Continua con fallback legacy.
+    }
+
+    try {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value;
+        input.setAttribute('readonly', 'readonly');
+        input.style.position = 'absolute';
+        input.style.left = '-9999px';
+        document.body.appendChild(input);
+        input.select();
+        input.setSelectionRange(0, value.length);
+        const copied = document.execCommand('copy');
+        document.body.removeChild(input);
+        return Boolean(copied);
+    } catch (_) {
+        return false;
+    }
+};
+
+const renderLottoCell = (item) => {
+    const lotto = String(getLotto(item) || '').trim();
+    if (!lotto || lotto === '—') {
+        return '—';
+    }
+
+    return `
+        <div class="lotto-cell-wrap">
+            <span class="lotto-cell-value">${escapeHtml(lotto)}</span>
+            <button class="copy-lotto-btn" type="button" data-lotto-id="${escapeAttr(lotto)}" title="Copia lotto ID" aria-label="Copia lotto ID">
+                <span class="copy-lotto-icon" aria-hidden="true">📑</span>
+            </button>
+        </div>
+    `;
+};
 // riquadro di dettaglio con tutte le fasi e note
 const formatDateTime = (value) => {
     if (!value) {
@@ -279,7 +328,7 @@ const rowLavorazioneHtml = (item) => `
     <td>${escapeHtml(formatDateTime(item.startedAt))}</td>
     <td>${escapeHtml(getCodiceLavorazione(item))}</td>
     <td>${escapeHtml(getQuantityLabel(item))}</td>
-    <td>${escapeHtml(getLotto(item))}</td>
+    <td>${renderLottoCell(item)}</td>
     <td>${escapeHtml(getStatoLabel(item.status))}</td>
     <td>${escapeHtml(getNotes(item))}</td>
     <td>
@@ -411,12 +460,49 @@ const saveFasiFromDetails = async (lavorazioneId) => {
         ));
 
         renderStatus(lavorazioniStatus, 'Fasi lavorazione aggiornate con successo.', 'green');
-        openDetails(rowLavorazioniMap.get(String(lavorazioneId)));
+        overlay.style.display = 'none';
     } catch (error) {
         console.error('Errore durante salvataggio fasi lavorazione:', error);
         renderStatus(lavorazioniStatus, 'Errore di connessione durante il salvataggio delle fasi.', 'red');
     }
 };
+
+    const resolveLottoIdForLavorazione = async (lavorazioneId) => {
+        const aziendaId = localStorage.getItem(SELECTED_AZIENDA_ID_KEY);
+        const token = localStorage.getItem('token');
+
+        if (!lavorazioneId || !aziendaId || !token) {
+            return '';
+        }
+
+        try {
+            const params = new URLSearchParams({
+                aziendaId,
+                lavorazioneId: String(lavorazioneId)
+            });
+
+            const response = await fetch(`/api/lotti-prodotto?${params.toString()}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                return '';
+            }
+
+            const items = await response.json().catch(() => ([]));
+            if (!Array.isArray(items) || items.length === 0) {
+                return '';
+            }
+
+            const lotNumber = String(items[0]?.lotNumber || '').trim();
+            return lotNumber;
+        } catch (error) {
+            console.warn('Impossibile risolvere il lotto dalla lavorazione:', error);
+            return '';
+        }
+    };
 
 const syncSequentialPhaseInputs = (overlay) => {
     if (!overlay) {
@@ -764,6 +850,35 @@ const patchCloseLavorazione = async (id, quantity, notes, source) => {
         return;
       }
 
+            const current = rowLavorazioniMap.get(String(id)) || {};
+            const serverItem = data?.lavorazione && typeof data.lavorazione === 'object'
+                ? data.lavorazione
+                : null;
+
+            const nextItem = {
+                ...current,
+                ...(serverItem || {}),
+                status: 'completata',
+                endedAt: new Date().toISOString(),
+                outputQuantity: Number(parsedQuantity.toFixed(2))
+            };
+
+            if (!String(nextItem.lottoId || '').trim()) {
+                const resolvedLottoId = await resolveLottoIdForLavorazione(id);
+                if (resolvedLottoId) {
+                    nextItem.lottoId = resolvedLottoId;
+                }
+            }
+
+            rowLavorazioniMap.set(String(id), nextItem);
+            allLavorazioni = allLavorazioni.map((item) => (
+                String(item._id) === String(id) ? { ...item, ...nextItem } : item
+            ));
+
+            if (allLavorazioni.length > 0) {
+                renderLavorazioniTable(allLavorazioni);
+            }
+
       renderStatus(lavorazioniStatus, data.message || 'Lavorazione aggiornata con successo.', 'green');
       await fetchLavorazioni();
     } catch (error) {
@@ -918,6 +1033,18 @@ if(lavorazioniTableBody){
         const closeScaleButton = event.target.closest('.terminate-scale-btn');
         const closeManualButton = event.target.closest('.terminate-manual-btn');
         const deleteButton = event.target.closest('.delete-animal-btn');
+        const copyLottoButton = event.target.closest('.copy-lotto-btn');
+
+        if (copyLottoButton) {
+            const lottoId = String(copyLottoButton.getAttribute('data-lotto-id') || '').trim();
+            const ok = await copyTextToClipboard(lottoId);
+            if (ok) {
+                renderStatus(lavorazioniStatus, `Lotto copiato: ${lottoId}`, 'green');
+            } else {
+                renderStatus(lavorazioniStatus, 'Impossibile copiare il lotto negli appunti.', 'red');
+            }
+            return;
+        }
 
         if (closeScaleButton) {
             const lavorazioneId = closeScaleButton.getAttribute('data-id') || '';

@@ -45,6 +45,14 @@ const eventoSchema = new Schema({
     required: false,
     trim: true
   },
+  lat: {
+    type: Number,
+    required: false
+  },
+  lng: {
+    type: Number,
+    required: false
+  },
   description: {
     type: String,
     required: false,

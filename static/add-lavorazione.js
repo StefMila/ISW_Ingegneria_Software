@@ -7,7 +7,13 @@ const ricercaTemplateInput = document.getElementById('ricercaTemplate');
 const templateSuggestions = document.getElementById('templateSuggestions');
 const templatePreviewForm = document.getElementById('template-preview-form');
 const templatePreviewMessage = document.getElementById('lavorazioneFormStatus');
-
+const semiLavoratoCodeInput = document.getElementById('semiLavoratoCode');
+const scanSemiLavoratoBtn = document.getElementById('scanSemiLavoratoBtn');
+const semiScanPanel = document.getElementById('semiScanPanel');
+const semiScanVideo = document.getElementById('semiScanVideo');
+const stopSemiScanBtn = document.getElementById('stopSemiScanBtn');
+const semiScanStatus = document.getElementById('semiScanStatus');
+// Mappature per tipi e unità di misura basate su input/output selezionati
 export const OUTPUT_TO_TIPO = {
     'Latte alimentare confezionato': 'altro',
     'Formaggi stagionati o freschi strutturati': 'formaggio',
@@ -17,14 +23,14 @@ export const OUTPUT_TO_TIPO = {
     'Latticello': 'altro',
     'Acque di lavaggio e reflui autolavanti': 'altro'
 };
-
+// Codice tipo lavorazione: A per primo-latte, B per formaggio, C per yogurt, D per altro
 export const TIPO_TO_CODICETIPO = {
     'primo-latte': 'A',
     'formaggio': 'B',
     'yogurt': 'C',
     'altro': 'D'
 };
-
+// Mappature per tipo e unità di misura degli input basate sulla selezione dell'utente
 const INPUT_TO_TYPE = {
     'Latte crudo': 'latte',
     'Latte in polvere': 'ingrediente',
@@ -32,7 +38,7 @@ const INPUT_TO_TYPE = {
     'Acqua': 'ingrediente',
     'Fermenti lattici': 'additivo'
 };
-
+// Unit di misura predefinite per ogni materia prima in input
 const INPUT_TO_UNIT = {
     'Latte crudo': 'L',
     'Latte in polvere': 'Kg',
@@ -40,7 +46,7 @@ const INPUT_TO_UNIT = {
     'Acqua': 'L',
     'Fermenti lattici': 'Kg'
 };
-
+// Unit di misura predefinite per ogni output principale selezionato
 export const OUTPUT_TO_UNIT = {
     'Latte alimentare confezionato': 'pezzi',
     'Formaggi stagionati o freschi strutturati': 'Kg',
@@ -50,12 +56,12 @@ export const OUTPUT_TO_UNIT = {
     'Latticello': 'L',
     'Acque di lavaggio e reflui autolavanti': 'L'
 };
-
+// Recupero e visualizzazione del nome dell'azienda attiva
 const selectedAziendaName = localStorage.getItem('selectedAziendaName') || 'non selezionata';
 if (currentAziendaBadge) {
     currentAziendaBadge.textContent = `Azienda attiva: ${selectedAziendaName}`;
 }
-
+// Funzione di utilità per ottenere il valore di un input e rimuovere spazi bianchi iniziali/finali
 const getTrimmedValue = (id) => {
     const el = document.getElementById(id);
     if (!el || typeof el.value !== 'string') {
@@ -63,7 +69,7 @@ const getTrimmedValue = (id) => {
     }
     return el.value.trim();
 };
-
+// Funzione per ottenere le materie prime selezionate dall'utente
 const getSelectedInputMaterials = () => {
     const select = document.getElementById('materiePrime');
     if (!(select instanceof HTMLSelectElement)) {
@@ -74,7 +80,7 @@ const getSelectedInputMaterials = () => {
         .map((option) => option.value.trim())
         .filter(Boolean);
 };
-
+// Funzione per ottenere le fasi selezionate dall'utente
 const getSelectedPhases = () => {
     const checkboxes = Array.from(document.querySelectorAll('.fase-checkbox'));
     return checkboxes
@@ -85,10 +91,13 @@ const getSelectedPhases = () => {
         }))
         .filter((fase) => fase.name);
 };
-
+// Validazione del codice lavorazione secondo il formato standard (es. A123, B456, etc.)
 const standardCodiceLavorazione = /^[A][A-D]\d{3}$/;
 let templateSuggestionsCache = [];
 let templateSuggestionsAziendaId = '';
+let semiScannerStream = null;
+let semiScannerAnimationId = null;
+let semiScannerActive = false;
 
 const normalizeText = (value) => String(value || '')
     .toLowerCase()
@@ -102,6 +111,173 @@ const hideTemplateSuggestions = () => {
     templateSuggestions.classList.add('hidden');
 };
 
+const setSemiScanStatus = (text, color = '#1f2937') => {
+    if (!semiScanStatus) return;
+    semiScanStatus.textContent = text;
+    semiScanStatus.style.color = color;
+};
+// Funzione per fermare la scansione semi-automatica, rilasciare risorse e nascondere il pannello di scansione
+const stopSemiScanner = () => {
+    semiScannerActive = false;
+
+    if (semiScannerAnimationId) {
+        cancelAnimationFrame(semiScannerAnimationId);
+        semiScannerAnimationId = null;
+    }
+
+    if (semiScannerStream) {
+        semiScannerStream.getTracks().forEach((track) => track.stop());
+        semiScannerStream = null;
+    }
+
+    if (semiScanVideo) {
+        semiScanVideo.srcObject = null;
+    }
+
+    if (semiScanPanel) {
+        semiScanPanel.classList.add('hidden');
+    }
+};
+// Funzione per applicare il codice semi-lavorato rilevato dalla scansione al form, aggiornare lo stato e fornire feedback all'utente
+const applyScannedSemiCode = (rawValue) => {
+    const normalized = String(rawValue || '').trim();
+    if (!normalized) {
+        setSemiScanStatus('Codice non leggibile. Riprova.', 'red');
+        return false;
+    }
+
+    if (semiLavoratoCodeInput) {
+        semiLavoratoCodeInput.value = normalized;
+    }
+
+    setSemiScanStatus(`Codice rilevato: ${normalized}`, 'green');
+    if (templatePreviewMessage) {
+        templatePreviewMessage.style.color = '#2f855a';
+        templatePreviewMessage.textContent = 'Codice semi-lavorato acquisito da scansione.';
+    }
+
+    return true;
+};
+// Funzione per avviare la scansione semi-automatica, gestire l'accesso alla fotocamera, rilevare codici a barre e aggiornare lo stato in tempo reale
+const startSemiScanner = async () => {
+    if (!semiScanPanel || !semiScanVideo) {
+        return;
+    }
+
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        setSemiScanStatus('Fotocamera non disponibile: usa HTTPS/localhost.', 'red');
+        semiScanPanel.classList.remove('hidden');
+        return;
+    }
+
+    semiScanPanel.classList.remove('hidden');
+    setSemiScanStatus('Avvio fotocamera...', '#1f2937');
+
+    try {
+        semiScannerStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } },
+            audio: false
+        });
+
+        semiScanVideo.srcObject = semiScannerStream;
+        await semiScanVideo.play();
+        semiScannerActive = true;
+
+        if (!('BarcodeDetector' in window)) {
+            setSemiScanStatus('Scansione disponibile in futuro su browser compatibili. Inserisci il codice manualmente.', '#b45309');
+            return;
+        }
+
+        setSemiScanStatus('Inquadra il codice del semi-lavorato.', '#1f2937');
+        const detector = new window.BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13'] });
+
+        const tick = async () => {
+            if (!semiScannerActive) {
+                return;
+            }
+
+            try {
+                const barcodes = await detector.detect(semiScanVideo);
+                if (Array.isArray(barcodes) && barcodes.length > 0) {
+                    const rawValue = barcodes[0]?.rawValue;
+                    if (applyScannedSemiCode(rawValue)) {
+                        stopSemiScanner();
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Errore durante scansione codice semi-lavorato:', error);
+            }
+
+            semiScannerAnimationId = requestAnimationFrame(tick);
+        };
+
+        semiScannerAnimationId = requestAnimationFrame(tick);
+    } catch (error) {
+        console.error('Errore apertura fotocamera semi-lavorato:', error);
+        setSemiScanStatus('Impossibile avviare la fotocamera.', 'red');
+    }
+};
+// Funzione per cercare una mungitura completata che corrisponda al codice del semi-lavorato fornito, restituendo l'ID della mungitura se trovata o un messaggio di errore
+const resolveMungituraBySemiCode = async (aziendaId, semiLavoratoId) => {
+    const token = (localStorage.getItem('token') || '').trim();
+    if (!aziendaId || !semiLavoratoId || !token) {
+        return { ok: false, message: 'Dati mancanti per il collegamento mungitura-lavorazione' };
+    }
+
+    const params = new URLSearchParams({
+        aziendaId,
+        semiLavoratoId,
+        status: 'completata'
+    });
+
+    try {
+        const response = await fetch(`/api/mungiture?${params.toString()}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json().catch(() => ([]));
+        if (!response.ok) {
+            return { ok: false, message: data?.message || 'Errore durante la ricerca della mungitura' };
+        }
+
+        const items = Array.isArray(data) ? data : [];
+        const matched = items.find((item) => String(item?.semiLavoratoId || '').trim() === semiLavoratoId);
+
+        if (!matched?._id) {
+            return { ok: false, message: 'Nessuna mungitura completata trovata con questo codice semi-lavorato' };
+        }
+
+        return { ok: true, mungituraId: String(matched._id) };
+    } catch (error) {
+        return { ok: false, message: 'Errore di rete durante la ricerca della mungitura' };
+    }
+};
+// Funzione per associare in modo sicuro l'ID di una mungitura agli input della lavorazione, evitando duplicati e assicurando che venga associato all'input di tipo "latte" se presente
+const attachMungituraToInputs = (inputs, mungituraId) => {
+    if (!Array.isArray(inputs) || !mungituraId) {
+        return Array.isArray(inputs) ? inputs : [];
+    }
+
+    const targetIndex = inputs.findIndex((input) => String(input?.type || '').toLowerCase() === 'latte');
+    const safeIndex = targetIndex >= 0 ? targetIndex : 0;
+
+    return inputs.map((input, index) => {
+        if (index !== safeIndex) {
+            return input;
+        }
+
+        const existingIds = Array.isArray(input?.mungituraIds) ? input.mungituraIds : [];
+        const merged = [...new Set([...existingIds.map((id) => String(id)), String(mungituraId)])];
+        return {
+            ...input,
+            mungituraIds: merged
+        };
+    });
+};
+// Funzione per mostrare le suggerimenti di template basati sui risultati filtrati, creando dinamicamente i pulsanti e gestendo l'interazione dell'utente
 const showTemplateSuggestions = (items) => {
     if (!templateSuggestions) return;
 
@@ -145,7 +321,7 @@ const showTemplateSuggestions = (items) => {
 
     templateSuggestions.classList.remove('hidden');
 };
-
+// Funzione per caricare i suggerimenti di template dal server basati sull'azienda attiva, con caching per migliorare le prestazioni e ridurre le chiamate API
 const loadTemplateSuggestions = async () => {
     const aziendaId = (localStorage.getItem('selectedAziendaId') || '').trim();
     if (!aziendaId) {
@@ -174,7 +350,7 @@ const loadTemplateSuggestions = async () => {
     templateSuggestionsCache = Array.isArray(data) ? data : [];
     templateSuggestionsAziendaId = aziendaId;
 };
-
+// Funzione per suggerire i template in base alla descrizione o codice inseriti dall'utente, filtrando i risultati e mostrando solo quelli rilevanti
 const suggestTemplatesByDescription = async () => {
     const query = normalizeText(getTrimmedValue('ricercaTemplate'));
     if (!query || query.length < 2) {
@@ -396,13 +572,27 @@ if(templatePreviewForm) {
             }
             const template = JSON.parse(templateInfo);
             const { _id, nomeTemplate, endedAt, createdAt, updatedAt, ...basePayload} = template;
+            const aziendaId = (localStorage.getItem('selectedAziendaId') || '').trim();
+            const semiLavoratoCode = getTrimmedValue('semiLavoratoCode');
+            let mungituraIdToLink = '';
+
+            if (semiLavoratoCode) {
+                const linked = await resolveMungituraBySemiCode(aziendaId, semiLavoratoCode);
+                if (!linked.ok) {
+                    templatePreviewMessage.textContent = linked.message;
+                    return;
+                }
+                mungituraIdToLink = linked.mungituraId;
+            }
+
             const payload = {
                 ...basePayload,
                 isTemplate: false,
                 templateId: template._id,
                 startedAt: Date.now,
                 notes: template.notes + addedNotes,
-                status: 'in_corso' 
+                status: 'in_corso',
+                inputs: attachMungituraToInputs(basePayload.inputs, mungituraIdToLink)
             };
 
             const response = await fetch('/api/lavorazioni', {
@@ -424,8 +614,26 @@ if(templatePreviewForm) {
             templatePreviewMessage.textContent = responseData.message || 'Lavorazione avviata con successo';
             templatePreviewForm.reset();
             templatePreviewForm.classList.add('hidden'); // Nascondo nuovamente il form
+            stopSemiScanner();
         } catch (error) {
             templatePreviewMessage.textContent = 'Errore di rete o del server';
         }
     });
 }
+
+if (scanSemiLavoratoBtn) {
+    scanSemiLavoratoBtn.addEventListener('click', () => {
+        startSemiScanner();
+    });
+}
+
+if (stopSemiScanBtn) {
+    stopSemiScanBtn.addEventListener('click', () => {
+        stopSemiScanner();
+        setSemiScanStatus('Scansione interrotta. Inserisci il codice manualmente se necessario.', '#b45309');
+    });
+}
+
+window.addEventListener('beforeunload', () => {
+    stopSemiScanner();
+});

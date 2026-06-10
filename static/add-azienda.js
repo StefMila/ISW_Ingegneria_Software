@@ -1,6 +1,10 @@
 const aziendaForm = document.getElementById('add-azienda-form');
 const aziendaFormMessage = document.getElementById('addAziendaMessage');
 const currentAziendaBadge = document.getElementById('currentAziendaBadge');
+const fotoAziendaInput = document.getElementById('fotoAzienda');
+const fotoAziendaPreview = document.getElementById('fotoAziendaPreview');
+
+let selectedFotoAziendaDataUrl = '';
 
 const selectedAziendaName = localStorage.getItem('selectedAziendaName') || 'non selezionata';
 if (currentAziendaBadge) {
@@ -80,7 +84,7 @@ function initAutocomplete() {
         });
     }
 }
-
+// Inizializza il menu pubblico e carica la chiave Google Maps al caricamento della pagina
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/config')
         .then((res) => res.json())
@@ -95,6 +99,49 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Errore nel caricamento della configurazione Google Maps.');
         });
 });
+
+if (fotoAziendaInput) {
+    fotoAziendaInput.addEventListener('change', () => {
+        const file = fotoAziendaInput.files && fotoAziendaInput.files[0];
+        selectedFotoAziendaDataUrl = '';
+
+        if (!file) {
+            if (fotoAziendaPreview) {
+                fotoAziendaPreview.style.display = 'none';
+                fotoAziendaPreview.removeAttribute('src');
+            }
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            aziendaFormMessage.style.color = 'red';
+            aziendaFormMessage.textContent = 'Seleziona un file immagine valido per la foto azienda.';
+            fotoAziendaInput.value = '';
+            return;
+        }
+
+        if (file.size > 1_400_000) {
+            aziendaFormMessage.style.color = 'red';
+            aziendaFormMessage.textContent = 'Foto azienda troppo grande. Usa un file sotto 1.4MB.';
+            fotoAziendaInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            selectedFotoAziendaDataUrl = typeof reader.result === 'string' ? reader.result : '';
+            if (fotoAziendaPreview && selectedFotoAziendaDataUrl) {
+                fotoAziendaPreview.src = selectedFotoAziendaDataUrl;
+                fotoAziendaPreview.style.display = 'block';
+            }
+        };
+        reader.onerror = () => {
+            aziendaFormMessage.style.color = 'red';
+            aziendaFormMessage.textContent = 'Impossibile leggere la foto azienda selezionata.';
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
 // Handler per la creazione di una nuova azienda 
 if (aziendaForm) {
@@ -154,6 +201,7 @@ if (aziendaForm) {
                     phoneNumber,
                     emailAzienda,
                     website,
+                    foto: selectedFotoAziendaDataUrl,
                     categories: productCategories,
                     lat,
                     lng
@@ -168,6 +216,11 @@ if (aziendaForm) {
             aziendaFormMessage.style.color = 'green';
             aziendaFormMessage.textContent = 'Azienda creata con successo';
             aziendaForm.reset();
+            selectedFotoAziendaDataUrl = '';
+            if (fotoAziendaPreview) {
+                fotoAziendaPreview.style.display = 'none';
+                fotoAziendaPreview.removeAttribute('src');
+            }
         } catch (error) {
             console.error('Errore durante la creazione dell\'azienda:', error);
             aziendaFormMessage.textContent = 'Errore di connessione al server';

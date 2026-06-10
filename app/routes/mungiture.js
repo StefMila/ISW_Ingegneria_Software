@@ -5,6 +5,7 @@ import { assertAziendaOwnedByUser } from './aziende.js';
 import Azienda from '../models/azienda.js';
 import Animale from '../models/animale.js';
 import Mungitura from '../models/munigitura.js';
+import Lavorazione from '../models/lavorazione.js';
 import Sensore from '../models/sensore.js';
 import { ultimeLettureIot } from '../services/mqttService.js';
 
@@ -270,7 +271,7 @@ export const getIotLitersReading = async (req, res) => {
 // GET /api/mungiture - recupera le mungiture dell'azienda con filtri opzionali per animale, stato e intervallo date
 export const getMungitura = async (req, res) => {
     try {
-        const { aziendaId, animaleId, status, startedAtFrom, startedAtTo } = req.query;
+        const { aziendaId, animaleId, semiLavoratoId, status, startedAtFrom, startedAtTo } = req.query;
         const startedAtFilter = {};
 
         if (!aziendaId) {
@@ -310,6 +311,14 @@ export const getMungitura = async (req, res) => {
             filter.status = status;
         }
 
+        if (semiLavoratoId) {
+            const normalizedSemi = String(semiLavoratoId).trim();
+            if (!normalizedSemi) {
+                return res.status(400).json({ message: 'semiLavoratoId non valido' });
+            }
+            filter.semiLavoratoId = normalizedSemi;
+        }
+
         if (Object.keys(startedAtFilter).length > 0) {
             filter.startedAt = startedAtFilter;
         }
@@ -338,6 +347,17 @@ export const deleteMungitura = async (req, res) => {
         const ownershipCheck = await assertAziendaOwnedByUser(existingMungitura.aziendaId, req.user.userId);
         if (!ownershipCheck.ok) {
             return res.status(ownershipCheck.status || 403).json({ message: ownershipCheck.message });
+        }
+
+        const usedInLavorazione = await Lavorazione.exists({
+            aziendaId: existingMungitura.aziendaId,
+            'inputs.mungituraIds': existingMungitura._id
+        });
+
+        if (usedInLavorazione) {
+            return res.status(409).json({
+                message: 'Impossibile eliminare la mungitura: e gia utilizzata in una lavorazione'
+            });
         }
 
         await Mungitura.deleteOne({ _id: id });
