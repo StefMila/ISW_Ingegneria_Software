@@ -4,7 +4,7 @@
     const userType = localStorage.getItem('userType');
     return Boolean(token) && userType === 'consumatore';
   };
-
+// Verifica se Font Awesome è già presente, altrimenti lo aggiunge dinamicamente
   const ensureFontAwesome = () => {
     if (document.querySelector('link[data-public-menu-fa="1"]')) return;
     if (document.querySelector('link[href*="font-awesome"]')) return;
@@ -16,7 +16,7 @@
     link.dataset.publicMenuFa = '1';
     document.head.appendChild(link);
   };
-
+//  Costruisce il markup HTML del menu pubblico
   const buildMenuMarkup = () => `
     <header class="public-fixed-menu" aria-label="Menu pubblico">
       <a href="/index.html" class="public-fixed-menu__brand" aria-label="MuccApp home pubblica">
@@ -31,7 +31,7 @@
       </nav>
     </header>
   `;
-
+// Imposta la classe "is-active" sul link corrispondente alla pagina attuale
   const setActiveLink = () => {
     const currentPath = window.location.pathname || '';
     document.querySelectorAll('.public-fixed-menu [data-menu-link]').forEach((link) => {
@@ -41,7 +41,7 @@
       }
     });
   };
-
+// Monta il menu pubblico se l'utente non è autenticato come consumatore
   const mountPublicMenu = async () => {
     if (document.querySelector('.public-fixed-menu')) return;
 
