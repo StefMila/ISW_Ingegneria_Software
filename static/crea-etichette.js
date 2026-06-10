@@ -45,7 +45,7 @@ let lastShiftSelectionIndex = null;
 let activeDetailLot = null;
 let pendingReprintLotFromQuery = null;
 let pendingReprintLotIdFromQuery = null;
-const PRINT_LOGO_SRC = '/logo-muccapp.svg';
+const PRINT_LOGO_SRC = '/logo-muccapp.png';
 // Stato per evitare più richieste di ristampa contemporanee
 const labelSetStatus = (message, color = '#3d5a1a') => {
   if (!labelBuilderStatus) return;
