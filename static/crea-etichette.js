@@ -683,7 +683,7 @@ const buildPrintHtml = (labels = []) => {
       display: none;
     }
     .print-qr-wrap { text-align: right; margin-left: auto; }
-    .print-qr-wrap img { width: 12mm; height: 12mm; object-fit: contain; }
+    .print-qr-wrap img { width: 18mm; height: 18mm; object-fit: contain; } /* dimensione del qr code in stampa */
     .print-qr-wrap span { font-size: 2.1mm; }
   </style>
 </head>

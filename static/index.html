@@ -35,18 +35,9 @@
             overflow-x: hidden;
         }
 
-        body.public-menu-enabled {
-            min-height: 100vh;
-        }
-
         main {
             width: min(100%, 1440px);
             margin: 0 auto;
-        }
-
-        body.public-menu-enabled main {
-            padding-top: clamp(12px, 2vw, 28px);
-            transform-origin: top center;
         }
 
         /* HEADER & NAVIGAZIONE */
@@ -116,27 +107,28 @@
         }
 
         /* HERO SECTION */
+        /* padding cambia il primo valore per modificare lo spazio tra menù e titolo, il secondo valore è per i padding laterali, il terzo valore modifica lo spazio tra titolo+paragrafo e sezione valori+flusso */
         .hero {
-            padding: clamp(700px, 24vw, 320px) 20px clamp(72px, 10vw, 100px) 20px;
+            padding: clamp(12px, 2.5vw, 32px) 20px clamp(72px, 10vw, 100px) 20px;
             background: linear-gradient(180deg, rgba(26,48,29,0.03) 0%, rgba(253,251,247,0) 100%);
             text-align: center;
             max-width: min(900px, calc(100vw - 32px));
             margin: 0 auto;
         }
-
+        /* margin bottom modifica lo spazio tra hero e sezione valori+flusso */
         .hero h1 {
             font-family: 'DM Serif Display', serif;
             font-size: clamp(2.2rem, 4.8vw, 3.5rem);
             color: var(--forest-green);
             line-height: 1.1;
-            margin-bottom: 24px;
+            margin-bottom: 18px;
         }
-
+        /* margin bottom modifica lo spazio tra titolo e paragrafo */
         .hero p {
             font-family: 'DM Serif Display', serif;
             font-size: clamp(1.35rem, 2.8vw, 2rem);
             color: var(--text-muted);
-            margin-bottom: 40px;
+            margin-bottom: 25px;
             line-height: 1.25;
             font-weight: 400;
         }
@@ -434,11 +426,6 @@
             }
         }
 
-        @media (max-width: 1360px), (max-height: 900px) {
-            body.public-menu-enabled main {
-                zoom: min(1, calc((100vw - 24px) / 1360px), calc((100vh - 120px) / 980px));
-            }
-        }
     </style>
 </head>
 <body>

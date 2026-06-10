@@ -6,10 +6,6 @@ html, body {
   font-family: Arial, sans-serif;
 }
 
-body.public-menu-enabled {
-  padding-top: 84px;
-}
-
 .public-fixed-menu {
   position: fixed;
   top: 0;
@@ -88,6 +84,12 @@ body.public-menu-enabled {
 .public-fixed-menu__nav a.public-fixed-menu__cta:hover,
 .public-fixed-menu__nav a.public-fixed-menu__cta.is-active {
   background: #2f6825;
+}
+
+body.public-menu-enabled {
+  display: block;
+  min-height: 100vh;
+  padding-top: 84px;
 }
 
 body.public-menu-esplora .quick-search-nav {
@@ -680,6 +682,19 @@ button:disabled {
   padding: 36px 32px;
   box-shadow: 0 10px 30px rgba(45, 90, 27, 0.15);
   border-top: 4px solid var(--yellow-gold);
+}
+
+body.auth-page {
+  min-height: 100vh;
+}
+
+body.auth-page.public-menu-enabled {
+  display: flex;
+  flex-direction: column;
+}
+
+body.auth-page main.auth-container {
+  margin: auto;
 }
 
 .auth-container h1 {
