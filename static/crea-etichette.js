@@ -633,15 +633,15 @@ const buildPrintHtml = (labels = []) => {
     .print-sheet {
       display: grid;
       grid-template-columns: repeat(auto-fill, 58mm);
-      grid-auto-rows: 40mm;
+      grid-auto-rows: 44mm;
       gap: 2mm;
       justify-content: start;
       align-content: start;
     }
     .print-label-card {
       width: 58mm;
-      height: 40mm;
-      padding: 2.2mm;
+      height: 44mm;
+      padding: 1.8mm 2mm;
       border: 0.2mm solid #111;
       overflow: hidden;
       display: flex;
@@ -649,14 +649,14 @@ const buildPrintHtml = (labels = []) => {
       justify-content: space-between;
       break-inside: avoid;
     }
-    h1 { margin: 0 0 1mm; font-size: 2.8mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    p { margin: 0.3mm 0; font-size: 2.4mm; line-height: 1.15; }
+    h1 { margin: 0 0 0.7mm; font-size: 2.6mm; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    p { margin: 0.2mm 0; font-size: 2.2mm; line-height: 1.08; }
     .print-brand-qr-row {
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
       gap: 2mm;
-      margin-top: 0.6mm;
+      margin-top: 0.4mm;
     }
     .print-logo-wrap {
       display: flex;
