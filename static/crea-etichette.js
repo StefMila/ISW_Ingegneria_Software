@@ -662,7 +662,7 @@ const buildPrintHtml = (labels = []) => {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      min-width: 44mm;
+      min-width: 34mm;
     }
     .print-logo-wrap.is-hidden { min-width: 0; }
     .print-logo-wrap img {
